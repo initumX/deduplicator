@@ -1,6 +1,68 @@
-# File Deduplicator - GUI Overview
+This is a **multi-layered Python application** built in stages:
 
-This is a **desktop application** with a **graphical user interface (GUI)** that lets users find and manage duplicate files and similar pics.
+```
+[Core Logic] → [API Layer] → [GUI (PyQt5)]
+```
+
+---
+
+## 🔧 1. Core Deduplication Engine
+
+- Written first
+- Contains the main logic for finding duplicates
+- Uses a **pipeline approach** with different modes:
+  - `fast`: Size → Front hash
+  - `normal`: Size → Front → Middle → End
+  - `full`: Size → Front → Middle → Full hash
+- Designed to be efficient, especially with large files
+
+Files:  
+-`core/scanner.py` - Forms a FileCollection
+- `core/deduplicator.py` – Main deduplication logic
+- `core/models.py` – Data models like `File`, `DuplicateGroup`, etc.
+- `core/grouper.py` – Helpers for grouping files
+- etc
+
+---
+
+## 🔄 2. API Layer
+
+- Built **on top of the core**
+- Provides a clean interface to use the deduplication engine
+- Makes it easier to plug into different front-ends (CLI, GUI, web)
+
+File:  
+- `api.py` – The API wrapper that connects the GUI to the core logic
+
+---
+
+## 🖥️ 3. GUI (PyQt5 Interface)
+
+- Built last
+- Uses **PyQt5** for the desktop interface
+- Communicates with the core via the API
+- Includes:
+  - File scanning UI
+  - Preferences/settings
+  - Results viewer
+  - Context menus and file management
+
+Files:  
+- `main_window.py` or similar (in your code, it's part of the big GUI script)
+- `worker.py` – Handles background tasks so the GUI doesn't freeze
+- `utils/services.py` – File operations and helpers
+
+---
+
+## 📦 Summary
+
+You built this project in layers:
+
+1. **Core logic** – To find duplicate files efficiently
+2. **API layer** – To cleanly expose that logic
+3. **GUI layer** – So users can interact with it easily using a desktop app
+
+This structure makes the app **modular**, **maintainable**, and potentially reusable in other contexts (like a CLI tool or web service).
 
 ---
 
@@ -85,7 +147,6 @@ Available actions:
 You can:
 - **Save scan results** to a JSON file
 - **Load previously saved results** from a JSON file
-- **Move files to trash** directly from the app
 
 ---
 
