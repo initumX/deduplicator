@@ -455,13 +455,37 @@ class MainWindow(QMainWindow):
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
-
         if reply == QMessageBox.Yes:
             try:
                 FileService.move_multiple_to_trash(paths)
                 self.status_label.setText(f"Moved {len(paths)} files to trash.")
-                # Optionally refresh view
-                self.populate_tree_with_files([f for f in self.file_collection.files if f.path not in paths])
+
+                # 1. Update file collection
+                remaining_files = [f for f in self.file_collection.files if f.path not in paths]
+                self.file_collection = FileCollection(remaining_files)
+
+                # 2. Update duplicate groups
+                updated_groups = []
+                for group in self.duplicate_groups:
+                    filtered_files = [f for f in group.files if f.path not in paths]
+                    if len(filtered_files) > 1:
+                        group.files = filtered_files
+                        updated_groups.append(group)
+
+                self.duplicate_groups = updated_groups
+
+                # 3. Decide what to show next:
+                if self.tree.topLevelItemCount() > 0 and isinstance(self.tree.topLevelItem(0),
+                                                                    QTreeWidgetItem) and self.tree.topLevelItem(
+                        0).childCount() > 0:
+                    # We were showing groups before, so refresh group view
+                    self.populate_tree_with_groups(self.duplicate_groups)
+                    self.status_label.setText(f"Updated {len(self.duplicate_groups)} duplicate group(s).")
+                else:
+                    # Fall back to file list if no groups exist
+                    self.populate_tree_with_files(remaining_files)
+                    self.status_label.setText(f"{len(remaining_files)} files remaining.")
+
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to delete files:\n{e}")
 
