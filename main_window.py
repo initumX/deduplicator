@@ -503,6 +503,10 @@ class MainWindow(QMainWindow):
         self.load_action.triggered.connect(self.load_results)
         self.actions_to_disable.append(self.load_action)
 
+        self.keep_one_action = file_menu.addAction("Keep One File Per Group")
+        self.keep_one_action.triggered.connect(self.keep_one_file_per_group)
+        self.actions_to_disable.append(self.keep_one_action)
+
         scan_menu = menubar.addMenu("Scan")
         self.start_action = scan_menu.addAction("Start Scan")
         self.start_action.triggered.connect(self.start_scan)
@@ -521,7 +525,7 @@ class MainWindow(QMainWindow):
         self.find_duplicates_action.triggered.connect(self.show_duplicates)
         self.actions_to_disable.append(self.find_duplicates_action)
 
-        self.find_similar_pictures_action = look_for_menu.addAction("Similar Pictures")
+        self.find_similar_pictures_action = look_for_menu.addAction("Similar Pictures (SLOW)")
         self.find_similar_pictures_action.triggered.connect(self.find_similar_pictures)
         self.actions_to_disable.append(self.find_similar_pictures_action)
 
@@ -671,6 +675,60 @@ class MainWindow(QMainWindow):
         self.min_size_label.setText(f"📏 Min Size: {format_size(min_size_bytes)}")
         self.max_size_label.setText(f"📏 Max Size: {format_size(max_size_bytes)}")
         self.ext_label.setText(f"📎 Extensions: {', '.join(extensions)}")
+
+    def keep_one_file_per_group(self):
+        if not self.duplicate_groups:
+            QMessageBox.information(self, "No Groups", "No duplicate groups found.")
+            return
+
+        reply = QMessageBox.question(
+            self,
+            'Confirm Operation',
+            f"Are you sure you want to keep only one file per group and move the rest to trash? ({len(self.duplicate_groups)} groups)",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        try:
+            # Collect all files to delete
+            files_to_delete = []
+            for group in self.duplicate_groups:
+                # Keep the first file, delete the rest
+                files_to_delete.extend(group.files[1:])
+
+            # Get paths
+            paths_to_delete = [f.path for f in files_to_delete]
+
+            if not paths_to_delete:
+                self.status_label.setText("Nothing to delete – every group has only one file.")
+                return
+
+            # Move to trash
+            FileService.move_multiple_to_trash(paths_to_delete)
+            self.status_label.setText(f"Moved {len(paths_to_delete)} files to trash.")
+
+            # Update file collection
+            remaining_files = [f for f in self.file_collection.files if f.path not in paths_to_delete]
+            self.file_collection = FileCollection(remaining_files)
+
+            # Update duplicate groups (now each group has only one file, so we filter them out)
+            updated_groups = []
+            for group in self.duplicate_groups:
+                kept_file = group.files[0]  # Only the first is kept
+                group.files = [kept_file]
+                updated_groups.append(group)
+
+            self.duplicate_groups = updated_groups
+
+            # Repopulate tree with updated groups
+            self.populate_tree_with_groups(updated_groups)
+            self.status_label.setText(f"Kept {len(updated_groups)} files – one per group.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to process files:\n{e}")
+
 
     def start_scan(self):
         if hasattr(self, 'worker') and self.worker.isRunning():

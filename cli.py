@@ -73,13 +73,13 @@ def cmd_scan(args: argparse.Namespace):
 
     if args.min_size:
         if not SizeUtils.is_valid_size_format(args.min_size):
-            print(f"❌ Invalid --min-size format: {args.min_size}")
+            print(f"Invalid --min-size format: {args.min_size}")
             sys.exit(1)
         min_size = SizeUtils.human_to_bytes(args.min_size)
 
     if args.max_size:
         if not SizeUtils.is_valid_size_format(args.max_size):
-            print(f"❌ Invalid --max-size format: {args.max_size}")
+            print(f"Invalid --max-size format: {args.max_size}")
             sys.exit(1)
         max_size = SizeUtils.human_to_bytes(args.max_size)
 
