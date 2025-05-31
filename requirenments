@@ -1,0 +1,13 @@
+ImageHash==4.3.2
+more-itertools==10.7.0
+numpy==2.2.6
+phash==0.2.0
+pillow==11.2.1
+PyQt5==5.15.11
+PyQt5-Qt5==5.15.17
+PyQt5-stubs==5.15.6.0
+PyQt5_sip==12.17.0
+PyWavelets==1.8.0
+scipy==1.15.3
+Send2Trash==1.8.3
+xxhash==3.5.0
