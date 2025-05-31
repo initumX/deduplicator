@@ -44,6 +44,8 @@ class File:
     path: str
     size: int  # in bytes
     phash: Optional[bytes] = None
+    name: Optional[str] = None
+    extension: Optional[str] = None
     full_hash: Optional[bytes] = None  # xxHash64 digest of entire file
     front_hash: Optional[bytes] = None  # hash of first N bytes
     end_hash: Optional[bytes] = None  # hash of last N bytes
@@ -57,6 +59,14 @@ class File:
             value = getattr(self, field_name)
             if value is not None and not isinstance(value, bytes):
                 raise ValueError(f"{field_name} must be bytes or None")
+
+        """Automatically extract basename and extension from path if not provided."""
+        if self.name is None:
+            self.basename = os.path.basename(self.path)
+
+        if self.extension is None:
+            _, ext = os.path.splitext(self.basename)
+            self.extension = ext.lower()  # ".JPG" → ".jpg"
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
