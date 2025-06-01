@@ -98,6 +98,21 @@ class PreferencesDialog(QDialog):
         self.settings = QSettings("MyCompany", "FileDeduplicator")
         default_dir = self.settings.value("default_directory", "")
 
+        # === Favourite Path Input ===
+        self.fav_path_input = QLineEdit()
+        self.fav_path_input.setReadOnly(True)
+        self.fav_browse_button = QPushButton("Browse...")
+        self.fav_browse_button.clicked.connect(self.select_favourite_directory)
+
+        fav_layout = QHBoxLayout()
+        fav_layout.addWidget(self.fav_path_input)
+        fav_layout.addWidget(self.fav_browse_button)
+        layout.addRow("Favourite Path (Originals):", fav_layout)
+
+        # Load saved value
+        fav_dir = self.settings.value("favourite_directory", "")
+        self.fav_path_input.setText(fav_dir)
+
         # Always restore last known directory
         if not default_dir:
             default_dir = ""
@@ -183,6 +198,11 @@ class PreferencesDialog(QDialog):
         if dir_path:
             self.dir_input.setText(dir_path)
 
+    def select_favourite_directory(self):
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Favourite Directory")
+        if dir_path:
+            self.fav_path_input.setText(dir_path)
+
     def _set_min_size_fields(self, bytes_value):
         """Set the UI for minimum size"""
         if bytes_value <= 0:
@@ -242,6 +262,7 @@ class PreferencesDialog(QDialog):
 
     def save_and_accept(self):
         self.settings.setValue("default_directory", self.dir_input.text())  # Only save if user picked one
+        self.settings.setValue("favourite_directory", self.fav_path_input.text())
         self.settings.setValue("min_size", self.get_min_size_in_bytes() or 0)
         self.settings.setValue("max_size", self.get_max_size_in_bytes() or 0)
         self.settings.setValue("extensions", self.ext_input.text())
@@ -252,6 +273,8 @@ class PreferencesDialog(QDialog):
         """Reset all inputs to predefined default values"""
         # Set directory blank
         self.dir_input.setText("")
+
+        self.fav_path_input.setText("")
 
         # Min size = 100 KB
         self.min_size_input.setValue(100)
@@ -672,6 +695,7 @@ class MainWindow(QMainWindow):
             return "not set" if val <= 0 else human_readable(val)
 
         self.path_label.setText(f"📁 Path to Scan: {default_dir}")
+        self.fav_dir = settings.value("favourite_directory", "")
         self.min_size_label.setText(f"📏 Min Size: {format_size(min_size_bytes)}")
         self.max_size_label.setText(f"📏 Max Size: {format_size(max_size_bytes)}")
         self.ext_label.setText(f"📎 Extensions: {', '.join(extensions)}")
@@ -695,17 +719,14 @@ class MainWindow(QMainWindow):
             # Collect all files to delete
             files_to_delete = []
             for group in self.duplicate_groups:
-                # Keep the first file, delete the rest
-                files_to_delete.extend(group.files[1:])
+                # Keep the first file (already sorted: original comes first)
+                files_to_delete.extend(group.files[1:])  # All but the first
 
-            # Get paths
             paths_to_delete = [f.path for f in files_to_delete]
-
             if not paths_to_delete:
                 self.status_label.setText("Nothing to delete – every group has only one file.")
                 return
 
-            # Move to trash
             FileService.move_multiple_to_trash(paths_to_delete)
             self.status_label.setText(f"Moved {len(paths_to_delete)} files to trash.")
 
@@ -713,16 +734,14 @@ class MainWindow(QMainWindow):
             remaining_files = [f for f in self.file_collection.files if f.path not in paths_to_delete]
             self.file_collection = FileCollection(remaining_files)
 
-            # Update duplicate groups (now each group has only one file, so we filter them out)
+            # Update groups to contain only kept files
             updated_groups = []
             for group in self.duplicate_groups:
-                kept_file = group.files[0]  # Only the first is kept
+                kept_file = group.files[0]
                 group.files = [kept_file]
                 updated_groups.append(group)
 
             self.duplicate_groups = updated_groups
-
-            # Repopulate tree with updated groups
             self.populate_tree_with_groups(updated_groups)
             self.status_label.setText(f"Kept {len(updated_groups)} files – one per group.")
 
@@ -784,9 +803,13 @@ class MainWindow(QMainWindow):
         for idx, group in enumerate(groups, 1):
             group_item = QTreeWidgetItem(self.tree)
             group_item.setText(0, f"📁 Group {idx} ({len(group.files)} files)")
+
             for file in group.files:
+                label = f"{os.path.basename(file.path)} ({human_readable(file.size)})"
+                if self.is_in_favourite_path(file.path):
+                    label += " ✅ (Original)"
                 file_item = QTreeWidgetItem(group_item)
-                file_item.setText(0, f"{os.path.basename(file.path)} ({human_readable(file.size)})")
+                file_item.setText(0, label)
                 file_item.setToolTip(0, file.path)
 
 
@@ -831,8 +854,19 @@ class MainWindow(QMainWindow):
         self.worker.error_occurred.connect(lambda msg: QMessageBox.critical(self, "Error", msg))
         self.worker.start()
 
+    def is_in_favourite_path(self, file_path):
+        fav_dir = self.settings.value("favourite_directory", "")
+        if not fav_dir:
+            return False
+        return os.path.commonpath([fav_dir, file_path]) == fav_dir
+
     def on_analysis_complete(self, result):
         if isinstance(result, list) and len(result) > 0 and isinstance(result[0], DuplicateGroup):
+            # Sort files within each group: those in favourite path come first
+            for group in result:
+                group.files.sort(
+                    key=lambda f: 0 if self.is_in_favourite_path(f.path) else 1
+                )
             self.duplicate_groups = result
             self.populate_tree_with_groups(result)
             self.status_label.setText(f"Found {len(result)} groups.")
