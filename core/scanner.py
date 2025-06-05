@@ -1,4 +1,7 @@
 """
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
+
 scanner.py
 Implements file scanning functionality using object-oriented design and modern pathlib.
 Features:
@@ -11,8 +14,10 @@ Features:
 import os
 from typing import List, Optional, Callable
 from pathlib import Path
+
 # Local imports
-from core.models import File, FileCollection, FileScanner
+from core.models import File, FileCollection
+from core.interfaces import FileScanner
 
 
 class FileScannerImpl(FileScanner):
@@ -31,24 +36,30 @@ class FileScannerImpl(FileScanner):
         root_dir: str,
         min_size: Optional[int] = None,
         max_size: Optional[int] = None,
-        extensions: Optional[List[str]] = None
+        extensions: Optional[List[str]] = None,
+        favorite_dirs: Optional[List[str]] = None
     ):
         self.root_dir = root_dir
         self.min_size = min_size
         self.max_size = max_size
         self.extensions = [ext.lower() for ext in extensions] if extensions else []
+        self.favorite_dirs = [os.path.normpath(d) for d in favorite_dirs] if favorite_dirs else []
 
-    def scan(self, stopped_flag: Optional[Callable[[], bool]] = None) -> FileCollection:
+    def scan(self,
+             stopped_flag: Optional[Callable[[], bool]] = None,
+             progress_callback: Optional[Callable[[int, int], None]] = None) -> FileCollection:
         """
         Scans the directory recursively and returns a filtered collection of files.
         Args:
             stopped_flag (Optional[Callable[[], bool]]): Function that returns True if operation should be stopped.
+            progress_callback (Optional[Callable[[int, int], None]]): Callback to report progress (current, total).
         Returns:
             FileCollection: Collection of filtered File objects
         """
         print(f"🔍 Scanning directory: {self.root_dir}")
         found_files = []
         root_path = Path(self.root_dir)
+        processed_files = 0
 
         if stopped_flag and stopped_flag():
             return FileCollection([])
@@ -59,7 +70,15 @@ class FileScannerImpl(FileScanner):
             raise RuntimeError(f"Not a directory: {self.root_dir}")
 
         try:
-            for path in root_path.rglob("*"):
+            # Only precompute paths if we need progress tracking
+            if progress_callback:
+                all_paths = list(root_path.rglob("*"))
+                total_files = sum(1 for p in all_paths if p.is_file())
+            else:
+                all_paths = root_path.rglob("*")
+                total_files = 0  # Not used
+
+            for path in all_paths:
                 if stopped_flag and stopped_flag():
                     return FileCollection([])
 
@@ -68,6 +87,9 @@ class FileScannerImpl(FileScanner):
                         file_info = self._process_file(path, stopped_flag=stopped_flag)
                         if file_info:
                             found_files.append(file_info)
+                            processed_files += 1
+                            if progress_callback and total_files > 0:
+                                progress_callback(processed_files, total_files)
                     except Exception as e:
                         print(f"⚠️ Unable to process file {path}: {e}")
         except PermissionError as pe:
@@ -75,7 +97,6 @@ class FileScannerImpl(FileScanner):
         except Exception as e:
             print(f"❌ Error during scanning: {e}")
 
-        # Sort by descending size
         found_files.sort(key=lambda f: -f.size)
         return FileCollection(found_files)
 
@@ -93,12 +114,14 @@ class FileScannerImpl(FileScanner):
 
         # Check read permissions
         if not os.access(str(path), os.R_OK):
+            print(f"No read permission for {path}")
             return None
 
         # Get file size
         try:
             size = path.stat().st_size
-        except OSError:
+        except OSError as e:
+            print(f"⚠️ Could not get size of {path}: {e}")
             return None
 
         # Skip zero-byte files
@@ -113,8 +136,16 @@ class FileScannerImpl(FileScanner):
         if not self._extension_passes(path):
             return None
 
-        # Create and return File object
-        return File(path=str(path), size=size)
+        try:
+            file = File(path=str(path), size=size)
+        except Exception as e:
+            print(f"Failed to create File object for {path}: {e}")
+            return None
+
+        if self.favorite_dirs:
+            file.set_favorite_status(self.favorite_dirs)
+
+        return file
 
     def _size_passes(self, size: int) -> bool:
         """
@@ -151,3 +182,4 @@ class FileScannerImpl(FileScanner):
             if any(candidate.lower() == ext.lower() for ext in self.extensions):
                 return True
         return False
+

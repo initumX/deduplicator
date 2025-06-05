@@ -1,4 +1,7 @@
 """
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
+
 deduplicator.py
 Implements a pipeline-based deduplication system using File objects.
 Supports three modes:
@@ -7,19 +10,11 @@ Supports three modes:
     - full: size → front → middle → full_hash
 """
 import time
-from typing import List, Tuple, Protocol, Optional, Callable
+from typing import List, Tuple, Optional, Callable
 from core.models import File, DuplicateGroup, DeduplicationStats, DeduplicationMode
-from core.grouper import DefaultFileGrouper
+from core.grouper import FileGrouperImpl
+from core.interfaces import SizeStage, PartialHashStage, Deduplicator
 from collections import defaultdict
-
-
-# =============================
-# Stage Interface
-# =============================
-class DeduplicationStage(Protocol):
-    def process(self, groups: List[DuplicateGroup]) -> List[DuplicateGroup]:
-        ...
-
 
 #=============================
 # Base Class and Config
@@ -47,7 +42,7 @@ class DeduplicationConfig:
         if file_size <= limit:
             return file_size
         elif file_size <= limit * 2:
-            return limit    # First elif should return limit, don't change it
+            return limit
         elif file_size <= 10 * 1024 * 1024:
             return 64 * 1024
         elif file_size <= 30 * 1024 * 1024:
@@ -65,13 +60,13 @@ class DeduplicationConfig:
 # =============================
 # Partial Hashing Base Class
 # =============================
-class PartialHashStageBase(HashStageBase):
+class PartialHashStageBase(HashStageBase, PartialHashStage):
     """
     Abstract base class for stages that perform partial hashing.
     Encapsulates common logic for front/middle/end hash stages.
     """
 
-    def __init__(self, grouper: DefaultFileGrouper):
+    def __init__(self, grouper: FileGrouperImpl):
         self.grouper = grouper
 
     def compute_hash(self, file: File) -> bytes:
@@ -99,7 +94,8 @@ class PartialHashStageBase(HashStageBase):
         self,
         groups: List[DuplicateGroup],
         confirmed_duplicates: List[DuplicateGroup],
-        stopped_flag: Optional[Callable[[], bool]] = None
+        stopped_flag: Optional[Callable[[], bool]] = None,
+        progress_callback: Optional[Callable[[str, int, int], None]] = None
     ) -> List[DuplicateGroup]:
         """
         Processes duplicate groups through this hash stage.
@@ -110,6 +106,9 @@ class PartialHashStageBase(HashStageBase):
             return []
 
         new_potential_groups = []
+        total_files = sum(len(group.files) for group in groups)
+        processed_files = 0
+
         for group in groups:
             if stopped_flag and stopped_flag():
                 return []
@@ -143,18 +142,26 @@ class PartialHashStageBase(HashStageBase):
                 if len(large_files) >= 2:
                     new_potential_groups.append(DuplicateGroup(size=group.size, files=large_files))
 
+            processed_files += len(group.files)
+            if progress_callback:
+                progress_callback(self.get_stage_name(), processed_files, total_files)
+
         return new_potential_groups
 
 
 # =============================
 # Individual Stages
 # =============================
-class SizeStage:
-    def __init__(self, grouper: DefaultFileGrouper):
+class SizeStageImpl(SizeStage):
+    def __init__(self, grouper: FileGrouperImpl):
         self.grouper = grouper
 
-    def process(self, files: List[File],
-                stopped_flag: Optional[Callable[[], bool]] = None) -> List[DuplicateGroup]:
+    def process(
+            self,
+            files: List[File],
+            stopped_flag: Optional[Callable[[], bool]] = None,
+            progress_callback: Optional[Callable[[str, int, int], None]] = None
+    ) -> List[DuplicateGroup]:
         """
         Group by file size.
         Returns list of DuplicateGroups with 2+ files of same size.
@@ -162,6 +169,11 @@ class SizeStage:
         if stopped_flag and stopped_flag():
             return []
         size_groups = self.grouper.group_by_size(files)
+
+        if progress_callback:
+            total_files = len(files)
+            progress_callback("size", total_files, total_files)  # Fake instant progress
+
         return [
             DuplicateGroup(size=size, files=files_list)
             for size, files_list in size_groups.items()
@@ -203,26 +215,37 @@ class EndHashStage(PartialHashStageBase):
 
 
 class FullHashStage:
-    def __init__(self, grouper: DefaultFileGrouper):
+    def __init__(self, grouper: FileGrouperImpl):
         self.grouper = grouper
 
     def process(
             self,
             groups: List[DuplicateGroup],
             confirmed_duplicates: List[DuplicateGroup],
-            stopped_flag: Optional[Callable[[], bool]] = None
+            stopped_flag: Optional[Callable[[], bool]] = None,
+            progress_callback: Optional[Callable[[str, int, int], None]] = None
     ) -> List[DuplicateGroup]:
         if stopped_flag and stopped_flag():
             return []
+
+        total_files = sum(len(g.files) for g in groups)
+        processed_files = 0
+
         for group in groups:
             if stopped_flag and stopped_flag():
                 return []
+
             hash_groups = self.grouper.group_by_full_hash(group.files)
             for hkey, files in hash_groups.items():
                 if stopped_flag and stopped_flag():
                     return []
                 if len(files) >= 2:
                     confirmed_duplicates.append(DuplicateGroup(size=group.size, files=files))
+
+            processed_files += len(group.files)
+            if progress_callback:
+                progress_callback("full", processed_files, total_files)
+
         return []
 
 
@@ -230,26 +253,28 @@ class FullHashStage:
 # =============================
 # Main Deduplicator Class
 # =============================
-class Deduplicator:
+class DeduplicatorImpl(Deduplicator):
     """
     Implements multi-stage duplicate detection using a pipeline architecture.
     Respects the DeduplicationMode enum and collects detailed statistics.
     """
     def __init__(self, grouper=None):
-        self.grouper = grouper or DefaultFileGrouper()
+        self.grouper = grouper or FileGrouperImpl()
 
     def find_duplicates(
         self,
         files: List[File],
         mode: DeduplicationMode,
-        stopped_flag: Optional[Callable[[], bool]] = None
+        stopped_flag: Optional[Callable[[], bool]] = None,
+        progress_callback: Optional[Callable[[str, int, int], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """
-        Main deduplication pipeline using File objects.
+                Main deduplication pipeline using File objects.
         Args:
             files: List of scanned file objects
             mode: Deduplication strategy ('fast', 'normal', or 'full')
             stopped_flag (Optional[Callable[[], bool]]): Function that returns True if operation should be stopped.
+            progress_callback (Optional[Callable[[str, int, int], None]]): Reports progress per stage.
         Returns:
             Tuple[List[DuplicateGroup], DeduplicationStats]
         """
@@ -257,11 +282,15 @@ class Deduplicator:
         total_start_time = time.time()
 
         # Initial stage: group by size
-        size_stage = SizeStage(self.grouper)
+        size_stage = SizeStageImpl(self.grouper)
         start_time = time.time()
-        groups = size_stage.process(files, stopped_flag=stopped_flag)
+        groups = size_stage.process(
+            files,
+            stopped_flag=stopped_flag,
+            progress_callback=progress_callback
+        )
         duration = time.time() - start_time
-        Deduplicator._update_stats(stats, "size", duration, groups, [])
+        DeduplicatorImpl._update_stats(stats, "size", duration, groups, [])
 
         confirmed_duplicates = []
 
@@ -271,9 +300,14 @@ class Deduplicator:
         # Run all stages in sequence
         for stage_name, stage in pipeline:
             start_time = time.time()
-            groups = stage.process(groups, confirmed_duplicates, stopped_flag=stopped_flag)
+            groups = stage.process(
+                groups,
+                confirmed_duplicates,
+                stopped_flag=stopped_flag,
+                progress_callback=progress_callback
+            )
             duration = time.time() - start_time
-            Deduplicator._update_stats(stats, stage_name, duration, groups, confirmed_duplicates)
+            DeduplicatorImpl._update_stats(stats, stage_name, duration, groups, confirmed_duplicates)
 
         # Filter out groups with less than 2 files
         final_unconfirmed = [g for g in groups if len(g.files) >= 2]
@@ -289,7 +323,7 @@ class Deduplicator:
 
         return all_duplicates, stats
 
-    def _build_pipeline(self, mode: DeduplicationMode):
+    def _build_pipeline(self, mode: DeduplicationMode) -> List[Tuple[str, PartialHashStage]]:
         """Builds the appropriate pipeline based on deduplication mode."""
         pipeline = []
         if mode == DeduplicationMode.FAST:

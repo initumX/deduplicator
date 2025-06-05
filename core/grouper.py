@@ -1,4 +1,7 @@
 """
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
+
 grouper.py
 Implements file grouping strategies using File objects and Hasher.
 Replaces multiple standalone groupers with a single class implementing FileGrouper.
@@ -6,18 +9,19 @@ Replaces multiple standalone groupers with a single class implementing FileGroup
 
 from typing import List, Dict, Any, Callable
 from collections import defaultdict
-from core.models import File, FileGrouper
-from core.hasher import XXHasher
+from core.interfaces import FileGrouper
+from core.models import File
+from core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
 
 
-class DefaultFileGrouper(FileGrouper):
+class FileGrouperImpl(FileGrouper):
     """
     A concrete implementation of FileGrouper using xxHash-based hashing.
     Uses an injected Hasher instance for flexibility and testability.
     """
 
-    def __init__(self, hasher: XXHasher = None):
-        self.hasher = hasher or XXHasher()
+    def __init__(self, hasher: Hasher = None):
+        self.hasher = hasher or HasherImpl(XXHashAlgorithmImpl())
 
     def group_by_size(self, files: List[File]) -> Dict[int, List[File]]:
         """Groups files by their size."""
@@ -62,6 +66,10 @@ class DefaultFileGrouper(FileGrouper):
 
         if skipped_files > 0:
             print(f"⚠️ Skipped {skipped_files} files due to hash computation errors")
+
+        """Duplicates from favourite dir goes first in a group"""
+        for key in groups:
+            groups[key].sort(key=lambda f: not f.is_from_fav_dir)
 
         return dict(groups)
 
