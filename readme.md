@@ -1,4 +1,4 @@
-```markdown
+
 # File Deduplicator
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
@@ -24,4 +24,4 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - PIL/Pillow (for image handling)
 
 © 2025 initumX (initum.x@gmail.com)
-``` 
+
