@@ -17,9 +17,9 @@ class SizeUtils:
         units = ["B", "KB", "MB", "GB", "TB", "PB"]
         for unit in units:
             if size_bytes < 1024:
-                return f"{size_bytes:.1f}{unit}"
-            size_bytes //= 1024
-        return f"{size_bytes:.1f}EB"
+                return f"{size_bytes:.2f}{unit}"
+            size_bytes /= 1024
+        return f"{size_bytes:.2f}EB"
 
     @staticmethod
     def human_to_bytes(size_str: str) -> int:
