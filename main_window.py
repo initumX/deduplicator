@@ -1,806 +1,515 @@
-import sys
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow,
-    QLabel, QPushButton,
-    QVBoxLayout, QWidget,
-    QAction, QMessageBox,
-    QDialog, QFormLayout,
-    QLineEdit, QDialogButtonBox,
-    QSpinBox, QComboBox,
-    QHBoxLayout, QFileDialog,
-    QTreeWidget, QTreeWidgetItem,
-    QStatusBar, QMenu, QSplitter,
+"""
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
+
+main_window.py
+
+File Deduplicator GUI Application
+
+A PyQt-based graphical interface for finding and removing duplicate files.
+Allows users to:
+- Scan directories for duplicates
+- Filter by size and file type
+- Choose deduplication mode (fast/normal/full)
+- Preview and delete duplicates with progress tracking
+
+Main features:
+- Integrated progress dialogs
+- File preview (image support)
+- Favorite folders prioritization
+- Statistics reporting
+"""
+
+from PySide6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QLineEdit, QComboBox, QSpinBox, QFileDialog,
+    QListWidget, QAbstractItemView, QDialog, QMessageBox,
+    QSplitter, QProgressDialog, QApplication, QGroupBox,
+    QScrollArea
 )
+from PySide6.QtCore import Qt, QSettings
 
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import QSize
-
-from worker import Worker
-import os, json
-
-from PyQt5.QtCore import Qt, QSettings, QThread, pyqtSignal
+from core.models import DeduplicationMode, Stage
 from api import FileDeduplicateApp
-from core.models import DuplicateGroup, FileCollection, File
 from utils.services import FileService
-
-# ==============================
-# Helper Functions
-# ==============================
-
-def human_readable(size_bytes):
-    if size_bytes < 1024:
-        return f"{size_bytes} B"
-    elif size_bytes < 1024 * 1024:
-        return f"{size_bytes // 1024} KB"
-    elif size_bytes < 1024 * 1024 * 1024:
-        return f"{size_bytes // (1024 * 1024)} MB"
-    else:
-        return f"{size_bytes // (1024 * 1024 * 1024)} GB"
+from dialogs import FavoriteDirsDialog
+from preview import ImagePreviewLabel
+from utils.services import DuplicateService
+from utils.size_utils import SizeUtils
+from duplicate_groups_list import DuplicateGroupsList
+import os
 
 
-# ==============================
-# Worker Thread Class
-# ==============================
-
-class Worker(QThread):
-    started = pyqtSignal()
-    finished = pyqtSignal(object)
-    error_occurred = pyqtSignal(str)
-
-    def __init__(self, func, *args, **kwargs):
-        super().__init__()
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self._stop_flag = False
-
-    def run(self):
-        self.started.emit()
-        try:
-            result = self.func(*self.args, **self.kwargs)
-            self.finished.emit(result)
-        except Exception as e:
-            self.error_occurred.emit(str(e))
-        finally:
-            self._stop_flag = False
-
-    def stop(self):
-        self._stop_flag = True
-
-    def stopped_flag(self):
-        return self._stop_flag
-
-
-# ==============================
-# Preferences Dialog
-# ==============================
-
-class PreferencesDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Preferences")
-
-        layout = QFormLayout()
-
-        # === Default Directory Input ===
-        self.dir_input = QLineEdit()
-        self.dir_input.setReadOnly(True)
-        self.browse_button = QPushButton("Browse...")
-        self.browse_button.clicked.connect(self.select_directory)
-        self.setMinimumWidth(600)
-
-        dir_layout = QHBoxLayout()
-        dir_layout.addWidget(self.dir_input)
-        dir_layout.addWidget(self.browse_button)
-        layout.addRow("Default Directory:", dir_layout)
-
-        # Load settings at start
+class SettingsManager:
+    def __init__(self):
         self.settings = QSettings("MyCompany", "FileDeduplicator")
-        default_dir = self.settings.value("default_directory", "")
 
-        # Always restore last known directory
-        if not default_dir:
-            default_dir = ""
+    def save_settings(self, key: str, value: any):
+        self.settings.setValue(key, value)
 
-        self.dir_input.setText(default_dir)
+    def load_settings(self, key: str, default: any = None) -> any:
+        return self.settings.value(key, default)
 
-        # === Similar Images Threshold ===
-        self.threshold_input = QSpinBox()
-        self.threshold_input.setRange(1, 7)
-        self.threshold_input.setValue(5)
-        self.threshold_input.setToolTip(
-            "Threshold determines how similar images must be to be grouped.\n"
-            "Higher values allow more visual differences between images."
-        )
-        threshold_label = QLabel("Similar Image Threshold:")
-        threshold_label.setToolTip(
-            "Threshold determines how similar images must be to be grouped.\n"
-            "Higher values allow more visual differences between images."
-        )
-        layout.addRow(threshold_label, self.threshold_input)
-
-        # === Min Size Input ===
-        self.min_size_input = QSpinBox()
-        self.min_size_input.setRange(0, 1024 * 1024)
-        self.min_size_input.setValue(1)
-
-        self.min_unit_combo = QComboBox()
-        self.min_unit_combo.addItems(["KB", "MB", "GB"])
-
-        min_size_layout = QHBoxLayout()
-        min_size_layout.addWidget(self.min_size_input)
-        min_size_layout.addWidget(self.min_unit_combo)
-        layout.addRow("Minimum File Size:", min_size_layout)
-
-        # Load saved min size in bytes
-        self.settings = QSettings("MyCompany", "FileDeduplicator")
-        min_size_bytes = int(self.settings.value("min_size", 102400))  # Default: 100 KB
-        self._set_min_size_fields(min_size_bytes)
-
-        # === Max Size Input ===
-        self.max_size_input = QSpinBox()
-        self.max_size_input.setRange(0, 1024 * 1024)
-        self.max_size_input.setValue(15)  # Default is now 15 MB
-
-        self.max_unit_combo = QComboBox()
-        self.max_unit_combo.addItems(["KB", "MB", "GB"])
-
-        max_size_layout = QHBoxLayout()
-        max_size_layout.addWidget(self.max_size_input)
-        max_size_layout.addWidget(self.max_unit_combo)
-        layout.addRow("Maximum File Size:", max_size_layout)
-
-        max_size_bytes = int(self.settings.value("max_size", 15728640))  # Default: 15 MB
-        if max_size_bytes > 0:
-            self._set_max_size_fields(max_size_bytes)
-
-        # === Extensions Input ===
-        self.ext_input = QLineEdit()
-        ext_value = self.settings.value("extensions", ".jpg")
-        self.ext_input.setText(ext_value)
-        layout.addRow("Extensions (comma-separated):", self.ext_input)
-
-        # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
-        buttons.accepted.connect(self.save_and_accept)
-        buttons.rejected.connect(self.reject)
-
-        reset_button = QPushButton("Reset to Defaults")
-        reset_button.clicked.connect(self.reset_to_defaults)
-
-        btn_layout = QHBoxLayout()
-        btn_layout.addWidget(reset_button)
-        btn_layout.addWidget(buttons)
-
-        layout.addRow(btn_layout)
-
-        self.setLayout(layout)
-
-    def select_directory(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Default Directory")
-        if dir_path:
-            self.dir_input.setText(dir_path)
-
-    def _set_min_size_fields(self, bytes_value):
-        """Set the UI for minimum size"""
-        if bytes_value <= 0:
-            self.min_size_input.setValue(0)
-            self.min_unit_combo.setCurrentText("KB")
-        elif bytes_value >= (1 << 30):  # GB
-            self.min_size_input.setValue(bytes_value >> 30)
-            self.min_unit_combo.setCurrentText("GB")
-        elif bytes_value >= (1 << 20):  # MB
-            self.min_size_input.setValue(bytes_value >> 20)
-            self.min_unit_combo.setCurrentText("MB")
-        else:  # KB
-            self.min_size_input.setValue((bytes_value + 512) >> 10)
-            self.min_unit_combo.setCurrentText("KB")
-
-    def _set_max_size_fields(self, bytes_value):
-        """Set the UI for maximum size"""
-        if bytes_value is None or bytes_value <= 0:
-            self.max_size_input.setValue(15)  # Default: 15 MB
-            self.max_unit_combo.setCurrentText("MB")
-        elif bytes_value >= (1 << 30):  # GB
-            self.max_size_input.setValue(bytes_value >> 30)
-            self.max_unit_combo.setCurrentText("GB")
-        elif bytes_value >= (1 << 20):  # MB
-            self.max_size_input.setValue(bytes_value >> 20)
-            self.max_unit_combo.setCurrentText("MB")
-        else:  # KB
-            self.max_size_input.setValue((bytes_value + 512) >> 10)
-            self.max_unit_combo.setCurrentText("KB")
-
-    def get_min_size_in_bytes(self):
-        value = self.min_size_input.value()
-        unit = self.min_unit_combo.currentText()
-        if value <= 0:
-            return None
-        if unit == "KB":
-            return value * 1024
-        elif unit == "MB":
-            return value * 1024 * 1024
-        elif unit == "GB":
-            return value * 1024 * 1024 * 1024
-
-    def get_max_size_in_bytes(self):
-        value = self.max_size_input.value()
-        unit = self.max_unit_combo.currentText()
-        if value <= 0:
-            return None
-        if unit == "KB":
-            return value * 1024
-        elif unit == "MB":
-            return value * 1024 * 1024
-        elif unit == "GB":
-            return value * 1024 * 1024 * 1024
-
-    def get_image_threshold(self):
-        return self.threshold_input.value()
-
-    def save_and_accept(self):
-        self.settings.setValue("default_directory", self.dir_input.text())  # Only save if user picked one
-        self.settings.setValue("min_size", self.get_min_size_in_bytes() or 0)
-        self.settings.setValue("max_size", self.get_max_size_in_bytes() or 0)
-        self.settings.setValue("extensions", self.ext_input.text())
-        self.settings.setValue("image_threshold", self.threshold_input.value())
-        self.accept()
-
-    def reset_to_defaults(self):
-        """Reset all inputs to predefined default values"""
-        # Set directory blank
-        self.dir_input.setText("")
-
-        # Min size = 100 KB
-        self.min_size_input.setValue(100)
-        self.min_unit_combo.setCurrentText("KB")
-
-        # Max size = 15 MB
-        self.max_size_input.setValue(15)
-        self.max_unit_combo.setCurrentText("MB")
-
-        # Extensions = .jpg
-        self.ext_input.setText(".jpg")
-
-        # Threshold = 5
-        self.threshold_input.setValue(5)
-
-# ==============================
-# Main Window Class
-# ==============================
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("File Deduplicator")
-        self.resize(800, 600)
+        self.resize(1000, 700)
 
-        self.app = None
-        self.file_collection = None
-        self.duplicate_groups = []
+        self.app = FileDeduplicateApp("")
+        self.settings_manager = SettingsManager()
 
-        # Settings
-        self.settings = QSettings("MyCompany", "FileDeduplicator")
+        # Widgets
+        self.root_dir_input = QLineEdit()
+        self.select_dir_button = QPushButton("Select Root Folder")
+        self.extension_filter_input = QLineEdit()
+        self.min_size_spin = QSpinBox()
+        self.min_unit_combo = QComboBox()
+        self.max_size_spin = QSpinBox()
+        self.max_unit_combo = QComboBox()
+        self.favorite_dirs_button = QPushButton("Select Favorite Folders")
+        self.dedupe_mode_combo = QComboBox()
+        self.find_duplicates_button = QPushButton("Find Duplicates")
+        self.progress_dialog = None
+        self.stats_window = None
+        self.keep_one_button = QPushButton("Keep One File Per Group")
+        self.about_button = QPushButton("About")
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
 
-        # Info labels
-        self.path_label = QLabel("📁 Path to Scan: Not selected")
-        self.min_size_label = QLabel("📏 Min Size: not set")
-        self.max_size_label = QLabel("📏 Max Size: not set")
-        self.ext_label = QLabel("📎 Extensions: .jpg, .png")
+        # QListWidget with scroll
+        self.favorite_list_widget = QListWidget()
+        self.favorite_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
 
-        # Status bar
-        self.status_label = QLabel("Status: Ready")
-        self.setStatusBar(QStatusBar())
-        self.statusBar().addWidget(self.status_label, 1)
+        # Output widgets
+        self.groups_list = DuplicateGroupsList()
 
-        # Tree widget (left panel)
-        self.tree = QTreeWidget()
-        self.tree.setMinimumWidth(300)
-        self.tree.setHeaderLabel("Scanned Files / Groups")
-        self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.tree.customContextMenuRequested.connect(self.show_context_menu)
-        self.tree.setSelectionMode(QTreeWidget.ExtendedSelection)
-        self.tree.itemSelectionChanged.connect(self.on_tree_selection_changed)
-        self.tree.itemDoubleClicked.connect(self.on_tree_item_double_clicked)
+        self.image_preview = ImagePreviewLabel()
+        self.image_preview.setMinimumSize(300, 200)
 
+        # Layouts
+        self.init_ui()
+        self.restore_settings()
 
-        # Image preview label (right panel)
-        self.image_preview = QLabel("No image selected")
-        self.image_preview.setAlignment(Qt.AlignCenter)
-        self.image_preview.setStyleSheet("background-color: #f0f0f0;")
+    def init_ui(self):
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
 
-        # === Splitter layout ===
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.tree)
-        splitter.addWidget(self.image_preview)
+        # --- Root Directory Layout ---
+        root_layout = QHBoxLayout()
+        root_layout.addWidget(QLabel("Root Folder:"))
+        self.root_dir_input.setPlaceholderText("Select directory...")
+        root_layout.addWidget(self.root_dir_input)
+        self.select_dir_button.clicked.connect(self.select_root_folder)
+        root_layout.addWidget(self.select_dir_button)
 
-        # Set initial sizes
-        splitter.setSizes([500, 500])  # ← Allocate more space to the tree
+        # --- Filters Group Box ---
+        filters_group = QGroupBox("Filters")
+        filters_group.setFixedWidth(220)
+        filters_group.setFixedHeight(200)
 
-        # === Info panel ===
-        info_container = QWidget()
-        info_layout = QVBoxLayout()
-        info_layout.addWidget(self.path_label)
-        info_layout.addWidget(self.min_size_label)
-        info_layout.addWidget(self.max_size_label)
-        info_layout.addWidget(self.ext_label)
-        info_container.setLayout(info_layout)
+        # Min Size Layout
+        min_size_layout = QHBoxLayout()
+        self.min_size_spin.setRange(0, 1024 * 1024)
+        self.min_size_spin.setValue(100)
+        self.min_size_spin.setFixedWidth(60)
+        self.min_unit_combo.addItems(["KB", "MB"])
+        self.min_unit_combo.setCurrentText("KB")
+        self.min_unit_combo.setFixedWidth(60)
+        min_size_layout.addWidget(QLabel("Min Size:"))
+        min_size_layout.addWidget(self.min_size_spin)
+        min_size_layout.addWidget(self.min_unit_combo)
 
-        # === Main layout ===
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(info_container)
-        main_layout.addWidget(splitter)
+        # Max Size Layout
+        max_size_layout = QHBoxLayout()
+        self.max_size_spin.setRange(0, 1024 * 1024)
+        self.max_size_spin.setValue(100)
+        self.max_size_spin.setFixedWidth(60)
+        self.max_unit_combo.addItems(["KB", "MB"])
+        self.max_unit_combo.setCurrentText("MB")
+        self.max_unit_combo.setFixedWidth(60)
+        max_size_layout.addWidget(QLabel("Max Size:"))
+        max_size_layout.addWidget(self.max_size_spin)
+        max_size_layout.addWidget(self.max_unit_combo)
 
-        # Give more vertical space to the splitter area
-        main_layout.setStretch(0, 1)  # info_container
-        main_layout.setStretch(1, 4)  # splitter (tree + preview)
+        # Extension filter layout
+        extension_layout_inside = QHBoxLayout()
+        self.extension_filter_input.setPlaceholderText(".jpg,.png")
+        self.extension_filter_input.setToolTip(
+            "Enter comma-separated file extensions to filter (e.g., .jpg, .png, .pdf)\n"
+            "Or leave blank to avoid extension filtering.")
+        extension_layout_inside.addWidget(QLabel("Extensions:"))
+        extension_layout_inside.addWidget(self.extension_filter_input)
 
-        # Wrap layout in central widget
+        # Vertical layout inside group box
+        filters_group_layout = QVBoxLayout()
+        filters_group_layout.addLayout(min_size_layout)
+        filters_group_layout.addLayout(max_size_layout)
+        filters_group_layout.addLayout(extension_layout_inside)
+        filters_group.setLayout(filters_group_layout)
+        # --- End of Filters Group Box ---
+
+        # --- Favorite Folders UI Block ---
+        favorite_group = QGroupBox("Favorite Folders")
+        favorite_group.setFixedWidth(600)
+        favorite_group.setFixedHeight(200)
+
+        favorite_layout = QVBoxLayout()
+
+        self.favorite_dirs_button = QPushButton("Manage Favorite Folders List")
+        self.favorite_dirs_button.setToolTip(
+            "Files from favorite folders are prioritized in each group. \n\n"
+            "When using 'Keep One File Per Group', the first file \n\n"
+            "from a favorite folder in the group will be preserved, \n\n"
+            "and others will be moved to trash. \n\n"
+            "Only one file per group can be saved this way.\n"
+        )
+        self.favorite_dirs_button.clicked.connect(self.select_favorite_dirs)
+        favorite_layout.addWidget(self.favorite_dirs_button)
+
+        # Включаем прокрутку
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # Vertical scroll not needed
+        scroll_area.setWidget(self.favorite_list_widget)
+
+        # Limit height using a container widget
         container = QWidget()
-        container.setLayout(main_layout)
-        self.setCentralWidget(container)
+        container.setLayout(QVBoxLayout())
+        container.layout().addWidget(scroll_area)
+        container.layout().setContentsMargins(0, 0, 0, 0)
+        container.setFixedHeight(120)  # Высота списка
 
-        # Set some minimum height for the tree if needed
-        self.tree.setMinimumHeight(400)
+        favorite_layout.addWidget(container)
+        favorite_group.setLayout(favorite_layout)
 
-        self.actions_to_disable = []
+        # --- Level layout: Size Filter + Favorite Folders ---
+        level_layout = QHBoxLayout()
+        level_layout.addWidget(filters_group)
+        level_layout.addWidget(favorite_group)
+        level_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        # Menu
-        self.create_menu()
+        # --- Unified Control Layout (Buttons and Deduplication Mode) ---
+        control_layout = QHBoxLayout()
+        self.find_duplicates_button.setFixedWidth(160)
+        self.find_duplicates_button.setToolTip(
+            "Start looking for duplicate files. \n\n"
+            "Files from your favorite folders will be marked with ✅-sign"
+        )
+        self.find_duplicates_button.clicked.connect(self.start_deduplication)
+        control_layout.addWidget(self.find_duplicates_button)
 
-        # Load settings
-        self.update_scan_info()
-        self.check_default_directory()
+        mode_label = QLabel("Mode:")
+        control_layout.addWidget(mode_label)
+        self.dedupe_mode_combo.addItems([mode.value.upper() for mode in DeduplicationMode])
+        self.dedupe_mode_combo.setFixedWidth(80)
+        self.dedupe_mode_combo.setToolTip(
+            "FAST: Compare file sizes and checksums of first 64KB only\n\n"
+            "NORMAL: Compare sizes and checksums of first, middle and last 64KB\n\n"
+            "FULL: Compare full file contents (slowest)"
+        )
+        control_layout.addWidget(self.dedupe_mode_combo)
 
-    def on_tree_selection_changed(self):
-        selected_items = self.tree.selectedItems()
-        if not selected_items:
-            self.image_preview.setText("No image selected")
-            return
+        self.keep_one_button.setToolTip(
+            "Keep one file (the first one) per group and move the rest to trash"
+        )
+        self.keep_one_button.setFixedWidth(200)
+        self.keep_one_button.clicked.connect(self.keep_one_file_per_group)
+        control_layout.addWidget(self.keep_one_button)
 
-        item = selected_items[0]
-        path = item.toolTip(0)
+        self.about_button.setFixedWidth(80)
+        self.about_button.setToolTip("Learn more about the program and its author")
+        self.about_button.clicked.connect(self.show_about_dialog)
 
-        if not FileService.is_valid_image(path):
-            self.image_preview.setText("Not an image")
-            return
+        control_layout.addWidget(self.about_button)
 
-        try:
-            pixmap = QPixmap(path)
-            if pixmap.isNull():
-                raise ValueError(f"Failed to load {path}")
+        control_layout.addStretch()  # Все элементы слева
+        control_layout.setContentsMargins(0, 20, 0, 0)  # top=20
 
-            # Maximum preview size (e.g., 600x600)
-            max_preview_size = self.image_preview.size().boundedTo(QSize(1024, 1024))
+        # --- Splitter for groups list and image preview ---
+        self.splitter.addWidget(self.groups_list)
+        self.splitter.addWidget(self.image_preview)
+        self.splitter.setCollapsible(0, False)
+        self.splitter.setCollapsible(1, False)
+        width = self.splitter.width()
+        self.splitter.setSizes([int(width * 0.4), int(width * 0.6)])
+        self.groups_list.setMinimumWidth(200)
 
-            scaled_pixmap = pixmap.scaled(
-                max_preview_size,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
+        # --- Main Layout Assembly ---
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(root_layout)
+        main_layout.addLayout(level_layout)
 
-            self.image_preview.setPixmap(scaled_pixmap)
-            self.image_preview.setToolTip(path)
-        except Exception as e:
-            self.image_preview.setText(f"Error\n{str(e)}")
-            self.image_preview.setToolTip("")
+        main_layout.addLayout(control_layout)
+        main_layout.addWidget(self.splitter)
+        main_widget.setLayout(main_layout)
 
-    def on_tree_item_double_clicked(self, item, column):
-        path = item.toolTip(0)
-        try:
-            if FileService.is_valid_image(path):
-                FileService.open_file(path)
-            else:
-                FileService.reveal_in_explorer(path)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open file:\n{e}")
+        self.groups_list.file_selected.connect(self.image_preview.set_file)
+        self.groups_list.delete_requested.connect(self.handle_delete_files)
 
-    def show_context_menu(self, position):
-        selected_items = self.tree.selectedItems()
-        if not selected_items:
-            return
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
 
-        # Create menu
-        menu = QMenu(self)
+        # Recalculate splitter proportions when the window is resized
+        if hasattr(self, 'splitter'):
+            sizes = self.splitter.sizes()
+            total = sum(sizes)
+            if total > 0:
+                ratio = sizes[0] / total  # Preserve left panel ratio
+                new_left = int(self.splitter.width() * ratio)
+                new_right = self.splitter.width() - new_left
+                self.splitter.setSizes([new_left, new_right])
 
-        if len(selected_items) == 1:
-            # Single file selected: show all options
-            open_action = QAction("Open File", self)
-            reveal_action = QAction("Reveal in Explorer", self)
-            delete_action = QAction("Move to Trash", self)
+    def select_root_folder(self):
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Root Folder")
+        if dir_path:
+            self.root_dir_input.setText(dir_path)
 
-            open_action.triggered.connect(lambda: self.open_selected_files(selected_items))
-            reveal_action.triggered.connect(lambda: self.reveal_in_explorer(selected_items))
-            delete_action.triggered.connect(lambda: self.delete_selected_files(selected_items))
+    def select_favorite_dirs(self):
+        current_dirs = getattr(self.app, 'favorite_dirs', [])
 
-            menu.addAction(open_action)
-            menu.addAction(reveal_action)
-            menu.addAction(delete_action)
+        dialog = FavoriteDirsDialog(self, current_dirs)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            selected_dirs = dialog.get_selected_dirs()
+            self.app.favorite_dirs = selected_dirs
+
+            self.favorite_list_widget.clear()
+
+            for path in selected_dirs:
+                self.favorite_list_widget.addItem(path)
+            QMessageBox.information(self, "Success", f"Selected {len(selected_dirs)} favorite folders.")
 
         else:
-            # Multiple files selected: only allow deletion
-            delete_action = QAction(f"Move {len(selected_items)} files to Trash", self)
-            delete_action.triggered.connect(lambda: self.delete_selected_files(selected_items))
-            menu.addAction(delete_action)
+            pass
 
-        # Show menu
-        menu.exec_(self.tree.viewport().mapToGlobal(position))
+    def keep_one_file_per_group(self):
+        duplicate_groups = self.app.get_duplicate_groups()
+        if not duplicate_groups:
+            QMessageBox.information(self, "Info", "No duplicate groups found.")
+            return
 
+        files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(duplicate_groups)
 
-    def open_selected_files(self, items):
-        for item in items:
-            path = item.toolTip(0)
-            try:
-                FileService.open_file(path)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to open file:\n{e}")
+        if not files_to_delete:
+            QMessageBox.information(self, "Info", "Nothing to delete.")
+            return
 
-    def reveal_in_explorer(self, items):
-        for item in items:
-            path = item.toolTip(0)
-            try:
-                FileService.reveal_in_explorer(path)
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to reveal file:\n{e}")
-
-    def delete_selected_files(self, items):
-        paths = [item.toolTip(0) for item in items]
         reply = QMessageBox.question(
             self,
-            'Confirm Deletion',
-            f"Are you sure you want to move {len(paths)} files to trash?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            "Confirm Deletion",
+            f"Are you sure you want to move {len(files_to_delete)} files to trash?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-
-        if reply == QMessageBox.Yes:
-            try:
-                FileService.move_multiple_to_trash(paths)
-                self.status_label.setText(f"Moved {len(paths)} files to trash.")
-                # Optionally refresh view
-                self.populate_tree_with_files([f for f in self.file_collection.files if f.path not in paths])
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete files:\n{e}")
-
-    def create_menu(self):
-        menubar = self.menuBar()
-
-        # === File Menu ===
-        file_menu = menubar.addMenu("File")
-
-        self.save_action = file_menu.addAction("Save Results")
-        self.save_action.triggered.connect(self.save_results)
-        self.actions_to_disable.append(self.save_action)
-
-        self.load_action = file_menu.addAction("Load Results")
-        self.load_action.triggered.connect(self.load_results)
-        self.actions_to_disable.append(self.load_action)
-
-        scan_menu = menubar.addMenu("Scan")
-        self.start_action = scan_menu.addAction("Start Scan")
-        self.start_action.triggered.connect(self.start_scan)
-        self.actions_to_disable.append(self.start_action)
-
-        prefs_action = scan_menu.addAction("Preferences...")
-        prefs_action.triggered.connect(self.show_preferences)
-        self.actions_to_disable.append(prefs_action)
-
-        self.stop_action = scan_menu.addAction("Stop Scan")
-        self.stop_action.triggered.connect(self.stop_scan)
-        # Stop action will be managed separately – not disabled initially
-
-        look_for_menu = menubar.addMenu("Look For")
-        self.find_duplicates_action = look_for_menu.addAction("Duplicates")
-        self.find_duplicates_action.triggered.connect(self.show_duplicates)
-        self.actions_to_disable.append(self.find_duplicates_action)
-
-        self.find_similar_pictures_action = look_for_menu.addAction("Similar Pictures")
-        self.find_similar_pictures_action.triggered.connect(self.find_similar_pictures)
-        self.actions_to_disable.append(self.find_similar_pictures_action)
-
-        help_menu = menubar.addMenu("Help")
-        self.about_action = help_menu.addAction("About")
-        self.about_action.triggered.connect(self.show_about)
-        self.actions_to_disable.append(self.about_action)
-
-        about_me_action = help_menu.addAction("Contact")
-        about_me_action.triggered.connect(self.show_about_me)
-        self.actions_to_disable.append(about_me_action)
-
-        # Add all actions to disable list
-        self.actions_to_disable = [
-            self.save_action,
-            self.load_action,
-            self.start_action,
-            self.find_duplicates_action,
-            self.find_similar_pictures_action,
-            prefs_action,
-        ]
-
-    def disable_ui(self):
-        """Disable most UI elements during background tasks"""
-        for action in self.actions_to_disable:
-            action.setEnabled(False)
-        self.stop_action.setEnabled(True)
-
-    def enable_ui(self):
-        """Re-enable UI elements after task completes"""
-        for action in self.actions_to_disable:
-            action.setEnabled(True)
-        self.stop_action.setEnabled(False)
-
-    def check_default_directory(self):
-        default_dir = self.settings.value("default_directory", "")
-        self.start_action.setEnabled(os.path.isdir(default_dir))
-
-    def save_results(self):
-        if not self.file_collection and not self.duplicate_groups:
-            QMessageBox.information(self, "Nothing to Save", "No files or groups found. Run 'Start Scan' first.")
+        if reply != QMessageBox.StandardButton.Yes:
             return
 
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Results", "results.json", "JSON Files (*.json)"
-        )
-        if not file_path:
+        self.handle_delete_files(files_to_delete)
+
+    def handle_delete_files(self, file_paths):
+        if not file_paths:
             return
+
+        total = len(file_paths)
+        self.progress_dialog = QProgressDialog("Moving files to trash...", "Cancel", 0, total, self)
+        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        self.progress_dialog.setWindowTitle("Deleting Files")
+        self.progress_dialog.show()
 
         try:
-            result_data = {
-                "root_dir": self.app.root_dir if self.app else "",
-                "files": [f.to_dict() for f in self.file_collection.files] if self.file_collection else [],
-                "groups": [g.to_dict() for g in self.duplicate_groups]
-            }
+            for i, path in enumerate(file_paths):
+                FileService.move_to_trash(path)
+                self.progress_dialog.setValue(i + 1)
+                self.progress_dialog.setLabelText(f"Deleting: {os.path.basename(path)}")
+                QApplication.processEvents()  # Обновляем интерфейс
 
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(result_data, f, ensure_ascii=False, indent=4)
+                if self.progress_dialog.wasCanceled():
+                    raise Exception("Operation was cancelled by the user.")
 
-            self.status_label.setText(f"Results saved to {os.path.basename(file_path)}")
+            # Refresh
+            updated_groups = DuplicateService.remove_files_from_groups(
+                self.app.get_duplicate_groups(), file_paths
+            )
+            self.app.duplicate_groups = updated_groups
+            self.groups_list.set_groups(updated_groups)
+
+            QMessageBox.information(self, "Success", f"{total} files moved to trash.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save results:\n{e}")
+            QMessageBox.critical(self, "Error", f"Failed to delete files:\n{e}")
+        finally:
+            self.progress_dialog.close()
+            self.progress_dialog = None
 
-    def load_results(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Load Results", "", "JSON Files (*.json)"
-        )
-        if not file_path:
-            return
-
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            # Clear current state
-            self.file_collection = None
-            self.duplicate_groups = []
-            self.tree.clear()
-
-            # Restore root directory
-            root_dir = data.get("root_dir", "")
-            if root_dir and os.path.isdir(root_dir):
-                self.settings.setValue("default_directory", root_dir)
-                self.update_scan_info()
-                self.check_default_directory()
-            else:
-                QMessageBox.warning(self, "Invalid Directory", f"Root directory not found: {root_dir}")
-
-            # Restore files
-            loaded_files = [File.from_dict(fd) for fd in data.get("files", [])]
-            if loaded_files:
-                self.file_collection = FileCollection(loaded_files)
-                self.populate_tree_with_files(loaded_files)
-                self.status_label.setText(f"Loaded {len(loaded_files)} files")
-
-            # Restore groups
-            if "groups" in data:
-                self.duplicate_groups = [DuplicateGroup.from_dict(gd) for gd in data["groups"]]
-                if self.duplicate_groups:
-                    self.populate_tree_with_groups(self.duplicate_groups)
-                    self.status_label.setText(f"Loaded {len(self.duplicate_groups)} duplicate group(s)")
-
-            # Re-init app with directory from first file (if available)
-            if loaded_files:
-                default_dir = os.path.dirname(loaded_files[0].path)
-                self.app = FileDeduplicateApp(root_dir=default_dir)
-                self.app.files = loaded_files
-
-            self.status_label.setText(f"Results loaded from {os.path.basename(file_path)}")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to load results:\n{e}")
-
-    def update_scan_info_after_load(self):
-        min_size_bytes = 0
-        max_size_bytes = 0
-        ext_text = ".jpg"
-
-        def format_size(val):
-            return "not set" if val <= 0 else human_readable(val)
-
-        self.path_label.setText("📁 Path to Scan: (loaded from file)")
-        self.min_size_label.setText(f"📏 Min Size: {format_size(min_size_bytes)}")
-        self.max_size_label.setText(f"📏 Max Size: {format_size(max_size_bytes)}")
-        self.ext_label.setText(f"📎 Extensions: {ext_text}")
-
-
-    def show_preferences(self):
-        dialog = PreferencesDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            self.update_scan_info()
-            self.check_default_directory()
-            self.status_label.setText("Preferences updated.")
-
-    def update_scan_info(self):
-        settings = QSettings("MyCompany", "FileDeduplicator")
-        default_dir = settings.value("default_directory", "Not selected")
-        min_size_bytes = int(settings.value("min_size", 102400))  # 100 KB
-        max_size_bytes = int(settings.value("max_size", 15728640))  # 15 MB
-        extensions = settings.value("extensions", ".jpg,.png").split(",")
-        extensions = [e.strip() for e in extensions if e.strip()]
-
-        def format_size(val):
-            return "not set" if val <= 0 else human_readable(val)
-
-        self.path_label.setText(f"📁 Path to Scan: {default_dir}")
-        self.min_size_label.setText(f"📏 Min Size: {format_size(min_size_bytes)}")
-        self.max_size_label.setText(f"📏 Max Size: {format_size(max_size_bytes)}")
-        self.ext_label.setText(f"📎 Extensions: {', '.join(extensions)}")
-
-    def start_scan(self):
-        if hasattr(self, 'worker') and self.worker.isRunning():
-            return
-
-        self.disable_ui()
-        settings = QSettings("MyCompany", "FileDeduplicator")
-        default_dir = settings.value("default_directory", ".")
-        min_size = int(settings.value("min_size", 0)) or None
-        max_size = int(settings.value("max_size", 0)) or None
-        ext_text = settings.value("extensions", ".jpg,.png")
-        extensions = [e.strip() for e in ext_text.split(",") if e.strip()]
-
-        if not os.path.isdir(default_dir):
-            QMessageBox.critical(self, "Error", f"Directory does not exist: {default_dir}")
-            self.enable_ui()
-            return
-
-        self.status_label.setText(f"Starting scan in: {default_dir}")
-        self.app = FileDeduplicateApp(root_dir=default_dir)
-
-        self.worker = Worker(
-            self.app.scan_directory,
-            min_size=min_size,
-            max_size=max_size,
-            extensions=extensions,
-            stopped_flag=lambda: self.worker.stopped_flag() if self.worker else False
-        )
-
-        self.worker.finished.connect(lambda result: self.on_scan_complete(result))
-        self.worker.finished.connect(self.enable_ui)  # ← Enable UI when done
-        self.worker.error_occurred.connect(self.enable_ui)  # ← Also enable on error
-        self.worker.error_occurred.connect(lambda msg: QMessageBox.critical(self, "Error", msg))
-        self.worker.start()
-
-    def on_scan_complete(self, file_collection):
-        self.file_collection = file_collection
-        self.status_label.setText(f"Found {len(file_collection.files)} files.")
-        self.populate_tree_with_files(file_collection.files)
-
-        if self.app:
-            self.app.files = file_collection.files
-
-    def populate_tree_with_files(self, files):
-        self.tree.clear()
-        for idx, file in enumerate(files, 1):
-            item = QTreeWidgetItem(self.tree)
-            item.setText(0, f"{idx}. {os.path.basename(file.path)} ({human_readable(file.size)})")
-            item.setToolTip(0, file.path)
-
-    def populate_tree_with_groups(self, groups):
-        self.tree.clear()
-        for idx, group in enumerate(groups, 1):
-            group_item = QTreeWidgetItem(self.tree)
-            group_item.setText(0, f"📁 Group {idx} ({len(group.files)} files)")
-            for file in group.files:
-                file_item = QTreeWidgetItem(group_item)
-                file_item.setText(0, f"{os.path.basename(file.path)} ({human_readable(file.size)})")
-                file_item.setToolTip(0, file.path)
-
-
-    def show_duplicates(self, checked=False):
-        if not self.file_collection:
-            self.status_label.setText("No files scanned yet. Run 'Start Scan' first.")
-            return
-
-        if self.app is None:
-            QMessageBox.critical(self, "Error", "File app instance is not initialized. Please scan files first.")
-            return
-
-        self.disable_ui()
-        self.status_label.setText("Finding duplicates...")
-        self.worker = Worker(self.app.find_duplicates)
-        self.worker.finished.connect(self.on_analysis_complete)
-        self.worker.finished.connect(self.enable_ui)
-        self.worker.error_occurred.connect(self.enable_ui)
-        self.worker.error_occurred.connect(lambda msg: QMessageBox.critical(self, "Error", msg))
-        self.worker.start()
-
-    def find_similar_pictures(self, checked=False):
-        if not self.file_collection:
-            self.status_label.setText("No files scanned yet. Run 'Start Scan' first.")
-            return
-
-        self.disable_ui()
-        self.status_label.setText("Finding similar pictures...")
-
-        settings = QSettings("MyCompany", "FileDeduplicator")
-        threshold = int(settings.value("image_threshold", "5"))
-
-        self.worker = Worker(
-            self.app.find_similar_images,
-            files=self.file_collection.files,
-            threshold=threshold,
-            stopped_flag=lambda: self.worker.stopped_flag() if self.worker else False
-        )
-        self.worker.finished.connect(self.on_analysis_complete)
-        self.worker.finished.connect(self.enable_ui)
-        self.worker.error_occurred.connect(self.enable_ui)
-        self.worker.error_occurred.connect(lambda msg: QMessageBox.critical(self, "Error", msg))
-        self.worker.start()
-
-    def on_analysis_complete(self, result):
-        if isinstance(result, list) and len(result) > 0 and isinstance(result[0], DuplicateGroup):
-            self.duplicate_groups = result
-            self.populate_tree_with_groups(result)
-            self.status_label.setText(f"Found {len(result)} groups.")
-        else:
-            self.status_label.setText("No matches found.")
-
-    def stop_scan(self):
-        if hasattr(self, "worker"):
-            self.worker.stop()
-            self.status_label.setText("Scan stopping...")
-
-    def closeEvent(self, event):
-        if hasattr(self, "worker") and self.worker.isRunning():
-            self.worker.stop()
-            self.worker.wait()
-        self.enable_ui()
-        super().closeEvent(event)
-
-    def on_worker_error(self, message):
-        self.enable_ui()
-        QMessageBox.critical(self, "Error", message)
-
-
-    def show_about_me(self):
-        QMessageBox.about(
-            self,
-            "About Me",
-            """
-            <i>Feel free to contact me<br><br>
-            <b>Email:</b> initum.x@gmail.com<br><br>
-            <b>Location:</b> Belarus / Earth<br><br>
-            <i>Thanks for using my app!</i>
-            """
-        )
-
-    def show_about(self):
+    def show_about_dialog(self):
         QMessageBox.about(
             self,
             "About File Deduplicator",
-            "File Deduplicator v1.0\n\n"
-            "A tool for finding duplicate and similar files.\n\n"
-            "Built using Python & PyQt5.\n\n"
-            "NOTE: Analyzes only the files currently visible in the list.\n"
-            "Use 'Start Scan' to load a new file list before searching \n"
-            "dupes or similar pics"
+            """<b>File Deduplicator</b><br><br>
+            Version: 2.0<br>
+            A tool to find and remove duplicate files.<br><br>
+            <b>Features:</b><br><br>
+            - Filtering by size and extension<br><br>
+            - Using xxhash (it's very fast)<br><br>
+            - 3 modes of searching duplicates(fast, normal, full)<br><br>
+            - Deleting all duplicates by one click(Keep one file per group) <br><br>
+            - Image preview, context menu, autosaving preferences, tooltips <br><br>
+             - and much more<br><br>
+            © Copyright (c) 2025 initumX (initum.x@gmail.com) <br><br>
+            Licensed under the MIT License<br>
+            """
         )
 
+    def start_deduplication(self):
+        root_dir = self.root_dir_input.text().strip()
+        if not root_dir:
+            QMessageBox.warning(self, "Input Error", "Please select a root directory.")
+            return
 
+        self.app.root_dir = root_dir
+
+        # Size filters
+        min_size_value = self.min_size_spin.value()
+        min_unit = self.min_unit_combo.currentText()
+
+        max_size_value = self.max_size_spin.value()
+        max_unit = self.max_unit_combo.currentText()
+
+        # Example: "10MB", "512KB"
+        min_size_str = f"{min_size_value}{min_unit}"
+        max_size_str = f"{max_size_value}{max_unit}"
+
+        try:
+            min_size = SizeUtils.human_to_bytes(min_size_str)
+            max_size = SizeUtils.human_to_bytes(max_size_str)
+        except ValueError as e:
+            QMessageBox.warning(self, "Input Error", f"Invalid size format: {e}")
+            return
+
+        extensions = [
+            ext.strip() for ext in self.extension_filter_input.text().split(",")
+            if ext.strip()
+        ]
+
+        mode_name = self.dedupe_mode_combo.currentText()
+        dedupe_mode = DeduplicationMode[mode_name]
+
+        self.progress_dialog = QProgressDialog("Scanning and deduplicating...", "Cancel", 0, 100, self)
+        self.progress_dialog.setModal(True)
+        self.progress_dialog.setWindowTitle("Processing...")
+        self.progress_dialog.show()
+        QApplication.processEvents()
+
+        def progress_callback(*args):
+            stage, current, total = args
+            percent = int((current / total) * 100) if total > 0 else 0
+            self.progress_dialog.setValue(percent)
+            self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
+
+        def stopped_flag():
+            return self.progress_dialog.wasCanceled()
+
+        try:
+            duplicate_groups, stats = self.app.find_duplicates(
+                min_size=min_size,
+                max_size=max_size,
+                extensions=extensions,
+                favorite_dirs=self.app.favorite_dirs,
+                mode=dedupe_mode,
+                stopped_flag=stopped_flag,
+                progress_callback=progress_callback
+            )
+
+            self.groups_list.set_groups(duplicate_groups)
+
+            # Forming Text for Statistics
+            def format_value(value):
+                if isinstance(value, float):
+                    return f"{value:.2f}"
+                return str(value)
+
+            stats_text = "\n".join([
+                f"{key.replace('_', ' ').title()}: {format_value(value)}"
+                for key, value in stats.__dict__.items()
+                if key not in ("stage_stats", "_listeners")
+            ])
+            stats_text += "\n\nStage (Criteria of comparing): GROUPS / FILES / TIME \n\n"
+            for stage_key, data in stats.stage_stats.items():
+                try:
+                    stage_label = Stage[stage_key.upper()].value
+                except KeyError:
+                    stage_label = stage_key.title()
+
+                stats_text += f"{stage_label}: {data['groups']} / {data['files']} / {data['time']:.2f}s\n\n"
+
+            self.stats_window = QMessageBox(self)
+            self.stats_window.setWindowTitle("Deduplication Statistics")
+            self.stats_window.setText(stats_text)
+            self.stats_window.setIcon(QMessageBox.Icon.Information)
+            self.stats_window.exec()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred:\n{str(e)}")
+
+    def closeEvent(self, event):
+        self.save_settings()
+        super().closeEvent(event)
+
+    def save_settings(self):
+        self.settings_manager.save_settings("root_dir", self.root_dir_input.text())
+        self.settings_manager.save_settings("min_size", self.min_size_spin.value())
+        self.settings_manager.save_settings("max_size", self.max_size_spin.value())
+        self.settings_manager.save_settings("min_unit_index", self.min_unit_combo.currentIndex())
+        self.settings_manager.save_settings("max_unit_index", self.max_unit_combo.currentIndex())
+        self.settings_manager.save_settings("dedupe_mode", self.dedupe_mode_combo.currentIndex())
+        self.settings_manager.save_settings("extensions", self.extension_filter_input.text())
+        self.settings_manager.save_settings("splitter_sizes", list(self.splitter.sizes()))
+        self.settings_manager.save_settings("favorite_dirs", self.app.favorite_dirs)
+        # favorite_dirs = getattr(self.app, 'favorite_dirs', [])
+        # self.settings_manager.save_settings("favorite_dirs", list(favorite_dirs))
+
+    def restore_settings(self):
+        self.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
+
+        min_size = self.settings_manager.load_settings("min_size", "100")
+        self.min_size_spin.setValue(int(min_size))
+
+        max_size = self.settings_manager.load_settings("max_size", "100")
+        self.max_size_spin.setValue(int(max_size))
+
+        min_unit_index = self.settings_manager.load_settings("min_unit_index", "0")
+        self.min_unit_combo.setCurrentIndex(int(min_unit_index))
+
+        max_unit_index = self.settings_manager.load_settings("max_unit_index", "1")  # default to MB
+        self.max_unit_combo.setCurrentIndex(int(max_unit_index))
+
+        dedupe_mode = self.settings_manager.load_settings("dedupe_mode", "1")
+        self.dedupe_mode_combo.setCurrentIndex(int(dedupe_mode))
+
+        extensions = self.settings_manager.load_settings("extensions", "")
+        self.extension_filter_input.setText(extensions)
+
+        splitter_sizes = self.settings_manager.load_settings("splitter_sizes", None)
+        if splitter_sizes:
+            self.splitter.setSizes([int(x) for x in splitter_sizes])
+        else:
+            self.splitter.setSizes([400, 600])
+
+        saved_dirs = self.settings_manager.load_settings("favorite_dirs", [])
+        if isinstance(saved_dirs, str):
+            saved_dirs = [d.strip() for d in saved_dirs.split(";") if d.strip()]
+        elif not isinstance(saved_dirs, list):
+            saved_dirs = []
+        self.app.favorite_dirs = saved_dirs
+
+        # Заполняем список сразу при запуске
+        self.favorite_list_widget.clear()
+        for path in self.app.favorite_dirs:
+            self.favorite_list_widget.addItem(path)
+
+import sys
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

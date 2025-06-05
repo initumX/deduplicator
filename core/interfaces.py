@@ -63,7 +63,7 @@ class FileScanner(Protocol):
     def scan(
         self,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, int], None]] = None
     ) -> FileCollection:
         """
         Scan files from the configured directory.

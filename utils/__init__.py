@@ -1,2 +1,2 @@
-from .services import FileService
+from .services import FileService, DuplicateService
 from .size_utils import SizeUtils

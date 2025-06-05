@@ -1,7 +1,9 @@
-# utils/size_utils.py
+"""
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
 
-from typing import Optional
-
+utils/size_utils.py
+"""
 
 class SizeUtils:
     @staticmethod

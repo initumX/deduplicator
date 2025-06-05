@@ -47,7 +47,7 @@ class FileScannerImpl(FileScanner):
 
     def scan(self,
              stopped_flag: Optional[Callable[[], bool]] = None,
-             progress_callback: Optional[Callable[[int, int], None]] = None) -> FileCollection:
+             progress_callback: Optional[Callable[[str, int, int], None]] = None) -> FileCollection:
         """
         Scans the directory recursively and returns a filtered collection of files.
         Args:
@@ -89,7 +89,7 @@ class FileScannerImpl(FileScanner):
                             found_files.append(file_info)
                             processed_files += 1
                             if progress_callback and total_files > 0:
-                                progress_callback(processed_files, total_files)
+                                progress_callback('scanning files:', processed_files, total_files)
                     except Exception as e:
                         print(f"⚠️ Unable to process file {path}: {e}")
         except PermissionError as pe:

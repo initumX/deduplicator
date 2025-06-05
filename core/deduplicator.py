@@ -172,7 +172,7 @@ class SizeStageImpl(SizeStage):
 
         if progress_callback:
             total_files = len(files)
-            progress_callback("size", total_files, total_files)  # Fake instant progress
+            progress_callback("Comparing by Size", total_files, total_files)  # Fake instant progress
 
         return [
             DuplicateGroup(size=size, files=files_list)
@@ -189,7 +189,7 @@ class FrontHashStage(PartialHashStageBase):
         return DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
 
     def get_stage_name(self) -> str:
-        return "front"
+        return "Comparing by hash of the first 64KB"
 
 
 class MiddleHashStage(PartialHashStageBase):
@@ -200,7 +200,7 @@ class MiddleHashStage(PartialHashStageBase):
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 1.5)
 
     def get_stage_name(self) -> str:
-        return "middle"
+        return "Comparing by hash of the middle 64KB"
 
 
 class EndHashStage(PartialHashStageBase):
@@ -211,7 +211,7 @@ class EndHashStage(PartialHashStageBase):
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
     def get_stage_name(self) -> str:
-        return "end"
+        return "Comparing by hash of the last 64KB"
 
 
 class FullHashStage:
@@ -244,7 +244,7 @@ class FullHashStage:
 
             processed_files += len(group.files)
             if progress_callback:
-                progress_callback("full", processed_files, total_files)
+                progress_callback("Comparing by full hash", processed_files, total_files)
 
         return []
 

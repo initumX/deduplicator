@@ -16,17 +16,20 @@ from enum import Enum
 # Enums
 # =============================
 
-class DeduplicationMode(str, Enum):
+class DeduplicationMode(Enum):
     FAST = "fast"
     NORMAL = "normal"
     FULL = "full"
 
+    def __repr__(self):
+        return self.value
+
 class Stage(str, Enum):
-    SIZE = "size"
-    FRONT = "front"
-    MIDDLE = "middle"
-    END = "end"
-    FULL = "full"
+    SIZE = "Comparing by Size"
+    FRONT = "By Hash of the first 64KB"
+    MIDDLE = "By Hash of the middle 64KB"
+    END = "By Hash of the last 64KB"
+    FULL = "By Hash of the full file"
 
     @classmethod
     def get_all(cls):
