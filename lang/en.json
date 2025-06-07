@@ -1,0 +1,84 @@
+{
+  "window_title": "File Deduplicator",
+
+  "btn_select_root": "Select Folder",
+  "label_root_folder": "Root Folder:",
+  "btn_keep_one": "Keep One File Per Group",
+  "btn_about": "About",
+  "btn_manage_favorites": "Manage Favorite Folders",
+  "btn_start_deduplication": "Find Duplicates",
+
+  "mode_fast": "Fast",
+  "mode_normal": "Normal",
+  "mode_full": "Full",
+
+  "group_box_filters": "Filters",
+  "label_min_size": "Min Size:",
+  "label_max_size": "Max Size:",
+  "label_extensions": "Extensions:",
+  "placeholder_extensions": ".jpg,.png",
+  "tooltip_extensions": "Enter comma-separated file extensions to filter (e.g., .jpg, .png, .pdf). Leave empty to disable extension filtering.",
+
+  "group_box_favorites": "Favorite Folders",
+  "tooltip_favorite_dirs": "Files from favorite folders are prioritized in each group.\nWhen using \"Keep One File\", the first file\nfrom a favorite folder will be preserved, others will be moved to trash.\nOnly one file per group can be saved this way.",
+  "label_scroll_area": "List of favorite folders",
+
+  "tooltip_find_duplicates": "Start searching for duplicate files.\nFiles from favorite folders are marked with ✅",
+  "tooltip_delete_duplicates": "Keep one file (the first) in the group and delete the rest",
+  "tooltip_about": "Learn more about the program and its author",
+  "tooltip_dedupe_mode": "FAST: Compare size and checksums of first 64KB only\nNORMAL: Compare parts of the file: beginning, middle, end\nFULL: Full content comparison (slowest)",
+
+  "title_progress_dialog": "Deleting Files",
+  "text_progress_dialog": "Moving files to trash...",
+
+  "title_about": "About",
+  "about_text": "<b>File Deduplicator</b><br><br>Version: 2.0<br>A tool to find and remove duplicate files.<br><br><b>Features:</b><br><br>- Filtering by size and extension<br><br>- Using xxhash (very fast)<br><br>- Three deduplication modes (fast, normal, full)<br><br>- Delete all duplicates with one click (keep one file per group)<br><br>- Image preview, context menu, auto-save settings, tooltips<br><br>- and much more<br><br>© Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>License: MIT License<br>",
+
+  "title_input_error": "Input Error",
+  "message_please_select_dir": "Please select a root directory.",
+  "message_invalid_size_format": "Invalid size format",
+  "message_confirm_delete": "Are you sure you want to move these files to trash?",
+  "message_success_delete": "Files moved to trash:",
+  "message_no_duplicates": "No duplicate groups found",
+  "message_success": "Success",
+  "message_processing": "Processing...",
+  "message_error": "Error",
+  "message_operation_canceled": "Operation was cancelled by user",
+  "message_failed_to_delete": "Failed to delete files",
+  "message_stats_title": "Deduplication Statistics",
+  "message_stats_stage": "Stage (comparison criteria): Groups / Files / Time",
+
+  "settings_root_dir": "root_dir",
+  "settings_min_size": "min_size",
+  "settings_max_size": "max_size",
+  "settings_min_unit_index": "min_unit_index",
+  "settings_max_unit_index": "max_unit_index",
+  "settings_dedupe_mode": "dedupe_mode",
+  "settings_extensions": "extensions",
+  "settings_splitter_sizes": "splitter_sizes",
+  "settings_favorite_dirs": "favorite_dirs",
+
+  "dialog_favorite_dirs_title": "Select Favorite Folders",
+  "btn_add_folder": "Add Folder",
+  "btn_remove_selected": "Remove Selected",
+  "btn_ok": "OK",
+  "btn_cancel": "Cancel",
+
+  "message_no_duplicates_found": "No duplicate groups found.",
+  "message_nothing_to_delete": "Nothing to delete.",
+  "btn_move_to_trash": "Move to Trash",
+  "title_confirm_deletion": "Confirm Deletion",
+  "text_confirm_deletion": "Are you sure you want to move {count} files to trash?",
+  "title_success": "Success",
+  "text_files_moved_to_trash": "{count} files moved to trash.",
+  "title_error": "Error",
+  "text_failed_to_delete_files": "Failed to delete files:\n{error}",
+
+  "context_menu_open": "Open",
+  "context_menu_reveal": "Reveal in Explorer",
+  "context_menu_move_to_trash": "Move to Trash",
+  "context_menu_move_multiple": "Move {count} files to Trash",
+
+  "group_title_prefix": "Group",
+  "group_size_label": "Size"
+}

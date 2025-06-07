@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QFileDialog, QAbstractItemView,
 )
 
+from translator import Translator
+
 
 class FavoriteDirsDialog(QDialog):
     """
@@ -30,7 +32,10 @@ class FavoriteDirsDialog(QDialog):
     """
     def __init__(self, parent=None, initial_dirs: list[str] = None):
         super().__init__(parent)
-        self.setWindowTitle("Select Favorite Folders")
+
+        self.translator = parent.translator if parent and hasattr(parent, "translator") else Translator("en")
+
+        self.setWindowTitle(self.translator.tr("dialog_favorite_dirs_title"))
         self.setMinimumWidth(500)
 
         self.favorite_dirs = initial_dirs or []
@@ -44,10 +49,10 @@ class FavoriteDirsDialog(QDialog):
                 self.list_widget.addItem(path)
 
         # Buttons
-        add_button = QPushButton("Add Folder")
-        remove_button = QPushButton("Remove Selected")
-        ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Cancel")
+        add_button = QPushButton(self.translator.tr("btn_add_folder"))
+        remove_button = QPushButton(self.translator.tr("btn_remove_selected"))
+        ok_button = QPushButton(self.translator.tr("btn_ok"))
+        cancel_button = QPushButton(self.translator.tr("btn_cancel"))
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(add_button)

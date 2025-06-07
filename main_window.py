@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QComboBox, QSpinBox, QFileDialog,
     QListWidget, QAbstractItemView, QDialog, QMessageBox,
     QSplitter, QProgressDialog, QApplication, QGroupBox,
-    QScrollArea
+    QSizePolicy
 )
 from PySide6.QtCore import Qt, QSettings
 
@@ -37,6 +37,8 @@ from preview import ImagePreviewLabel
 from utils.services import DuplicateService
 from utils.size_utils import SizeUtils
 from duplicate_groups_list import DuplicateGroupsList
+from translator import Translator
+from ui_updater import update_ui_texts
 import os
 
 
@@ -55,15 +57,24 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("File Deduplicator")
-        self.resize(1000, 700)
+        self.resize(900, 600)
 
         self.app = FileDeduplicateApp("")
         self.settings_manager = SettingsManager()
+        self.settings = QSettings("MyCompany", "FileDeduplicator")
+
+        self.supported_languages = ["en", "ru"]
+        saved_lang = self.settings.value("language", "en")
+        self.translator = Translator(saved_lang)
+
+        self.original_image_preview_size = None
+
 
         # Widgets
         self.root_dir_input = QLineEdit()
         self.select_dir_button = QPushButton("Select Root Folder")
         self.extension_filter_input = QLineEdit()
+        self.lang_combo = QComboBox()
         self.min_size_spin = QSpinBox()
         self.min_unit_combo = QComboBox()
         self.max_size_spin = QSpinBox()
@@ -79,13 +90,16 @@ class MainWindow(QMainWindow):
 
         # QListWidget with scroll
         self.favorite_list_widget = QListWidget()
+        self.favorite_list_widget.setContentsMargins(0, 0, 0, 0)
         self.favorite_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
 
         # Output widgets
-        self.groups_list = DuplicateGroupsList()
+        self.groups_list = DuplicateGroupsList(self)
 
         self.image_preview = ImagePreviewLabel()
-        self.image_preview.setMinimumSize(300, 200)
+
+        #self.image_preview.setMinimumSize(300, 200)
+        #self.image_preview.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         # Layouts
         self.init_ui()
@@ -105,17 +119,16 @@ class MainWindow(QMainWindow):
 
         # --- Filters Group Box ---
         filters_group = QGroupBox("Filters")
-        filters_group.setFixedWidth(220)
-        filters_group.setFixedHeight(200)
+        filters_group.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         # Min Size Layout
         min_size_layout = QHBoxLayout()
         self.min_size_spin.setRange(0, 1024 * 1024)
         self.min_size_spin.setValue(100)
-        self.min_size_spin.setFixedWidth(60)
+        self.min_size_spin.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.min_unit_combo.addItems(["KB", "MB", "GB"])
         self.min_unit_combo.setCurrentText("KB")
-        self.min_unit_combo.setFixedWidth(60)
+        self.max_unit_combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         min_size_layout.addWidget(QLabel("Min Size:"))
         min_size_layout.addWidget(self.min_size_spin)
         min_size_layout.addWidget(self.min_unit_combo)
@@ -124,10 +137,10 @@ class MainWindow(QMainWindow):
         max_size_layout = QHBoxLayout()
         self.max_size_spin.setRange(0, 1024 * 1024)
         self.max_size_spin.setValue(100)
-        self.max_size_spin.setFixedWidth(60)
+        self.max_size_spin.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.max_unit_combo.addItems(["KB", "MB", "GB"])
         self.max_unit_combo.setCurrentText("MB")
-        self.max_unit_combo.setFixedWidth(60)
+        self.max_unit_combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         max_size_layout.addWidget(QLabel("Max Size:"))
         max_size_layout.addWidget(self.max_size_spin)
         max_size_layout.addWidget(self.max_unit_combo)
@@ -151,8 +164,13 @@ class MainWindow(QMainWindow):
 
         # --- Favorite Folders UI Block ---
         favorite_group = QGroupBox("Favorite Folders")
-        favorite_group.setFixedWidth(600)
-        favorite_group.setFixedHeight(200)
+        filters_group.updateGeometry()
+        favorite_group.updateGeometry()
+        favorite_group.setMaximumHeight(filters_group.sizeHint().height() + 20)
+        favorite_group.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed
+        )
 
         favorite_layout = QVBoxLayout()
 
@@ -167,21 +185,11 @@ class MainWindow(QMainWindow):
         self.favorite_dirs_button.clicked.connect(self.select_favorite_dirs)
         favorite_layout.addWidget(self.favorite_dirs_button)
 
-        # Включаем прокрутку
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # Vertical scroll not needed
-        scroll_area.setWidget(self.favorite_list_widget)
-
-        # Limit height using a container widget
-        container = QWidget()
-        container.setLayout(QVBoxLayout())
-        container.layout().addWidget(scroll_area)
-        container.layout().setContentsMargins(0, 0, 0, 0)
-        container.setFixedHeight(120)  # Высота списка
-
-        favorite_layout.addWidget(container)
+        # Просто добавляем QListWidget напрямую
+        self.favorite_list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.favorite_list_widget.setContentsMargins(0, 0, 0, 0)
+        self.favorite_list_widget.setStyleSheet("padding: 0px; margin: 0px;")
+        favorite_layout.addWidget(self.favorite_list_widget)
         favorite_group.setLayout(favorite_layout)
 
         # --- Level layout: Size Filter + Favorite Folders ---
@@ -192,7 +200,7 @@ class MainWindow(QMainWindow):
 
         # --- Unified Control Layout (Buttons and Deduplication Mode) ---
         control_layout = QHBoxLayout()
-        self.find_duplicates_button.setFixedWidth(160)
+        self.find_duplicates_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.find_duplicates_button.setToolTip(
             "Start looking for duplicate files. \n\n"
             "Files from your favorite folders will be marked with ✅-sign"
@@ -203,7 +211,7 @@ class MainWindow(QMainWindow):
         mode_label = QLabel("Mode:")
         control_layout.addWidget(mode_label)
         self.dedupe_mode_combo.addItems([mode.value.upper() for mode in DeduplicationMode])
-        self.dedupe_mode_combo.setFixedWidth(80)
+        self.dedupe_mode_combo.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.dedupe_mode_combo.setToolTip(
             "FAST: Compare file sizes and checksums of first 64KB only\n\n"
             "NORMAL: Compare sizes and checksums of first, middle and last 64KB\n\n"
@@ -214,15 +222,19 @@ class MainWindow(QMainWindow):
         self.keep_one_button.setToolTip(
             "Keep one file (the first one) per group and move the rest to trash"
         )
-        self.keep_one_button.setFixedWidth(200)
+        self.keep_one_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.keep_one_button.clicked.connect(self.keep_one_file_per_group)
         control_layout.addWidget(self.keep_one_button)
 
-        self.about_button.setFixedWidth(80)
+        self.about_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.about_button.setToolTip("Learn more about the program and its author")
         self.about_button.clicked.connect(self.show_about_dialog)
 
         control_layout.addWidget(self.about_button)
+
+        self.lang_combo.addItems(["English", "Русский"])
+        self.lang_combo.currentIndexChanged.connect(self.change_language)
+        control_layout.addWidget(self.lang_combo)
 
         control_layout.addStretch()  # Все элементы слева
         control_layout.setContentsMargins(0, 20, 0, 0)  # top=20
@@ -232,9 +244,9 @@ class MainWindow(QMainWindow):
         self.splitter.addWidget(self.image_preview)
         self.splitter.setCollapsible(0, False)
         self.splitter.setCollapsible(1, False)
-        width = self.splitter.width()
-        self.splitter.setSizes([int(width * 0.4), int(width * 0.6)])
-        self.groups_list.setMinimumWidth(200)
+
+        self.splitter.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        self.groups_list.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         # --- Main Layout Assembly ---
         main_layout = QVBoxLayout()
@@ -242,11 +254,20 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(level_layout)
 
         main_layout.addLayout(control_layout)
-        main_layout.addWidget(self.splitter)
+
+        main_layout.addWidget(self.splitter, stretch=1)
         main_widget.setLayout(main_layout)
 
         self.groups_list.file_selected.connect(self.image_preview.set_file)
         self.groups_list.delete_requested.connect(self.handle_delete_files)
+
+    def update_ui_texts(self):
+        update_ui_texts(self)
+
+    def change_language(self, index):
+        lang_code = "en" if index == 0 else "ru"
+        self.translator = Translator(lang_code)
+        self.update_ui_texts()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -285,21 +306,22 @@ class MainWindow(QMainWindow):
             pass
 
     def keep_one_file_per_group(self):
+        tr = self.translator.tr
         duplicate_groups = self.app.get_duplicate_groups()
         if not duplicate_groups:
-            QMessageBox.information(self, "Info", "No duplicate groups found.")
+            QMessageBox.information(self, tr("title_nfo"), tr("message_no_duplicates_found"))
             return
 
         files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(duplicate_groups)
 
         if not files_to_delete:
-            QMessageBox.information(self, "Info", "Nothing to delete.")
+            QMessageBox.information(self, tr("title_nfo"), tr("message_nothing_to_delete"))
             return
 
         reply = QMessageBox.question(
             self,
-            "Confirm Deletion",
-            f"Are you sure you want to move {len(files_to_delete)} files to trash?",
+            tr("title_confirm_deletion"),
+            tr("text_confirm_deletion").format(count=len(files_to_delete)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -343,23 +365,9 @@ class MainWindow(QMainWindow):
             self.progress_dialog = None
 
     def show_about_dialog(self):
-        QMessageBox.about(
-            self,
-            "About File Deduplicator",
-            """<b>File Deduplicator</b><br><br>
-            Version: 2.0<br>
-            A tool to find and remove duplicate files.<br><br>
-            <b>Features:</b><br><br>
-            - Filtering by size and extension<br><br>
-            - Using xxhash (it's very fast)<br><br>
-            - 3 modes of searching duplicates(fast, normal, full)<br><br>
-            - Deleting all duplicates by one click(Keep one file per group) <br><br>
-            - Image preview, context menu, autosaving preferences, tooltips <br><br>
-             - and much more<br><br>
-            © Copyright (c) 2025 initumX (initum.x@gmail.com) <br><br>
-            Licensed under the MIT License<br>
-            """
-        )
+        about_title = self.translator.tr("title_about")
+        about_text = self.translator.tr("about_text")
+        QMessageBox.about(self,about_title, about_text)
 
     def start_deduplication(self):
         root_dir = self.root_dir_input.text().strip()
@@ -392,8 +400,8 @@ class MainWindow(QMainWindow):
             if ext.strip()
         ]
 
-        mode_name = self.dedupe_mode_combo.currentText()
-        dedupe_mode = DeduplicationMode[mode_name]
+        mode_key = self.dedupe_mode_combo.currentData()
+        dedupe_mode = DeduplicationMode[mode_key]
 
         self.progress_dialog = QProgressDialog("Scanning and deduplicating...", "Cancel", 0, 100, self)
         self.progress_dialog.setModal(True)
@@ -434,7 +442,7 @@ class MainWindow(QMainWindow):
                 for key, value in stats.__dict__.items()
                 if key not in ("stage_stats", "_listeners")
             ])
-            stats_text += "\n\nStage (Criteria of comparing): GROUPS / FILES / TIME \n\n"
+            stats_text += "\n\nStage: GROUPS / FILES / TIME \n\n"
             for stage_key, data in stats.stage_stats.items():
                 try:
                     stage_label = Stage[stage_key.upper()].value
@@ -465,8 +473,7 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("extensions", self.extension_filter_input.text())
         self.settings_manager.save_settings("splitter_sizes", list(self.splitter.sizes()))
         self.settings_manager.save_settings("favorite_dirs", self.app.favorite_dirs)
-        # favorite_dirs = getattr(self.app, 'favorite_dirs', [])
-        # self.settings_manager.save_settings("favorite_dirs", list(favorite_dirs))
+        self.settings_manager.save_settings("language", self.translator.lang_code)
 
     def restore_settings(self):
         self.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
@@ -507,9 +514,26 @@ class MainWindow(QMainWindow):
         for path in self.app.favorite_dirs:
             self.favorite_list_widget.addItem(path)
 
+        saved_lang = self.settings.value("language", "en")
+        if not isinstance(saved_lang, str) or saved_lang not in self.supported_languages:
+            saved_lang = "en"
+        self.translator = Translator(saved_lang)
+        self.update_ui_texts()
+
+        lang_index = self.supported_languages.index(saved_lang) if saved_lang in self.supported_languages else 0
+        self.lang_combo.setCurrentIndex(lang_index)
+
 import sys
 if __name__ == "__main__":
+
+    # enable DPI
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    os.environ["QT_ENABLE_HIGHDPI_SCALING_OVERRIDE"] = "1"
+
     app = QApplication(sys.argv)
+    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
+    app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

@@ -25,11 +25,11 @@ class DeduplicationMode(Enum):
         return self.value
 
 class Stage(str, Enum):
-    SIZE = "Comparing by Size"
-    FRONT = "By Hash of the first 64KB"
-    MIDDLE = "By Hash of the middle 64KB"
-    END = "By Hash of the last 64KB"
-    FULL = "By Hash of the full file"
+    SIZE = "Size grouping"
+    FRONT = "Front-chunk Hash"
+    MIDDLE = "Middle-chunk Hash"
+    END = "End-chunk Hash"
+    FULL = "Full Hash"
 
     @classmethod
     def get_all(cls):
