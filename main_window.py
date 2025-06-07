@@ -525,15 +525,7 @@ class MainWindow(QMainWindow):
 
 import sys
 if __name__ == "__main__":
-
-    # enable DPI
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-    os.environ["QT_ENABLE_HIGHDPI_SCALING_OVERRIDE"] = "1"
-
     app = QApplication(sys.argv)
-    app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling)
-    app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
-
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
