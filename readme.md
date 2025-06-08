@@ -22,6 +22,6 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - PySide6 (Qt)
 - send2trash
 - PIL/Pillow (for image handling)
+- xxhash
 
 © 2025 initumX (initum.x@gmail.com)
-
