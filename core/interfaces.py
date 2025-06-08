@@ -144,9 +144,6 @@ class PartialHashStage(Protocol):
     Each implementation computes a specific hash (front/middle/end),
     compares files, and confirms small duplicates early.
     """
-    def compute_hash(self, file: File) -> bytes:
-        """Compute the specific hash value for this stage."""
-        ...
 
     def get_threshold(self) -> int:
         """Get the file size threshold for early duplicate confirmation."""

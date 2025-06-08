@@ -10,11 +10,10 @@ Supports three modes:
     - full: size → front → middle → full_hash
 """
 import time
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Dict, Optional, Callable
 from core.models import File, DuplicateGroup, DeduplicationStats, DeduplicationMode
 from core.grouper import FileGrouperImpl
 from core.interfaces import SizeStage, PartialHashStage, Deduplicator
-from collections import defaultdict
 
 #=============================
 # Base Class and Config
@@ -69,13 +68,6 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
     def __init__(self, grouper: FileGrouperImpl):
         self.grouper = grouper
 
-    def compute_hash(self, file: File) -> bytes:
-        """
-        Computes the specific hash for this stage.
-        Must be implemented by subclasses.
-        """
-        raise NotImplementedError
-
     def get_threshold(self) -> int:
         """
         Returns the file size threshold for early confirmation.
@@ -87,6 +79,22 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
         """
         Returns the name of the current stage.
         Used for statistics and logging.
+        """
+        raise NotImplementedError
+
+    def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
+        """
+        Groups files by their hash values.
+
+        This method must be implemented by subclasses to define how files are grouped,
+        typically using a specific hash (e.g., front, middle, or end hash).
+
+        Args:
+            files (List[File]): A list of files to group.
+
+        Returns:
+            Dict[bytes, List[File]]: A dictionary mapping hash values to lists of files
+                                     that match that hash.
         """
         raise NotImplementedError
 
@@ -116,19 +124,9 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
             # Assign chunk sizes before hashing
             HashStageBase.assign_chunk_sizes(group.files)
 
-            # Compute hash groups
-            hash_groups = defaultdict(list)
-            for file in group.files:
-                if stopped_flag and stopped_flag():
-                    return []
-                try:
-                    key = self.compute_hash(file)
-                    hash_groups[key].append(file)
-                except Exception as e:
-                    print(f"⚠️ Error computing hash for {file.path}: {e}")
-
-            # Process each hash group
+            hash_groups = self._group_files(group.files)
             threshold = self.get_threshold()
+
             for hkey, files_in_group in hash_groups.items():
                 if len(files_in_group) < 2:
                     continue
@@ -174,44 +172,40 @@ class SizeStageImpl(SizeStage):
             total_files = len(files)
             progress_callback("Size grouping", total_files, total_files)  # Fake instant progress
 
-        return [
-            DuplicateGroup(size=size, files=files_list)
-            for size, files_list in size_groups.items()
-            if len(files_list) >= 2
-        ]
+        return [DuplicateGroup(size=size, files=files_list) for size, files_list in size_groups.items()]
 
 
 class FrontHashStage(PartialHashStageBase):
-    def compute_hash(self, file: File) -> bytes:
-        return self.grouper.hasher.compute_front_hash(file)
-
     def get_threshold(self) -> int:
         return DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
 
     def get_stage_name(self) -> str:
         return "Front-chunk Hash"
 
+    def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
+        return self.grouper.group_by_front_hash(files)
+
 
 class MiddleHashStage(PartialHashStageBase):
-    def compute_hash(self, file: File) -> bytes:
-        return self.grouper.hasher.compute_middle_hash(file)
-
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 1.5)
 
     def get_stage_name(self) -> str:
         return "Middle-chunk Hash"
 
+    def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
+        return self.grouper.group_by_middle_hash(files)
+
 
 class EndHashStage(PartialHashStageBase):
-    def compute_hash(self, file: File) -> bytes:
-        return self.grouper.hasher.compute_end_hash(file)
-
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
     def get_stage_name(self) -> str:
         return "End-chunk Hash"
+
+    def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
+        return self.grouper.group_by_end_hash(files)
 
 
 class FullHashStage:
@@ -309,11 +303,8 @@ class DeduplicatorImpl(Deduplicator):
             duration = time.time() - start_time
             DeduplicatorImpl._update_stats(stats, stage_name, duration, groups, confirmed_duplicates)
 
-        # Filter out groups with less than 2 files
-        final_unconfirmed = [g for g in groups if len(g.files) >= 2]
-
         # Combine confirmed duplicates and unprocessed groups
-        all_duplicates = confirmed_duplicates + final_unconfirmed
+        all_duplicates = confirmed_duplicates + groups
 
         # Sort by descending size
         all_duplicates.sort(key=lambda g: -g.files[0].size if g.files else 0)

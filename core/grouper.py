@@ -67,9 +67,11 @@ class FileGrouperImpl(FileGrouper):
         if skipped_files > 0:
             print(f"⚠️ Skipped {skipped_files} files due to hash computation errors")
 
-        """Duplicates from favourite dir goes first in a group"""
-        for key in groups:
-            groups[key].sort(key=lambda f: not f.is_from_fav_dir)
+        result = {}
+        for key, group in groups.items():
+            if len(group) >= 2:
+                sorted_group = sorted(group, key=lambda f: not f.is_from_fav_dir)
+                result[key] = sorted_group
 
-        return dict(groups)
+        return result
 

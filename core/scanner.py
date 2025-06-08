@@ -112,6 +112,10 @@ class FileScannerImpl(FileScanner):
         if stopped_flag and stopped_flag():
             return None
 
+        if path.is_symlink():
+            print(f"🔗 Skipping symbolic link: {path}")
+            return None
+
         # Check read permissions
         if not os.access(str(path), os.R_OK):
             print(f"No read permission for {path}")

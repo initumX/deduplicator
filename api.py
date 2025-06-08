@@ -151,28 +151,28 @@ class FileDeduplicateApp:
         """Get all files found during last scan."""
         return self.files
 
-    def delete_files(self, file_paths: List[str]):
-        """
-        Move specified files to trash and update internal collections.
-        Args:
-            file_paths: Paths to files to delete.
-        Raises:
-            RuntimeError: If any file fails to be moved to trash.
-        """
-        try:
-            missing = [p for p in file_paths if not os.path.exists(p)]
-            if missing:
-                raise FileNotFoundError(f"Missing files: {missing}")
-
-            FileService.move_multiple_to_trash(file_paths)
-
-            # Обновляем данные в памяти
-            self.files = DuplicateService.remove_files_from_file_list(self.files, file_paths)
-            self.duplicate_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, file_paths)
-
-        except Exception as e:
-            logger.error(f"Error deleting files: {e}")
-            raise RuntimeError(f"Failed to delete files: {e}") from e
+    # def delete_files(self, file_paths: List[str]):
+    #     """
+    #     Move specified files to trash and update internal collections.
+    #     Args:
+    #         file_paths: Paths to files to delete.
+    #     Raises:
+    #         RuntimeError: If any file fails to be moved to trash.
+    #     """
+    #     try:
+    #         missing = [p for p in file_paths if not os.path.exists(p)]
+    #         if missing:
+    #             raise FileNotFoundError(f"Missing files: {missing}")
+    #
+    #         FileService.move_multiple_to_trash(file_paths)
+    #
+    #         # Обновляем данные в памяти
+    #         self.files = DuplicateService.remove_files_from_file_list(self.files, file_paths)
+    #         self.duplicate_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, file_paths)
+    #
+    #     except Exception as e:
+    #         logger.error(f"Error deleting files: {e}")
+    #         raise RuntimeError(f"Failed to delete files: {e}") from e
 
     # def find_similar_images(
     #     self,

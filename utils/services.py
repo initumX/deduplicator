@@ -78,8 +78,17 @@ class DuplicateService:
     @staticmethod
     def remove_files_from_groups(groups: list[DuplicateGroup], file_paths: list[str]) -> list[DuplicateGroup]:
         """
-        Removes the specified files from the list of duplicate groups.
-        Returns the updated list of groups.
+        Removes files with the specified paths from all duplicate groups.
+
+        Files that match any of the provided file paths are removed from each group.
+        Groups that contain fewer than 2 files after removal are discarded.
+
+        Args:
+            groups (list[DuplicateGroup]): List of duplicate groups to update.
+            file_paths (list[str]): List of file paths to remove.
+
+        Returns:
+            list[DuplicateGroup]: Updated list of duplicate groups.
         """
         updated_groups = []
         for group in groups:
@@ -91,9 +100,58 @@ class DuplicateService:
     @staticmethod
     def remove_files_from_file_list(files: list[File], file_paths: list[str]) -> list[File]:
         """
-        Removes the specified files from the main file list.
+        Removes files matching the given file paths from the main file list.
+
+        Args:
+            files (list[File]): The full list of files found during scanning.
+            file_paths (list[str]): Paths of files to be removed.
+
+        Returns:
+            list[File]: A new list of files excluding those marked for deletion.
         """
         return [f for f in files if f.path not in file_paths]
+
+    @staticmethod
+    def update_favorite_status(files: List[File], favorite_dirs: List[str]):
+        """
+        Updates the `is_from_fav_dir` flag on all files based on the current favorite directories.
+
+        This method checks whether each file's path starts with one of the favorite directory paths,
+        and sets its `is_from_fav_dir` attribute accordingly.
+
+        Args:
+            files (List[File]): List of files to update.
+            favorite_dirs (List[str]): List of favorite directory paths.
+        """
+        if not files:
+            return
+        for file in files:
+            file.set_favorite_status(favorite_dirs)
+
+    @staticmethod
+    def delete_files(
+            file_paths: List[str],
+            files: List[File],
+            duplicate_groups: List[DuplicateGroup]
+    ) -> Tuple[List[File], List[DuplicateGroup]]:
+        """
+        Simulates the deletion of files by removing them from both the main file list
+        and all associated duplicate groups.
+
+        This method does not perform actual deletion or file operations. It only updates
+        internal data structures to reflect what would happen after deletion.
+
+        Args:
+            file_paths (List[str]): Paths of files to be deleted.
+            files (List[File]): Current list of all scanned files.
+            duplicate_groups (List[DuplicateGroup]): Current list of duplicate groups.
+
+        Returns:
+            Tuple[List[File], List[DuplicateGroup]]: Updated file list and duplicate groups.
+        """
+        updated_files = DuplicateService.remove_files_from_file_list(files, file_paths)
+        updated_groups = DuplicateService.remove_files_from_groups(duplicate_groups, file_paths)
+        return updated_files, updated_groups
 
     @staticmethod
     def keep_only_one_file_per_group(groups: List[DuplicateGroup]) -> Tuple[List[str], List[DuplicateGroup]]:

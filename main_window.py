@@ -75,10 +75,8 @@ class MainWindow(QMainWindow):
         self.select_dir_button = QPushButton("Select Root Folder")
         self.extension_filter_input = QLineEdit()
         self.lang_combo = QComboBox()
-        self.min_size_spin = QSpinBox()
-        self.min_unit_combo = QComboBox()
-        self.max_size_spin = QSpinBox()
-        self.max_unit_combo = QComboBox()
+        self.min_size_spin, self.min_unit_combo = self.create_size_input(100)
+        self.max_size_spin, self.max_unit_combo = self.create_size_input(100)
         self.favorite_dirs_button = QPushButton("Select Favorite Folders")
         self.dedupe_mode_combo = QComboBox()
         self.find_duplicates_button = QPushButton("Find Duplicates")
@@ -123,10 +121,7 @@ class MainWindow(QMainWindow):
 
         # Min Size Layout
         min_size_layout = QHBoxLayout()
-        self.min_size_spin.setRange(0, 1024 * 1024)
-        self.min_size_spin.setValue(100)
         self.min_size_spin.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.min_unit_combo.addItems(["KB", "MB", "GB"])
         self.min_unit_combo.setCurrentText("KB")
         self.max_unit_combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         min_size_layout.addWidget(QLabel("Min Size:"))
@@ -135,10 +130,7 @@ class MainWindow(QMainWindow):
 
         # Max Size Layout
         max_size_layout = QHBoxLayout()
-        self.max_size_spin.setRange(0, 1024 * 1024)
-        self.max_size_spin.setValue(100)
         self.max_size_spin.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.max_unit_combo.addItems(["KB", "MB", "GB"])
         self.max_unit_combo.setCurrentText("MB")
         self.max_unit_combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         max_size_layout.addWidget(QLabel("Max Size:"))
@@ -264,6 +256,15 @@ class MainWindow(QMainWindow):
     def update_ui_texts(self):
         update_ui_texts(self)
 
+    @staticmethod
+    def create_size_input(default_value=100):
+        spin = QSpinBox()
+        spin.setRange(0, 1024 * 1024)
+        spin.setValue(default_value)
+        unit_combo = QComboBox()
+        unit_combo.addItems(["KB", "MB", "GB"])
+        return spin, unit_combo
+
     def change_language(self, index):
         lang_code = "en" if index == 0 else "ru"
         self.translator = Translator(lang_code)
@@ -289,21 +290,33 @@ class MainWindow(QMainWindow):
 
     def select_favorite_dirs(self):
         current_dirs = getattr(self.app, 'favorite_dirs', [])
-
         dialog = FavoriteDirsDialog(self, current_dirs)
-
         if dialog.exec() == QDialog.DialogCode.Accepted:
             selected_dirs = dialog.get_selected_dirs()
             self.app.favorite_dirs = selected_dirs
-
             self.favorite_list_widget.clear()
 
             for path in selected_dirs:
                 self.favorite_list_widget.addItem(path)
+
+            # Update flag
+            DuplicateService.update_favorite_status(self.app.files, selected_dirs)
+
+            # Resort original groups
+            for group in self.app.duplicate_groups:
+                group.files.sort(key=lambda f: not f.is_from_fav_dir)
+
+            # Update groups on list widget
+            self.groups_list.set_groups(self.app.duplicate_groups)
+
             QMessageBox.information(self, "Success", f"Selected {len(selected_dirs)} favorite folders.")
 
         else:
             pass
+
+    def refresh_duplicate_groups_display(self):
+        duplicate_groups = self.app.get_duplicate_groups()
+        self.groups_list.set_groups(duplicate_groups)
 
     def keep_one_file_per_group(self):
         tr = self.translator.tr
@@ -341,6 +354,7 @@ class MainWindow(QMainWindow):
         self.progress_dialog.show()
 
         try:
+            # Move to trash
             for i, path in enumerate(file_paths):
                 FileService.move_to_trash(path)
                 self.progress_dialog.setValue(i + 1)
@@ -351,10 +365,13 @@ class MainWindow(QMainWindow):
                     raise Exception("Operation was cancelled by the user.")
 
             # Refresh
-            updated_groups = DuplicateService.remove_files_from_groups(
-                self.app.get_duplicate_groups(), file_paths
-            )
+            self.app.files = DuplicateService.remove_files_from_file_list(self.app.files, file_paths)
+            updated_groups = DuplicateService.remove_files_from_groups(self.app.duplicate_groups, file_paths)
+
+            # Save
             self.app.duplicate_groups = updated_groups
+
+            # Update UI
             self.groups_list.set_groups(updated_groups)
 
             QMessageBox.information(self, "Success", f"{total} files moved to trash.")

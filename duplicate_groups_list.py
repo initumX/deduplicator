@@ -45,6 +45,7 @@ class DuplicateGroupsList(QListWidget):
         """Displays a list of duplicate groups in the UI."""
         self.clear()
         for idx, group in enumerate(groups):
+            group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = SizeUtils.bytes_to_human(group.size)
 
             folder_title = f"📁 {self.tr('group_title_prefix')} {idx+1} | {self.tr('group_size_label')}: {size_str}"
