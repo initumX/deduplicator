@@ -322,7 +322,11 @@ class MainWindow(QMainWindow):
         tr = self.translator.tr
         duplicate_groups = self.app.get_duplicate_groups()
         if not duplicate_groups:
-            QMessageBox.information(self, tr("title_nfo"), tr("message_no_duplicates_found"))
+            QMessageBox.information(
+                self,
+                tr("title_nfo"),
+                tr("message_no_duplicates_found")
+            )
             return
 
         files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(duplicate_groups)
@@ -344,13 +348,19 @@ class MainWindow(QMainWindow):
         self.handle_delete_files(files_to_delete)
 
     def handle_delete_files(self, file_paths):
+        tr = self.translator.tr
         if not file_paths:
             return
 
         total = len(file_paths)
-        self.progress_dialog = QProgressDialog("Moving files to trash...", "Cancel", 0, total, self)
+        self.progress_dialog = QProgressDialog(
+            tr("text_progress_delete"),
+            tr("btn_cancel"),
+            0, total, self
+        )
+
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress_dialog.setWindowTitle("Deleting Files")
+        self.progress_dialog.setWindowTitle(tr("title_progress_dialog"))
         self.progress_dialog.show()
 
         try:
@@ -358,7 +368,9 @@ class MainWindow(QMainWindow):
             for i, path in enumerate(file_paths):
                 FileService.move_to_trash(path)
                 self.progress_dialog.setValue(i + 1)
-                self.progress_dialog.setLabelText(f"Deleting: {os.path.basename(path)}")
+                self.progress_dialog.setLabelText(
+                    tr("text_progress_deletion").format(filename=os.path.basename(path))
+                )
                 QApplication.processEvents()  # Обновляем интерфейс
 
                 if self.progress_dialog.wasCanceled():
@@ -368,13 +380,30 @@ class MainWindow(QMainWindow):
             self.app.files = DuplicateService.remove_files_from_file_list(self.app.files, file_paths)
             updated_groups = DuplicateService.remove_files_from_groups(self.app.duplicate_groups, file_paths)
 
-            # Save
-            self.app.duplicate_groups = updated_groups
+            removed_group_count = len(self.app.duplicate_groups) - len(updated_groups)
 
-            # Update UI
+            # Save groups and update UI
+            self.app.duplicate_groups = updated_groups
             self.groups_list.set_groups(updated_groups)
 
-            QMessageBox.information(self, "Success", f"{total} files moved to trash.")
+            if removed_group_count == 1:
+                QMessageBox.information(
+                    self,
+                    tr("title_removing_group_from_a_list"),
+                    tr("text_removing_group_from_a_list")
+                )
+            elif removed_group_count > 1:
+                QMessageBox.information(
+                    self,
+                    tr("title_removing_groups_from_a_list"),
+                    tr("text_removing_groups_from_a_list").format(group_count=removed_group_count)
+                )
+
+            QMessageBox.information(
+                self,
+                tr("title_success"),
+                tr("text_files_moved_to_trash").format(count=total)
+            )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to delete files:\n{e}")
         finally:
@@ -387,6 +416,7 @@ class MainWindow(QMainWindow):
         QMessageBox.about(self,about_title, about_text)
 
     def start_deduplication(self):
+        tr = self.translator.tr
         root_dir = self.root_dir_input.text().strip()
         if not root_dir:
             QMessageBox.warning(self, "Input Error", "Please select a root directory.")
@@ -420,7 +450,7 @@ class MainWindow(QMainWindow):
         mode_key = self.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
 
-        self.progress_dialog = QProgressDialog("Scanning and deduplicating...", "Cancel", 0, 100, self)
+        self.progress_dialog = QProgressDialog("Scanning...", "Cancel", 0, 100, self)
         self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle("Processing...")
         self.progress_dialog.show()
