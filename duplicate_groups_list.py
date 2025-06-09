@@ -49,6 +49,8 @@ class DuplicateGroupsList(QListWidget):
             size_str = SizeUtils.bytes_to_human(group.size)
 
             folder_title = f"📁 {self.tr('group_title_prefix')} {idx+1} | {self.tr('group_size_label')}: {size_str}"
+            folder_title = QListWidgetItem(folder_title)
+            folder_title.setFlags(Qt.ItemFlag.NoItemFlags)  # Inactive
             self.addItem(folder_title)
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
@@ -57,7 +59,9 @@ class DuplicateGroupsList(QListWidget):
                 item.setToolTip(file.path)
                 item.setData(Qt.ItemDataRole.UserRole, file)
                 self.addItem(item)
-            self.addItem("")
+            empty_item = QListWidgetItem("")
+            empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.addItem(empty_item)
 
     def on_item_clicked(self, item):
         """Emits signal when a file item is clicked."""

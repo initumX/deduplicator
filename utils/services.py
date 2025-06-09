@@ -63,16 +63,6 @@ class FileService:
         except Exception:
             return False
 
-    # @staticmethod
-    # def get_file_size(file_path: str) -> Optional[int]:
-    #     """
-    #     Get file size in bytes.
-    #     Returns None if file doesn't exist or inaccessible.
-    #     """
-    #     try:
-    #         return os.path.getsize(file_path)
-    #     except (OSError, FileNotFoundError):
-    #         return None
 
 class DuplicateService:
     @staticmethod
@@ -127,31 +117,6 @@ class DuplicateService:
             return
         for file in files:
             file.set_favorite_status(favorite_dirs)
-
-    @staticmethod
-    def delete_files(
-            file_paths: List[str],
-            files: List[File],
-            duplicate_groups: List[DuplicateGroup]
-    ) -> Tuple[List[File], List[DuplicateGroup]]:
-        """
-        Simulates the deletion of files by removing them from both the main file list
-        and all associated duplicate groups.
-
-        This method does not perform actual deletion or file operations. It only updates
-        internal data structures to reflect what would happen after deletion.
-
-        Args:
-            file_paths (List[str]): Paths of files to be deleted.
-            files (List[File]): Current list of all scanned files.
-            duplicate_groups (List[DuplicateGroup]): Current list of duplicate groups.
-
-        Returns:
-            Tuple[List[File], List[DuplicateGroup]]: Updated file list and duplicate groups.
-        """
-        updated_files = DuplicateService.remove_files_from_file_list(files, file_paths)
-        updated_groups = DuplicateService.remove_files_from_groups(duplicate_groups, file_paths)
-        return updated_files, updated_groups
 
     @staticmethod
     def keep_only_one_file_per_group(groups: List[DuplicateGroup]) -> Tuple[List[str], List[DuplicateGroup]]:
