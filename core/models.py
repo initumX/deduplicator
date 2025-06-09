@@ -234,22 +234,26 @@ class DeduplicationStats:
                 print(f"⚠️ Error in stats event handler: {e}")
 
 
-    def print_summary(self) -> None:
+    def print_summary(self) -> str:
         labels = {
             "size": "📁 Size Groups",
             "front": "📄 Front Hash Groups",
-            "end": "🔚 End Hash Groups",
             "middle": "🧠 Middle Hash Groups",
+            "end": "🔚 End Hash Groups",
             "full": "🔍 Full Content Hash Groups",
         }
 
-        print("\n📊 Deduplication Statistics:")
-        for stage, data in self.stage_stats.items():
-            label = labels.get(stage, stage)
-            if data["groups"] > 0 or data["time"] > 0:
-                print(f"{label}: {data['groups']} groups, {data['files']} files / Time: {data['time']:.3f}s")
+        lines = []
+        lines.append("📊 Deduplication Statistics:")
+        lines.append(f"Total Execution Time: {self.total_time:.3f}s\n")
+        lines.append("Stage: GROUPS / FILES / TIME")
 
-        print(f"\n⏱️ Total Execution Time: {self.total_time:.3f}s")
+        for stage, data in self.stage_stats.items():
+            label = labels.get(stage.lower(), stage.title())
+            if data["groups"] > 0 or data["time"] > 0:
+                lines.append(f"{label}: {data['groups']} / {data['files']} / {data['time']:.3f}s")
+
+        return "\n".join(lines)
 
 
 # =============================

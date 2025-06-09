@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QSettings
 
-from core.models import DeduplicationMode, Stage
+from core.models import DeduplicationMode
 from api import FileDeduplicateApp
 from utils.services import FileService
 from dialogs import FavoriteDirsDialog
@@ -39,6 +39,7 @@ from utils.size_utils import SizeUtils
 from duplicate_groups_list import DuplicateGroupsList
 from translator import Translator
 from ui_updater import update_ui_texts
+from worker import DeduplicateWorker
 import os
 
 
@@ -56,6 +57,7 @@ class SettingsManager:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.worker_thread = None
         self.setWindowTitle("File Deduplicator")
         self.resize(900, 600)
 
@@ -416,7 +418,6 @@ class MainWindow(QMainWindow):
         QMessageBox.about(self,about_title, about_text)
 
     def start_deduplication(self):
-        tr = self.translator.tr
         root_dir = self.root_dir_input.text().strip()
         if not root_dir:
             QMessageBox.warning(self, "Input Error", "Please select a root directory.")
@@ -427,7 +428,6 @@ class MainWindow(QMainWindow):
         # Size filters
         min_size_value = self.min_size_spin.value()
         min_unit = self.min_unit_combo.currentText()
-
         max_size_value = self.max_size_spin.value()
         max_unit = self.max_unit_combo.currentText()
 
@@ -450,61 +450,57 @@ class MainWindow(QMainWindow):
         mode_key = self.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
 
+
+        if self.worker_thread:
+            self.worker_thread.stop()
+            self.worker_thread.wait()
+            self.worker_thread = None
+
         self.progress_dialog = QProgressDialog("Scanning...", "Cancel", 0, 100, self)
         self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle("Processing...")
         self.progress_dialog.show()
+
+        def cancel_action():
+            if self.worker_thread:
+                self.worker_thread.stop()
+
+        self.progress_dialog.canceled.connect(cancel_action)
+
+        self.worker_thread = DeduplicateWorker(
+            self.app, min_size, max_size, extensions, self.app.favorite_dirs, dedupe_mode
+        )
+
+        self.worker_thread.progress.connect(self.update_progress)
+        self.worker_thread.finished.connect(self.on_deduplicate_finished)
+        self.worker_thread.error.connect(self.on_deduplicate_error)
+        self.worker_thread.start()
+
+    def update_progress(self, stage, current, total):
+        if self.progress_dialog is None:
+            return
+        percent = int((current / total) * 100) if total > 0 else 0
+        self.progress_dialog.setValue(percent)
+        self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
         QApplication.processEvents()
 
-        def progress_callback(*args):
-            stage, current, total = args
-            percent = int((current / total) * 100) if total > 0 else 0
-            self.progress_dialog.setValue(percent)
-            self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
+    def on_deduplicate_finished(self, duplicate_groups, stats):
+        self.progress_dialog.close()
+        self.progress_dialog = None
+        self.groups_list.set_groups(duplicate_groups)
 
-        def stopped_flag():
-            return self.progress_dialog.wasCanceled()
+        stats_text = stats.print_summary()
+        self.stats_window = QMessageBox(self)
+        self.stats_window.setWindowTitle("Deduplication Statistics")
+        self.stats_window.setText(stats_text)
+        self.stats_window.setIcon(QMessageBox.Icon.Information)
+        self.stats_window.exec()
 
-        try:
-            duplicate_groups, stats = self.app.find_duplicates(
-                min_size=min_size,
-                max_size=max_size,
-                extensions=extensions,
-                favorite_dirs=self.app.favorite_dirs,
-                mode=dedupe_mode,
-                stopped_flag=stopped_flag,
-                progress_callback=progress_callback
-            )
+    def on_deduplicate_error(self, error_message):
+        self.progress_dialog.close()
+        self.progress_dialog = None
+        QMessageBox.critical(self, "Error", f"An error occurred:\n{error_message}")
 
-            self.groups_list.set_groups(duplicate_groups)
-
-            # Forming Text for Statistics
-            def format_value(value):
-                if isinstance(value, float):
-                    return f"{value:.2f}"
-                return str(value)
-
-            stats_text = "\n".join([
-                f"{key.replace('_', ' ').title()}: {format_value(value)}"
-                for key, value in stats.__dict__.items()
-                if key not in ("stage_stats", "_listeners")
-            ])
-            stats_text += "\n\nStage: GROUPS / FILES / TIME \n\n"
-            for stage_key, data in stats.stage_stats.items():
-                try:
-                    stage_label = Stage[stage_key.upper()].value
-                except KeyError:
-                    stage_label = stage_key.title()
-
-                stats_text += f"{stage_label}: {data['groups']} / {data['files']} / {data['time']:.2f}s\n\n"
-
-            self.stats_window = QMessageBox(self)
-            self.stats_window.setWindowTitle("Deduplication Statistics")
-            self.stats_window.setText(stats_text)
-            self.stats_window.setIcon(QMessageBox.Icon.Information)
-            self.stats_window.exec()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred:\n{str(e)}")
 
     def closeEvent(self, event):
         self.save_settings()

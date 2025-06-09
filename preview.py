@@ -15,9 +15,36 @@ Implements a QLabel-based image viewer that:
 """
 
 from PySide6.QtWidgets import QLabel, QSizePolicy
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRunnable, QThreadPool, QObject, Signal
 from PySide6.QtGui import QPixmap
 from core.models import File
+
+
+
+class ImageLoaderSignals(QObject):
+    image_loaded = Signal(object)
+    loading_failed = Signal(str)
+
+
+class ImageLoaderRunnable(QRunnable):
+    def __init__(self, file_path):
+        super().__init__()
+        self.file_path = file_path
+        self.signals = ImageLoaderSignals()
+        self.is_running = True
+
+    def run(self):
+        if not self.is_running:
+            return
+
+        pixmap = QPixmap(self.file_path)
+        if pixmap.isNull():
+            self.signals.loading_failed.emit("Unsupported image format or corrupted file.")
+        else:
+            self.signals.image_loaded.emit(pixmap)
+
+    def cancel(self):
+        self.is_running = False
 
 
 class ImagePreviewLabel(QLabel):
@@ -28,24 +55,32 @@ class ImagePreviewLabel(QLabel):
         self.setWordWrap(True)
         self.current_file = None
         self.original_pixmap = None
-        self.last_scaled_pixmap = None  # Cache last scaled pixmap
-
-        # Set size policy for proper resizing inside QSplitter
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+        self.thread_pool = QThreadPool()
+        self.current_runnable = None
 
     def set_file(self, file: File):
         self.current_file = file
-        try:
-            pixmap = QPixmap(file.path)
-            if pixmap.isNull():
-                self.setText("Unsupported image format or corrupted file.")
-                self.original_pixmap = None
-            else:
-                self.original_pixmap = pixmap
-                self.update_pixmap()
-        except Exception as e:
-            self.setText(f"Error loading image:\n{str(e)}")
-            self.original_pixmap = None
+        self.setText("Loading preview...")
+
+        if self.current_runnable:
+            self.current_runnable.cancel()
+            self.current_runnable = None
+
+        runnable = ImageLoaderRunnable(file.path)
+        runnable.signals.image_loaded.connect(self._on_image_loaded)
+        runnable.signals.loading_failed.connect(self._on_loading_failed)
+        self.current_runnable = runnable
+        self.thread_pool.start(runnable)
+
+    def _on_image_loaded(self, pixmap):
+        if self.current_runnable:
+            self.original_pixmap = pixmap
+            self.update_pixmap()
+
+    def _on_loading_failed(self, error_message):
+        self.setText(error_message)
+        self.original_pixmap = None
 
     def update_pixmap(self):
         if not self.original_pixmap:
@@ -60,5 +95,4 @@ class ImagePreviewLabel(QLabel):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # Force update pixmap on resize
         self.update_pixmap()
