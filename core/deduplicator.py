@@ -33,14 +33,14 @@ class HashStageBase:
 
 
 class DeduplicationConfig:
-    EARLY_CONFIRMATION_SIZE_LIMIT = 256 * 1024  # Files ≤ this size can be confirmed after front hash
+    EARLY_CONFIRMATION_SIZE_LIMIT = 128 * 1024  # Files ≤ this size can be confirmed after front hash
 
     @staticmethod
     def get_chunk_size(file_size: int) -> int:
         limit = DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
         if file_size <= limit:
             return file_size
-        elif file_size <= limit * 2:
+        elif file_size <= limit * 3:
             return limit
         elif file_size <= 10 * 1024 * 1024:
             return 64 * 1024
@@ -128,16 +128,14 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
             threshold = self.get_threshold()
 
             for hkey, files_in_group in hash_groups.items():
-                if len(files_in_group) < 2:
-                    continue
 
                 small_files = [f for f in files_in_group if f.size <= threshold]
                 large_files = [f for f in files_in_group if f.size > threshold]
 
-                if len(small_files) >= 2:
+                if small_files:
                     confirmed_duplicates.append(DuplicateGroup(size=group.size, files=small_files))
 
-                if len(large_files) >= 2:
+                if large_files:
                     new_potential_groups.append(DuplicateGroup(size=group.size, files=large_files))
 
             processed_files += len(group.files)
@@ -188,7 +186,7 @@ class FrontHashStage(PartialHashStageBase):
 
 class MiddleHashStage(PartialHashStageBase):
     def get_threshold(self) -> int:
-        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 1.5)
+        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
     def get_stage_name(self) -> str:
         return "Middle-chunk Hash"
@@ -199,7 +197,7 @@ class MiddleHashStage(PartialHashStageBase):
 
 class EndHashStage(PartialHashStageBase):
     def get_threshold(self) -> int:
-        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
+        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 3)
 
     def get_stage_name(self) -> str:
         return "End-chunk Hash"

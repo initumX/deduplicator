@@ -56,7 +56,7 @@ class HasherImpl(Hasher):
         """Computes and caches hash of the central N bytes of a file."""
         if file.hashes.middle is not None:
             return file.hashes.middle
-        offset = max(0, (file.size - file.chunk_size) // 2)
+        offset = max(0, file.size // 2)
         data = self._read_chunk(file, offset)
         result = self.algorithm.hash(data)
         file.hashes.middle = result

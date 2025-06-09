@@ -69,7 +69,7 @@ class FileGrouperImpl(FileGrouper):
 
         result = {}
         for key, group in groups.items():
-            if len(group) >= 2:
+            if len(group) >= 2: # Avoid groups with less than 2 files
                 sorted_group = sorted(group, key=lambda f: not f.is_from_fav_dir)
                 result[key] = sorted_group
 
