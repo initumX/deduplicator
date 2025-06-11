@@ -17,12 +17,13 @@ from PySide6.QtCore import Qt, Signal
 from core.models import File, DuplicateGroup
 from utils.services import FileService
 from utils.size_utils import SizeUtils
-from translator import Translator
+from core.interfaces import TranslatorProtocol
+from translator import DictTranslator
 
 
 class DuplicateGroupsList(QListWidget):
     """
-    A custom list widget that displays duplicate file groups.
+    A custom list widget that displays duplicate groups.
 
     Signals:
         file_selected (File): Emitted when a file item is clicked.
@@ -38,7 +39,8 @@ class DuplicateGroupsList(QListWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.itemClicked.connect(self.on_item_clicked)
 
-        self.translator = parent.translator if parent and hasattr(parent, "translator") else Translator("en")
+        # Use translator from parent or default to English
+        self.translator = parent.translator if parent and hasattr(parent, "translator") else DictTranslator("en")
         self.tr = self.translator.tr
 
     def set_groups(self, groups: list[DuplicateGroup]):
@@ -93,7 +95,14 @@ class DuplicateGroupsList(QListWidget):
             menu.addAction(delete_action)
 
         else:
-            delete_action = QAction(self.tr("context_menu_move_multiple").format(count=len(selected_items)), self)
+            # Safe format with fallback
+            menu_text = self.tr("context_menu_move_multiple")
+            try:
+                menu_text = menu_text.format(count=len(selected_items))
+            except KeyError:
+                menu_text = f"Move {len(selected_items)} files to trash"
+
+            delete_action = QAction(menu_text, self)
             delete_action.triggered.connect(lambda _: self.delete_selected_files(selected_items))
             menu.addAction(delete_action)
 

@@ -16,10 +16,11 @@ Created as part of the File Deduplicator application.
 
 from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
-    QVBoxLayout, QFileDialog, QAbstractItemView,
+    QVBoxLayout, QFileDialog, QAbstractItemView
 )
 
-from translator import Translator
+# Import only DictTranslator instead of full Translator
+from translator import DictTranslator
 
 
 class FavoriteDirsDialog(QDialog):
@@ -33,7 +34,8 @@ class FavoriteDirsDialog(QDialog):
     def __init__(self, parent=None, initial_dirs: list[str] = None):
         super().__init__(parent)
 
-        self.translator = parent.translator if parent and hasattr(parent, "translator") else Translator("en")
+        # Use injected translator if available, fallback to default language
+        self.translator = parent.translator if parent and hasattr(parent, "translator") else DictTranslator("en")
 
         self.setWindowTitle(self.translator.tr("dialog_favorite_dirs_title"))
         self.setMinimumWidth(500)
@@ -77,7 +79,7 @@ class FavoriteDirsDialog(QDialog):
 
     def on_add(self):
         """Handler for adding a new folder."""
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Folder")
+        dir_path = QFileDialog.getExistingDirectory(self, self.translator.tr("dialog_select_folder_title"))
         if dir_path:
             if dir_path not in self.favorite_dirs:
                 self.favorite_dirs.append(dir_path)
