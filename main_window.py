@@ -414,10 +414,14 @@ class MainWindow(QMainWindow):
     def update_progress(self, stage, current, total):
         if self.progress_dialog is None:
             return
-        percent = int((current / total) * 100) if total > 0 else 0
-        self.progress_dialog.setValue(percent)
-        self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
-        QApplication.processEvents()
+        try:
+            percent = int((current / total) * 100) if total > 0 else 0
+            self.progress_dialog.setValue(percent)
+            self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
+            QApplication.processEvents()
+        except (TypeError, ZeroDivisionError, RuntimeError, AttributeError):
+            # Gracefully handle errors due to invalid values or destroyed widget
+            self.progress_dialog = None
 
     def on_deduplicate_finished(self, duplicate_groups, stats):
         self.progress_dialog.close()
