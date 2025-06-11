@@ -399,6 +399,7 @@ class MainWindow(QMainWindow):
         self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle(self.translator.tr("title_processing"))
         self.progress_dialog.show()
+
         def cancel_action():
             if self.worker_thread:
                 self.worker_thread.stop()
@@ -429,7 +430,7 @@ class MainWindow(QMainWindow):
         self.groups_list.set_groups(duplicate_groups)
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
-        self.stats_window.setWindowTitle(self.translator.tr("title_stats"))
+        self.stats_window.setWindowTitle(self.translator.tr("message_stats_title"))
         self.stats_window.setText(stats_text)
         self.stats_window.setIcon(QMessageBox.Icon.Information)
         self.stats_window.exec()
