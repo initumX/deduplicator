@@ -1,4 +1,4 @@
-{
+translations = {
   "window_title": "Удаление дубликатов",
   "btn_select_root": "Выбрать папку",
   "label_root_folder": "Корневая папка:",
@@ -7,6 +7,7 @@
   "btn_manage_favorites": "Управление избранными папками",
   "btn_start_deduplication": "Найти дубликаты",
 
+  "label_dedupe_mode": "Режим:",
   "mode_fast": "Быстрый",
   "mode_normal": "Обычный",
   "mode_full": "Полный",
@@ -27,6 +28,8 @@
   "tooltip_about": "Подробнее о программе и её авторе",
   "tooltip_dedupe_mode": "FAST: Сравнение размера и контрольных сумм первых 64 КБ\nNORMAL: Сравнение частей файла: начало, середина, конец\nFULL: Полное сравнение содержимого (самый медленный)",
 
+  "title_processing": "Поиск",
+  "text_progress_scanning": "Сканирование...",
   "title_progress_dialog": "Удаление файлов",
   "text_progress_dialog": "Перемещение файлов в корзину...",
 

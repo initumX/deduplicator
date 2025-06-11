@@ -30,6 +30,11 @@ from core.models import (
 
 # ===== Interfaces =====
 
+from typing import Protocol
+
+class TranslatorProtocol(Protocol):
+    def tr(self, key: str) -> str:
+        ...
 
 class Hasher(Protocol):
     """Interface for hashing different parts of a file."""

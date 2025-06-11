@@ -1,4 +1,4 @@
-{
+translations = {
   "window_title": "File Deduplicator",
 
   "btn_select_root": "Select Folder",
@@ -8,13 +8,14 @@
   "btn_manage_favorites": "Manage Favorite Folders",
   "btn_start_deduplication": "Find Duplicates",
 
+  "label_dedupe_mode": "Mode:",
   "mode_fast": "Fast",
   "mode_normal": "Normal",
   "mode_full": "Full",
 
   "group_box_filters": "Filters",
-  "label_min_size": "Min Size:",
-  "label_max_size": "Max Size:",
+  "label_min_size": "Min size:",
+  "label_max_size": "Max size:",
   "label_extensions": "Extensions:",
   "placeholder_extensions": ".jpg,.png",
   "tooltip_extensions": "Enter comma-separated file extensions to filter (e.g., .jpg, .png, .pdf). Leave empty to disable extension filtering.",
@@ -28,6 +29,8 @@
   "tooltip_about": "Learn more about the program and its author",
   "tooltip_dedupe_mode": "FAST: Compare size and checksums of first 64KB only\nNORMAL: Compare parts of the file: beginning, middle, end\nFULL: Full content comparison (slowest)",
 
+  "title_processing": "Processing",
+  "text_progress_scanning": "Scanning...",
   "title_progress_dialog": "Deleting Files",
   "text_progress_dialog": "Moving files to trash...",
 
