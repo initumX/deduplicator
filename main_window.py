@@ -35,6 +35,12 @@ from duplicate_groups_list import DuplicateGroupsList
 from core.interfaces import TranslatorProtocol
 from worker import DeduplicateWorker
 import os, sys
+import logging
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
 
 
 class SettingsManager:
@@ -415,12 +421,21 @@ class MainWindow(QMainWindow):
     def update_progress(self, stage, current, total):
         if self.progress_dialog is None:
             return
+
         try:
-            percent = int((current / total) * 100) if total > 0 else 0
-            self.progress_dialog.setValue(percent)
-            self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
+            if total is not None and total > 0:
+                percent = int((current / total) * 100)
+                self.progress_dialog.setValue(percent)
+                self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
+            else:
+                # Fake progress: every 200 files = 1%
+                fake_max_percent = 100
+                fake_percent = min(int(current / 200), fake_max_percent)
+                self.progress_dialog.setValue(fake_percent)
+                self.progress_dialog.setLabelText(f"{stage}: {current} files processed...")
+
             QApplication.processEvents()
-        except (TypeError, ZeroDivisionError, RuntimeError, AttributeError):
+        except (TypeError, RuntimeError, AttributeError):
             # Gracefully handle errors due to invalid values or destroyed widget
             self.progress_dialog = None
 

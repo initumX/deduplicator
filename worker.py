@@ -1,7 +1,7 @@
 from PySide6.QtCore import QThread, Signal
 
 class DeduplicateWorker(QThread):
-    progress = Signal(str, int, int)  # stage, current, total
+    progress = Signal(str, int, object)  # stage, current, total (может быть None)
     finished = Signal(list, object)  # duplicate_groups, stats
     error = Signal(str)
 
@@ -31,7 +31,7 @@ class DeduplicateWorker(QThread):
                 favorite_dirs=self.favorite_dirs,
                 mode=self.mode,
                 stopped_flag=self.is_stopped,
-                progress_callback=lambda stage, cur, total: self.progress.emit(stage, cur, total)
+                progress_callback=lambda stage, cur, total=None: self.progress.emit(stage, cur, total)
             )
             if not self._stopped:
                 self.finished.emit(result, stats)

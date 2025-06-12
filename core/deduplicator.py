@@ -103,7 +103,7 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
         groups: List[DuplicateGroup],
         confirmed_duplicates: List[DuplicateGroup],
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
         """
         Processes duplicate groups through this hash stage.
@@ -156,7 +156,7 @@ class SizeStageImpl(SizeStage):
             self,
             files: List[File],
             stopped_flag: Optional[Callable[[], bool]] = None,
-            progress_callback: Optional[Callable[[str, int, int], None]] = None
+            progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
         """
         Group by file size.
@@ -215,7 +215,7 @@ class FullHashStage:
             groups: List[DuplicateGroup],
             confirmed_duplicates: List[DuplicateGroup],
             stopped_flag: Optional[Callable[[], bool]] = None,
-            progress_callback: Optional[Callable[[str, int, int], None]] = None
+            progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
         if stopped_flag and stopped_flag():
             return []
@@ -258,7 +258,7 @@ class DeduplicatorImpl(Deduplicator):
         files: List[File],
         mode: DeduplicationMode,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """
                 Main deduplication pipeline using File objects.
