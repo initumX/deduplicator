@@ -63,7 +63,7 @@ class FileDeduplicateApp:
         extensions: Optional[List[str]] = None,
         favorite_dirs: Optional[List[str]] = None,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> FileCollection:
         """
         Scan directory recursively and filter files by size, extension, and favorite directories.
@@ -96,7 +96,7 @@ class FileDeduplicateApp:
         favorite_dirs: Optional[List[str]] = None,
         mode: DeduplicationMode = DeduplicationMode.NORMAL,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """
         Unified method to perform scanning + duplicate detection.

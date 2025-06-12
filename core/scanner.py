@@ -14,6 +14,9 @@ Features:
 import os
 from typing import List, Optional, Callable
 from pathlib import Path
+import time
+import logging
+logger = logging.getLogger(__name__)
 
 # Local imports
 from core.models import File, FileCollection
@@ -24,11 +27,13 @@ class FileScannerImpl(FileScanner):
     """
     Scans directories recursively and filters files based on size and extensions.
     Uses `pathlib.Path` for safe and consistent cross-platform behavior.
+
     Attributes:
         root_dir: Root directory to scan
         min_size: Minimum file size in bytes (optional)
         max_size: Maximum file size in bytes (optional)
         extensions: List of allowed file extensions (e.g., [".txt", ".jpg"])
+        favorite_dirs: Directories marked as favorites for special processing
     """
 
     def __init__(
@@ -47,57 +52,63 @@ class FileScannerImpl(FileScanner):
 
     def scan(self,
              stopped_flag: Optional[Callable[[], bool]] = None,
-             progress_callback: Optional[Callable[[str, int, int], None]] = None) -> FileCollection:
+             progress_callback: Optional[Callable[[str, int, object], None]] = None) -> FileCollection:
         """
-        Scans the directory recursively and returns a filtered collection of files.
-        Args:
-            stopped_flag (Optional[Callable[[], bool]]): Function that returns True if operation should be stopped.
-            progress_callback (Optional[Callable[[int, int], None]]): Callback to report progress (current, total).
-        Returns:
-            FileCollection: Collection of filtered File objects
+        Single-pass scanner with real-time progress updates and debug logging.
+        Returns a filtered collection of files found in the directory tree.
         """
-        print(f"🔍 Scanning directory: {self.root_dir}")
+        logger.debug("📁 Starting scan operation...")
+        logger.debug(f"Root directory: {self.root_dir}")
+        logger.debug(f"Filters: min_size={self.min_size}, max_size={self.max_size}, extensions={self.extensions}")
+
         found_files = []
         root_path = Path(self.root_dir)
         processed_files = 0
 
         if stopped_flag and stopped_flag():
+            logger.debug("🛑 Scan was cancelled before start.")
             return FileCollection([])
 
         if not root_path.exists():
-            raise RuntimeError(f"Directory does not exist: {self.root_dir}")
+            error_msg = f"Directory does not exist: {self.root_dir}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
         if not root_path.is_dir():
-            raise RuntimeError(f"Not a directory: {self.root_dir}")
+            error_msg = f"Not a directory: {self.root_dir}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         try:
-            # Only precompute paths if we need progress tracking
-            if progress_callback:
-                all_paths = list(root_path.rglob("*"))
-                total_files = sum(1 for p in all_paths if p.is_file())
-            else:
-                all_paths = root_path.rglob("*")
-                total_files = 0  # Not used
+            logger.info(f"🔍 Scanning directory: {self.root_dir}")
+            start_time = time.time()
 
-            for path in all_paths:
+            # Use os.walk instead of Path.rglob for faster traversal
+            for root, dirs, files in os.walk(str(root_path)):
                 if stopped_flag and stopped_flag():
+                    logger.warning("🛑 Scan was interrupted by user.")
                     return FileCollection([])
 
-                if path.is_file():
-                    try:
-                        file_info = self._process_file(path, stopped_flag=stopped_flag)
-                        if file_info:
-                            found_files.append(file_info)
-                            processed_files += 1
-                            if progress_callback and total_files > 0:
-                                progress_callback('scanning files:', processed_files, total_files)
-                    except Exception as e:
-                        print(f"⚠️ Unable to process file {path}: {e}")
-        except PermissionError as pe:
-            print(f"🔒 Permission denied during scan: {pe}")
-        except Exception as e:
-            print(f"❌ Error during scanning: {e}")
+                for filename in files:
+                    path = Path(root) / filename
+                    file_info = self._process_file(path, stopped_flag=stopped_flag)
+                    if file_info:
+                        found_files.append(file_info)
+                    processed_files += 1
 
-        found_files.sort(key=lambda f: -f.size)
+                    if progress_callback:
+                        progress_callback('scanning', processed_files, None)
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            logger.debug(f"⏱️ Total scan time: {elapsed_time:.2f} seconds")
+            logger.info(f"✅ Scan completed. Found {len(found_files)} matching files.")
+
+        except PermissionError as pe:
+            logger.error(f"🔒 Permission denied during scan: {pe}", exc_info=True)
+        except Exception as e:
+            logger.exception(f"❌ Unexpected error during scanning: {e}")
+
         return FileCollection(found_files)
 
     def _process_file(self, path: Path, stopped_flag: Optional[Callable[[], bool]] = None) -> Optional[File]:
@@ -105,7 +116,7 @@ class FileScannerImpl(FileScanner):
         Process an individual file path and return a File if it passes all filters.
         Args:
             path: Path object pointing to the file
-            stopped_flag (Optional[Callable[[], bool]]): Function that returns True if operation should be stopped.
+            stopped_flag: Function that returns True if operation should be stopped.
         Returns:
             Optional[File]: File object if it passes filters, else None
         """
@@ -113,19 +124,15 @@ class FileScannerImpl(FileScanner):
             return None
 
         if path.is_symlink():
-            print(f"🔗 Skipping symbolic link: {path}")
+            logger.warning(f"🔗 Skipping symbolic link: {path}")
             return None
 
-        # Check read permissions
-        if not os.access(str(path), os.R_OK):
-            print(f"No read permission for {path}")
-            return None
-
-        # Get file size
         try:
-            size = path.stat().st_size
-        except OSError as e:
-            print(f"⚠️ Could not get size of {path}: {e}")
+            # Get file size directly
+            stat_result = path.stat()
+            size = stat_result.st_size
+        except (OSError, PermissionError) as e:
+            logger.warning(f"⚠️ Could not get size of {path}: {e}")
             return None
 
         # Skip zero-byte files
@@ -143,7 +150,7 @@ class FileScannerImpl(FileScanner):
         try:
             file = File(path=str(path), size=size)
         except Exception as e:
-            print(f"Failed to create File object for {path}: {e}")
+            logger.warning(f"Failed to create File object for {path}: {e}")
             return None
 
         if self.favorite_dirs:
@@ -175,15 +182,5 @@ class FileScannerImpl(FileScanner):
         """
         if not self.extensions:
             return True
-        base_name = path.name
-        if base_name.startswith("."):
-            return False  # Skip hidden files when extensions are specified
-        parts = base_name.split(".")
-        if len(parts) < 2:
-            return False  # No extension
-        for i in range(1, len(parts)):
-            candidate = "." + ".".join(parts[i:])
-            if any(candidate.lower() == ext.lower() for ext in self.extensions):
-                return True
-        return False
-
+        ext = path.suffix.lower()
+        return any(ext == allowed_ext for allowed_ext in self.extensions)

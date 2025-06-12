@@ -30,8 +30,6 @@ from core.models import (
 
 # ===== Interfaces =====
 
-from typing import Protocol
-
 class TranslatorProtocol(Protocol):
     def tr(self, key: str) -> str:
         ...
@@ -68,7 +66,7 @@ class FileScanner(Protocol):
     def scan(
         self,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> FileCollection:
         """
         Scan files from the configured directory.
@@ -126,7 +124,7 @@ class SizeStage(Protocol):
         self,
         files: List[File],
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
         """
         Group files by size to find initial duplicate candidates.
@@ -163,7 +161,7 @@ class PartialHashStage(Protocol):
         groups: List[DuplicateGroup],
         confirmed_duplicates: List[DuplicateGroup],
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
         """
         Process groups through this stage, identifying confirmed and potential duplicates.
@@ -192,7 +190,7 @@ class Deduplicator(Protocol):
         files: List[File],
         mode: DeduplicationMode,
         stopped_flag: Optional[Callable[[], bool]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """
         Run the full deduplication pipeline based on the selected mode.
