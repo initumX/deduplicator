@@ -148,7 +148,8 @@ class FileScannerImpl(FileScanner):
             return None
 
         try:
-            file = File(path=str(path), size=size)
+            creation_time = getattr(stat_result, 'st_birthtime', stat_result.st_ctime)
+            file = File(path=str(path), size=size, creation_time=creation_time)
         except Exception as e:
             logger.warning(f"Failed to create File object for {path}: {e}")
             return None

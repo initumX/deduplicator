@@ -1,5 +1,6 @@
 translations = {
   "window_title": "Удаление дубликатов",
+
   "btn_select_root": "Выбрать папку",
   "label_root_folder": "Корневая папка:",
   "btn_keep_one": "Оставить по одному файлу на группу",

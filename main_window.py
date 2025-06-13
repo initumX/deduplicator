@@ -96,6 +96,9 @@ class MainWindow(QMainWindow):
         self.label_extensions = QLabel(self.translator.tr("label_extensions"))
         self.extension_layout_inside.addWidget(self.label_extensions)
 
+        self.mode_label = QLabel(self.translator.tr("label_dedupe_mode"))
+
+
         self.favorite_group = QGroupBox(self.translator.tr("group_box_favorites"))
         self.favorite_dirs_button = QPushButton("Manage Favorite Folders List")
         self.dedupe_mode_combo = QComboBox()
@@ -193,8 +196,7 @@ class MainWindow(QMainWindow):
         self.find_duplicates_button.clicked.connect(self.start_deduplication)
         control_layout.addWidget(self.find_duplicates_button)
 
-        mode_label = QLabel(self.translator.tr("label_dedupe_mode"))
-        control_layout.addWidget(mode_label)
+        control_layout.addWidget(self.mode_label)
         self.dedupe_mode_combo.addItems([mode.value.upper() for mode in DeduplicationMode])
         self.dedupe_mode_combo.setToolTip(self.translator.tr("tooltip_dedupe_mode"))
         control_layout.addWidget(self.dedupe_mode_combo)
@@ -540,6 +542,7 @@ class MainWindow(QMainWindow):
         self.dedupe_mode_combo.setToolTip(tr("tooltip_dedupe_mode"))
 
         # --- Режимы дедупликации ---
+        self.mode_label.setText(self.translator.tr("label_dedupe_mode"))
         dedupe_mode_items = [tr("mode_fast"), tr("mode_normal"), tr("mode_full")]
         current_index = self.dedupe_mode_combo.currentIndex()
         self.dedupe_mode_combo.clear()

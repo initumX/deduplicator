@@ -57,10 +57,15 @@ class DuplicateGroupsList(QListWidget):
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
                 item_text = f"     {file.name}{fav_marker}"
+
+                creation_time_str = SizeUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
+                tooltip_text = f"Path: {file.path}\nCreation Time: {creation_time_str}"
+
                 item = QListWidgetItem(item_text)
-                item.setToolTip(file.path)
+                item.setToolTip(tooltip_text)
                 item.setData(Qt.ItemDataRole.UserRole, file)
                 self.addItem(item)
+
             empty_item = QListWidgetItem("")
             empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(empty_item)

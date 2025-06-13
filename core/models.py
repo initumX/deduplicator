@@ -79,6 +79,7 @@ class File:
     """
     path: str
     size: int  # in bytes
+    creation_time: float = None
     name: Optional[str] = None
     extension: Optional[str] = None
     is_from_fav_dir: bool = False
@@ -117,6 +118,7 @@ class File:
         data = {
             'path': self.path,
             'size': self.size,
+            "creation_time": self.creation_time,
             'name': self.name,
             'extension': self.extension,
             'is_from_fav_dir': self.is_from_fav_dir,
@@ -135,6 +137,7 @@ class File:
         return cls(
             path=data['path'],
             size=int(data['size']),
+            creation_time=float(data["creation_time"]) if data.get("creation_time") is not None else None,
             name=data.get('name'),
             extension=data.get('extension'),
             is_from_fav_dir=data.get('is_from_fav_dir', False),
