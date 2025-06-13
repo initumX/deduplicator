@@ -2,6 +2,7 @@ translations = {
   "window_title": "File Deduplicator",
 
   "btn_select_root": "Select Folder",
+  "select_root_dir": "Select Folder to scan",
   "label_root_folder": "Root Folder:",
   "btn_keep_one": "Keep One File Per Group",
   "btn_about": "About",
