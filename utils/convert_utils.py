@@ -2,11 +2,11 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-utils/size_utils.py
+utils/convert_utils.py
 """
 import time
 
-class SizeUtils:
+class ConvertUtils:
     @staticmethod
     def bytes_to_human(size_bytes: int) -> str:
         """
@@ -61,7 +61,7 @@ class SizeUtils:
         Check if the input string has a valid size format.
         """
         try:
-            SizeUtils.human_to_bytes(size_str)
+            ConvertUtils.human_to_bytes(size_str)
             return True
         except ValueError:
             return False

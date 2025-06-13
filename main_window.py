@@ -30,7 +30,7 @@ from utils.services import FileService
 from dialogs import FavoriteDirsDialog
 from preview import ImagePreviewLabel
 from utils.services import DuplicateService
-from utils.size_utils import SizeUtils
+from utils.convert_utils import ConvertUtils
 from duplicate_groups_list import DuplicateGroupsList
 from core.interfaces import TranslatorProtocol
 from worker import DeduplicateWorker
@@ -388,8 +388,8 @@ class MainWindow(QMainWindow):
         min_size_str = f"{min_size_value}{min_unit}"
         max_size_str = f"{max_size_value}{max_unit}"
         try:
-            min_size = SizeUtils.human_to_bytes(min_size_str)
-            max_size = SizeUtils.human_to_bytes(max_size_str)
+            min_size = ConvertUtils.human_to_bytes(min_size_str)
+            max_size = ConvertUtils.human_to_bytes(max_size_str)
         except ValueError as e:
             QMessageBox.warning(self, "Input Error", f"{self.translator.tr('error_invalid_size_format')}: {e}")
             return

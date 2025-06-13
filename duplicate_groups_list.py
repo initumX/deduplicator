@@ -16,7 +16,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
 from core.models import File, DuplicateGroup
 from utils.services import FileService
-from utils.size_utils import SizeUtils
+from utils.convert_utils import ConvertUtils
 from core.interfaces import TranslatorProtocol
 from translator import DictTranslator
 
@@ -48,7 +48,7 @@ class DuplicateGroupsList(QListWidget):
         self.clear()
         for idx, group in enumerate(groups):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
-            size_str = SizeUtils.bytes_to_human(group.size)
+            size_str = ConvertUtils.bytes_to_human(group.size)
 
             folder_title = f"📁 {self.tr('group_title_prefix')} {idx+1} | {self.tr('group_size_label')}: {size_str}"
             folder_title = QListWidgetItem(folder_title)
@@ -58,7 +58,7 @@ class DuplicateGroupsList(QListWidget):
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
                 item_text = f"     {file.name}{fav_marker}"
 
-                creation_time_str = SizeUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
+                creation_time_str = ConvertUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
                 tooltip_text = f"Path: {file.path}\nCreation Time: {creation_time_str}"
 
                 item = QListWidgetItem(item_text)

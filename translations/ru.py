@@ -2,7 +2,8 @@ translations = {
   "window_title": "Удаление дубликатов",
 
   "btn_select_root": "Выбрать папку",
-"select_root_dir": "Выберите папку для сканирования",
+  "select_root_dir": "Выберите папку для сканирования",
+  "error_please_select_root": "Выберите папку для сканирования!",
   "label_root_folder": "Корневая папка:",
   "btn_keep_one": "Оставить по одному файлу на группу",
   "btn_about": "О программе",
