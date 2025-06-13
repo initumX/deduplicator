@@ -24,4 +24,12 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - PIL/Pillow (for image handling)
 - xxhash
 
+## How to build
+`pip install xxhash pillow send2trash pyside6 nuitka`
+
+
+`nuitka --standalone --onefile --windows-console-mode=disable --enable-plugins=pyside6 --output-dir=dist main_window.py`
+
+Or just download binary from [realeases](https://github.com/initumX/deduplicator/releases)
+
 © 2025 initumX (initum.x@gmail.com)
