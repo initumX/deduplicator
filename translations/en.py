@@ -37,7 +37,7 @@ translations = {
   "text_progress_dialog": "Moving files to trash...",
 
   "title_about": "About",
-  "about_text": "<b>File Deduplicator</b><br><br>Version: 2.2<br>A tool to find and remove duplicate files.<br><br><b>Features:</b><br><br>- Filtering by size and extension<br><br>- Using xxhash (very fast)<br><br>- Three deduplication modes (fast, normal, full)<br><br>- Delete all duplicates with one click (keep one file per group)<br><br>- Image preview, context menu, auto-save settings, tooltips<br><br>- and much more<br><br>© Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>License: MIT License<br>",
+  "about_text": "<b>File Deduplicator</b><br><br>Version: 2.2.1<br>A tool to find and remove duplicate files.<br><br><b>Features:</b><br><br>- Filtering by size and extension<br><br>- Using xxhash (very fast)<br><br>- Three deduplication modes (fast, normal, full)<br><br>- Delete all duplicates with one click (keep one file per group)<br><br>- Image preview, context menu, auto-save settings, tooltips<br><br>- and much more<br><br>© Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>License: MIT License<br>",
 
   "title_input_error": "Input Error",
   "message_please_select_dir": "Please select a root directory.",
