@@ -248,6 +248,7 @@ class MainWindow(QMainWindow):
     def change_language(self, index):
         lang_code = "en" if index == 0 else "ru"
         self.translator = DictTranslator(lang_code)
+        self.groups_list.update_translator(self.translator)
         self.update_ui_texts()
 
     def resizeEvent(self, event):

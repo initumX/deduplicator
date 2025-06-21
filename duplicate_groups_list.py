@@ -39,14 +39,22 @@ class DuplicateGroupsList(QListWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.itemClicked.connect(self.on_item_clicked)
 
+        # Store groups for retranslation
+        self.current_groups = []
+
         # Use translator from parent or default to English
         self.translator = parent.translator if parent and hasattr(parent, "translator") else DictTranslator("en")
         self.tr = self.translator.tr
 
     def set_groups(self, groups: list[DuplicateGroup]):
         """Displays a list of duplicate groups in the UI."""
+        self.current_groups = groups  # Store groups for retranslation
+        self._populate_list()
+
+    def _populate_list(self):
+        """Internal method to populate the list with current groups"""
         self.clear()
-        for idx, group in enumerate(groups):
+        for idx, group in enumerate(self.current_groups):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = ConvertUtils.bytes_to_human(group.size)
 
@@ -54,6 +62,7 @@ class DuplicateGroupsList(QListWidget):
             folder_title = QListWidgetItem(folder_title)
             folder_title.setFlags(Qt.ItemFlag.NoItemFlags)  # Inactive
             self.addItem(folder_title)
+
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
                 item_text = f"     {file.name}{fav_marker}"
@@ -69,6 +78,13 @@ class DuplicateGroupsList(QListWidget):
             empty_item = QListWidgetItem("")
             empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(empty_item)
+
+    def update_translator(self, translator: TranslatorProtocol):
+        """Update the translator and retranslate the UI"""
+        self.translator = translator
+        self.tr = self.translator.tr
+        if self.current_groups:
+            self._populate_list()
 
     def on_item_clicked(self, item):
         """Emits signal when a file item is clicked."""
@@ -100,13 +116,7 @@ class DuplicateGroupsList(QListWidget):
             menu.addAction(delete_action)
 
         else:
-            # Safe format with fallback
-            menu_text = self.tr("context_menu_move_multiple")
-            try:
-                menu_text = menu_text.format(count=len(selected_items))
-            except KeyError:
-                menu_text = f"Move {len(selected_items)} files to trash"
-
+            menu_text = self.tr("context_menu_move_multiple").format(count=len(selected_items))
             delete_action = QAction(menu_text, self)
             delete_action.triggered.connect(lambda _: self.delete_selected_files(selected_items))
             menu.addAction(delete_action)
