@@ -21,6 +21,10 @@ class DeduplicationMode(Enum):
     NORMAL = "normal"
     FULL = "full"
 
+    @property
+    def display_name(self):
+        return self.value.capitalize()
+
     def __repr__(self):
         return self.value
 
@@ -55,21 +59,21 @@ class FileHashes:
             if value is not None and not isinstance(value, bytes):
                 raise ValueError(f"Field '{key}' must be bytes or None")
 
-    def to_dict(self) -> Dict[str, str]:
-        result = {}
-        fields = getattr(self, '__dataclass_fields__', {})
-        for key in fields:
-            value = getattr(self, key)
-            if value is not None:
-                result[key] = value.hex()
-        return result
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, str]) -> 'FileHashes':
-        return cls(**{
-            key: bytes.fromhex(val) if val else None
-            for key, val in data.items()
-        })
+    # def to_dict(self) -> Dict[str, str]:
+    #     result = {}
+    #     fields = getattr(self, '__dataclass_fields__', {})
+    #     for key in fields:
+    #         value = getattr(self, key)
+    #         if value is not None:
+    #             result[key] = value.hex()
+    #     return result
+    #
+    # @classmethod
+    # def from_dict(cls, data: Dict[str, str]) -> 'FileHashes':
+    #     return cls(**{
+    #         key: bytes.fromhex(val) if val else None
+    #         for key, val in data.items()
+    #     })
 
 @dataclass
 class File:
@@ -114,37 +118,37 @@ class File:
                 return
         self.is_from_fav_dir = False
 
-    def to_dict(self) -> Dict[str, Any]:
-        data = {
-            'path': self.path,
-            'size': self.size,
-            "creation_time": self.creation_time,
-            'name': self.name,
-            'extension': self.extension,
-            'is_from_fav_dir': self.is_from_fav_dir,
-            'is_confirmed_duplicate': self.is_confirmed_duplicate,
-            'chunk_size': self.chunk_size,
-            'hashes': self.hashes.to_dict(),
-        }
-        return {k: v for k, v in data.items() if v is not None}
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'File':
-        """Reconstruct File from dict (after loading from JSON)"""
-        hash_data = data.get('hashes', {})
-        hashes = FileHashes.from_dict(hash_data)
-
-        return cls(
-            path=data['path'],
-            size=int(data['size']),
-            creation_time=float(data["creation_time"]) if data.get("creation_time") is not None else None,
-            name=data.get('name'),
-            extension=data.get('extension'),
-            is_from_fav_dir=data.get('is_from_fav_dir', False),
-            is_confirmed_duplicate=data.get('is_confirmed_duplicate', False),
-            hashes=hashes,
-            chunk_size=data.get('chunk_size')
-        )
+    # def to_dict(self) -> Dict[str, Any]:
+    #     data = {
+    #         'path': self.path,
+    #         'size': self.size,
+    #         "creation_time": self.creation_time,
+    #         'name': self.name,
+    #         'extension': self.extension,
+    #         'is_from_fav_dir': self.is_from_fav_dir,
+    #         'is_confirmed_duplicate': self.is_confirmed_duplicate,
+    #         'chunk_size': self.chunk_size,
+    #         'hashes': self.hashes.to_dict(),
+    #     }
+    #     return {k: v for k, v in data.items() if v is not None}
+    #
+    # @classmethod
+    # def from_dict(cls, data: Dict[str, Any]) -> 'File':
+    #     """Reconstruct File from dict (after loading from JSON)"""
+    #     hash_data = data.get('hashes', {})
+    #     hashes = FileHashes.from_dict(hash_data)
+    #
+    #     return cls(
+    #         path=data['path'],
+    #         size=int(data['size']),
+    #         creation_time=float(data["creation_time"]) if data.get("creation_time") is not None else None,
+    #         name=data.get('name'),
+    #         extension=data.get('extension'),
+    #         is_from_fav_dir=data.get('is_from_fav_dir', False),
+    #         is_confirmed_duplicate=data.get('is_confirmed_duplicate', False),
+    #         hashes=hashes,
+    #         chunk_size=data.get('chunk_size')
+    #     )
 
     def __repr__(self):
         return f"<File path={self.path}, size={self.size}>"
