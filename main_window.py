@@ -286,9 +286,9 @@ class MainWindow(QMainWindow):
             self.groups_list.set_groups(self.app.duplicate_groups)
             QMessageBox.information(self, self.translator.tr("title_success"), self.translator.tr("message_favorite_folders_updated").format(count=len(selected_dirs)))
 
-    def refresh_duplicate_groups_display(self):
-        duplicate_groups = self.app.get_duplicate_groups()
-        self.groups_list.set_groups(duplicate_groups)
+    # def refresh_duplicate_groups_display(self):
+    #     duplicate_groups = self.app.get_duplicate_groups()
+    #     self.groups_list.set_groups(duplicate_groups)
 
     def keep_one_file_per_group(self):
         tr = self.translator.tr
@@ -336,7 +336,7 @@ class MainWindow(QMainWindow):
                 self.progress_dialog.setLabelText(
                     tr("text_progress_deletion").format(filename=os.path.basename(path))
                 )
-                QApplication.processEvents()  # Обновляем интерфейс
+                QApplication.processEvents()
                 if self.progress_dialog.wasCanceled():
                     raise Exception("Operation was cancelled by the user.")
             # Refresh
@@ -392,8 +392,13 @@ class MainWindow(QMainWindow):
             min_size = ConvertUtils.human_to_bytes(min_size_str)
             max_size = ConvertUtils.human_to_bytes(max_size_str)
         except ValueError as e:
-            QMessageBox.warning(self, "Input Error", f"{self.translator.tr('error_invalid_size_format')}: {e}")
+            QMessageBox.warning(
+                self,
+                "Input Error",
+                f"{self.translator.tr('error_invalid_size_format')}: {e}"
+            )
             return
+
         extensions = [
             ext.strip() for ext in self.extension_filter_input.text().split(",")
             if ext.strip()
@@ -403,18 +408,31 @@ class MainWindow(QMainWindow):
         if self.worker_thread:
             self.worker_thread.stop()
             self.worker_thread.wait()
+            self.worker_thread.deleteLater()
             self.worker_thread = None
-        self.progress_dialog = QProgressDialog(self.translator.tr("text_progress_scanning"), self.translator.tr("btn_cancel"), 0, 100, self)
+        self.progress_dialog = QProgressDialog(
+            self.translator.tr("text_progress_scanning"),
+            self.translator.tr("btn_cancel"),
+            0, 100, self
+        )
+        self.progress_dialog.setMinimumDuration(1000)
         self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle(self.translator.tr("title_processing"))
+        self.progress_dialog.setAutoReset(True)
         self.progress_dialog.show()
 
         def cancel_action():
             if self.worker_thread:
                 self.worker_thread.stop()
+
         self.progress_dialog.canceled.connect(cancel_action)
         self.worker_thread = DeduplicateWorker(
-            self.app, min_size, max_size, extensions, self.app.favorite_dirs, dedupe_mode
+            self.app,
+            min_size,
+            max_size,
+            extensions,
+            self.app.favorite_dirs,
+            dedupe_mode
         )
         self.worker_thread.progress.connect(self.update_progress)
         self.worker_thread.finished.connect(self.on_deduplicate_finished)
@@ -422,10 +440,13 @@ class MainWindow(QMainWindow):
         self.worker_thread.start()
 
     def update_progress(self, stage, current, total):
-        if self.progress_dialog is None:
+        if not self.progress_dialog or not self.worker_thread:
             return
 
         try:
+            if hasattr(self.worker_thread, '_stopped') and self.worker_thread._stopped:
+                return
+
             if total is not None and total > 0:
                 percent = int((current / total) * 100)
                 self.progress_dialog.setValue(percent)
@@ -437,14 +458,15 @@ class MainWindow(QMainWindow):
                 self.progress_dialog.setValue(fake_percent)
                 self.progress_dialog.setLabelText(f"{stage}: {current} files processed...")
 
-            QApplication.processEvents()
+            # QApplication.processEvents()
         except (TypeError, RuntimeError, AttributeError):
             # Gracefully handle errors due to invalid values or destroyed widget
             self.progress_dialog = None
 
     def on_deduplicate_finished(self, duplicate_groups, stats):
-        self.progress_dialog.close()
-        self.progress_dialog = None
+        if self.progress_dialog:
+            self.progress_dialog.deleteLater()
+            self.progress_dialog = None
         self.groups_list.set_groups(duplicate_groups)
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
@@ -454,11 +476,24 @@ class MainWindow(QMainWindow):
         self.stats_window.exec()
 
     def on_deduplicate_error(self, error_message):
-        self.progress_dialog.close()
-        self.progress_dialog = None
-        QMessageBox.critical(self, self.translator.tr("title_error"), f"{self.translator.tr('error_occurred')}:\n{error_message}")
+        if self.progress_dialog:
+            self.progress_dialog.deleteLater()
+            self.progress_dialog = None
+        QMessageBox.critical(
+            self,
+            self.translator.tr("title_error"),
+            f"{self.translator.tr('error_occurred')}:\n{error_message}"
+        )
 
     def closeEvent(self, event):
+        if self.worker_thread:
+            self.worker_thread.stop()
+            if not self.worker_thread.wait(1000):
+                self.worker_thread.terminate()
+
+        if self.progress_dialog:
+            self.progress_dialog.deleteLater()
+
         self.save_settings()
         super().closeEvent(event)
 
@@ -561,7 +596,6 @@ from translator import DictTranslator
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    translator = DictTranslator("ru")  # или "en"
-    window = MainWindow(ui_translator=translator)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
