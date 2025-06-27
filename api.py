@@ -28,8 +28,6 @@ from core.models import (
     File
 )
 from core.interfaces import FileScanner, Deduplicator as DeduplicatorInterface
-from utils.services import FileService, DuplicateService
-# from core.similar_image_finder import SimilarImageFinder
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,7 +49,6 @@ class FileDeduplicateApp:
         self.root_dir = root_dir
         self._scanner: Optional[FileScanner] = None
         self._deduplicator: DeduplicatorInterface = DeduplicatorImpl()
-        # self._image_finder = SimilarImageFinder()
         self.files: List[File] = []
         self.duplicate_groups: List[DuplicateGroup] = []
         self.stats = None
@@ -150,70 +147,3 @@ class FileDeduplicateApp:
     def get_files(self) -> List[File]:
         """Get all files found during last scan."""
         return self.files
-
-    # def delete_files(self, file_paths: List[str]):
-    #     """
-    #     Move specified files to trash and update internal collections.
-    #     Args:
-    #         file_paths: Paths to files to delete.
-    #     Raises:
-    #         RuntimeError: If any file fails to be moved to trash.
-    #     """
-    #     try:
-    #         missing = [p for p in file_paths if not os.path.exists(p)]
-    #         if missing:
-    #             raise FileNotFoundError(f"Missing files: {missing}")
-    #
-    #         FileService.move_multiple_to_trash(file_paths)
-    #
-    #         # Обновляем данные в памяти
-    #         self.files = DuplicateService.remove_files_from_file_list(self.files, file_paths)
-    #         self.duplicate_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, file_paths)
-    #
-    #     except Exception as e:
-    #         logger.error(f"Error deleting files: {e}")
-    #         raise RuntimeError(f"Failed to delete files: {e}") from e
-
-    # def find_similar_images(
-    #     self,
-    #     files: List[File],
-    #     threshold: int = 5,
-    #     stopped_flag: Optional[Callable[[], bool]] = None
-    # ) -> List[DuplicateGroup]:
-    #     """
-    #     Find visually similar images among scanned files.
-    #     Args:
-    #         files: Files to check for similarity.
-    #         threshold: Maximum allowed perceptual hash difference.
-    #         stopped_flag: Function that returns True if operation should be stopped.
-    #     Returns:
-    #         List of DuplicateGroup objects containing similar images.
-    #     """
-    #     if not self.files:
-    #         raise RuntimeError("No files found. Call scan_directory first.")
-    #
-    #     self._image_finder.threshold = threshold
-    #     similar_groups = self._image_finder.find_similar_images(files, stopped_flag=stopped_flag)
-    #     return similar_groups
-    #
-    # def find_similar_to_image(
-    #     self,
-    #     target_file: File,
-    #     threshold: int = 5,
-    #     stopped_flag: Optional[Callable[[], bool]] = None
-    # ) -> List[DuplicateGroup]:
-    #     """
-    #     Find images similar to a specific file.
-    #     Args:
-    #         target_file: The reference image.
-    #         threshold: Max phash difference.
-    #         stopped_flag: Function that returns True if operation should be stopped.
-    #     Returns:
-    #         List of groups with similar images.
-    #     """
-    #     if not self.files:
-    #         raise RuntimeError("No files found. Call scan_directory first.")
-    #
-    #     self._image_finder.threshold = threshold
-    #     similar_files = self._image_finder.find_similar_to_image(target_file, self.files, stopped_flag=stopped_flag)
-    #     return similar_files
