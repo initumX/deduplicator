@@ -1,7 +1,8 @@
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QMutex, QDeadlineTimer, QMutexLocker
+
 
 class DeduplicateWorker(QThread):
-    progress = Signal(str, int, object)  # stage, current, total (может быть None)
+    progress = Signal(str, int, object)  # stage, current, total
     finished = Signal(list, object)  # duplicate_groups, stats
     error = Signal(str)
 
@@ -14,16 +15,32 @@ class DeduplicateWorker(QThread):
         self.favorite_dirs = favorite_dirs
         self.mode = mode
         self._stopped = False
+        self._mutex = QMutex()
+        self._progress_mutex = QMutex()
+        self._deadline = QDeadlineTimer(1000)
 
     def stop(self):
-        self._stopped = True
+        with QMutexLocker(self._mutex):
+            self._stopped = True
+        self.wait(self._deadline.remainingTime())
 
     def is_stopped(self):
-        return self._stopped
+        with QMutexLocker(self._mutex):
+            return self._stopped
+
+    def safe_emit_progress(self, stage, current, total):
+        with QMutexLocker(self._progress_mutex):
+            if not self.is_stopped():
+                try:
+                    self.progress.emit(stage, current, total)
+                except RuntimeError:
+                    pass
 
     def run(self):
         try:
-            # Start duplicate searching
+            if self.is_stopped():
+                return
+
             result, stats = self.app.find_duplicates(
                 min_size=self.min_size,
                 max_size=self.max_size,
@@ -31,9 +48,26 @@ class DeduplicateWorker(QThread):
                 favorite_dirs=self.favorite_dirs,
                 mode=self.mode,
                 stopped_flag=self.is_stopped,
-                progress_callback=lambda stage, cur, total=None: self.progress.emit(stage, cur, total)
+                progress_callback=self.safe_progress_emit
             )
-            if not self._stopped:
+
+            if not self.is_stopped():
                 self.finished.emit(result, stats)
+
         except Exception as e:
-            self.error.emit(str(e))
+            if not self.is_stopped():
+                self.error.emit(f"{type(e).__name__}: {str(e)}")
+        finally:
+            self.cleanup()
+
+    def safe_progress_emit(self, stage, current, total=None):
+        if not self.is_stopped():
+            try:
+                self.progress.emit(stage, current, total)
+            except RuntimeError:
+                self.stop()
+
+    def cleanup(self):
+        self.progress.disconnect()
+        self.finished.disconnect()
+        self.error.disconnect()
