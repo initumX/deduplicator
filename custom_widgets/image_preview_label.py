@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-preview.py
+image_preview_label.py
 
 Image preview widget for the File Deduplicator application.
 

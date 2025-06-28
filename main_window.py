@@ -27,11 +27,11 @@ from PySide6.QtCore import Qt, QSettings
 from core.models import DeduplicationMode
 from api import FileDeduplicateApp
 from utils.services import FileService
-from dialogs import FavoriteDirsDialog
-from preview import ImagePreviewLabel
+from custom_widgets.favourite_dirs_dialog import FavoriteDirsDialog
+from custom_widgets.image_preview_label import ImagePreviewLabel
 from utils.services import DuplicateService
 from utils.convert_utils import ConvertUtils
-from duplicate_groups_list import DuplicateGroupsList
+from custom_widgets.duplicate_groups_list import DuplicateGroupsList
 from core.interfaces import TranslatorProtocol
 from worker import DeduplicateWorker
 import os, sys
