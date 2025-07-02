@@ -68,6 +68,7 @@ translations = {
   "btn_remove_selected": "Удалить выделенные",
   "btn_ok": "OK",
   "btn_cancel": "Отмена",
+  "message_favorite_folders_updated" : "Список избранных папок обновлен",
 
   "message_no_duplicates_found": "Дубликатов не найдено.",
   "message_nothing_to_delete": "Нет файлов для удаления.",

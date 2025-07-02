@@ -68,6 +68,7 @@ translations = {
   "btn_remove_selected": "Remove Selected",
   "btn_ok": "OK",
   "btn_cancel": "Cancel",
+  "message_favorite_folders_updated" : "Favourite Folders Updated",
 
   "message_no_duplicates_found": "No duplicate groups found.",
   "message_nothing_to_delete": "Nothing to delete.",
