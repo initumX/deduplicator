@@ -24,11 +24,14 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - PIL/Pillow (for image handling)
 - xxhash
 
-## How to build
-`pip install xxhash pillow send2trash pyside6 nuitka`
+## How to build with Nuitka
+`pip install xxhash pillow send2trash pyside6 nuitka pyinstaller`
 
 
 `nuitka --standalone --onefile --windows-console-mode=disable --enable-plugins=pyside6 --output-dir=dist main_window.py`
+
+## How to build with Pyinstaller
+`pyinstaller --noconfirm --clean --noconsole --onefile --exclude-module=PySide6.QtNetwork main_window.py`
 
 Or just download binary from [realeases](https://github.com/initumX/deduplicator/releases)
 
