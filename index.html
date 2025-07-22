@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deduplicator App</title>
+  <style>
+    :root { --accent:#0078d4; --bg:#fafafa; --card:#fff; }
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:#333}
+    header{background:var(--accent);color:#fff;padding:2rem 1rem;text-align:center}
+    header h1{margin:.2em 0;font-size:2.2rem}
+    header p{margin:.4em 0;font-size:1.1rem;opacity:.9}
+    .btn{display:inline-block;background:#fff;color:var(--accent);padding:.6em 1.4em;border-radius:4px;font-weight:600;text-decoration:none;margin-top:.5em}
+    main{max-width:960px;margin:-2rem auto 3rem;padding:0 1rem}
+    .card{background:var(--card);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);padding:1.5rem;margin-bottom:1.5rem}
+    .card h2{margin-top:0;color:var(--accent)}
+    ul{list-style:none;padding-left:1em}
+    li{margin:.5em 0}
+    code{background:#f3f3f3;padding:.2em .4em;border-radius:3px}
+    footer{text-align:center;padding:1rem;font-size:.8rem;color:#666}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Deduplicator App</h1>
+  <p>Lightning-fast duplicate finder for Windows / Linux<br/>
+     Built with Python&nbsp;3 &amp; PySide6 (Qt&nbsp;6)</p>
+  <a class="btn" href="https://github.com/initumX/deduplicator/releases">Download Latest</a>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Features</h2>
+    <ul>
+      <li>Recursive file-system scan with progress bar</li>
+      <li>Flexible filters: extension, min / max size</li>
+      <li>Image preview</li>
+      <li>Context menu, one-click deletion</li>
+      <li>Cross-platform GUI (Qt 6)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Quick Start</h2>
+    <ol>
+      <li>Install: grab a pre-built binary or build it from source files.</li>
+      <li> Double-click the executable. If you use Linux, make file executable <code>chmod a+x ./DeduplicatorV2_2_2</code></li>
+      <li>Add folders, adjust filters, hit <strong>Scan</strong>.</li>
+      <li>Review thumbnails, select duplicates, press <strong>Clean</strong>.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Built With</h2>
+    <ul>
+      <li><strong>Python 3.10+</strong></li>
+      <li><strong>PySide6</strong> – Qt 6 bindings</li>
+      <li><strong>send2trash</strong> – safe deletion</li>
+      <li><strong>Pillow</strong> – image handling</li>
+      <li><strong>xxhash</strong> – Fast hash calculation</li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  MIT © 2025 <a href="https://github.com/YOU">initumX</a>
+</footer>
+
+</body>
+</html>
