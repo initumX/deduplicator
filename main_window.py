@@ -254,7 +254,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progress_dialog.setMinimumDuration(1000)
         self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle(self.translator.tr("title_processing"))
-        self.progress_dialog.setAutoReset(True)
+        self.progress_dialog.setAutoReset(False)
         self.progress_dialog.show()
 
         def cancel_action():
@@ -290,7 +290,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             else:
                 # Fake progress: every 200 files = 1%
                 fake_max_percent = 100
-                fake_percent = min(int(current / 200), fake_max_percent)
+                fake_percent = min(int(current / 500), fake_max_percent)
                 self.progress_dialog.setValue(fake_percent)
                 self.progress_dialog.setLabelText(f"{stage}: {current} files processed...")
 
