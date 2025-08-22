@@ -50,6 +50,10 @@ class Ui_MainWindow(object):
         self.favorite_dirs_button = QPushButton("Manage Favorite Folders List")
         self.dedupe_mode_combo = QComboBox()
         self.find_duplicates_button = QPushButton("Find Duplicates")
+
+        self.ordering_label = QLabel("label_ordering")
+        self.ordering_combo = QComboBox()
+
         self.progress_dialog = None
         self.stats_window = None
         self.keep_one_button = QPushButton("Keep One File Per Group")
@@ -143,6 +147,9 @@ class Ui_MainWindow(object):
         self.dedupe_mode_combo.setToolTip(tr("tooltip_dedupe_mode"))
         control_layout.addWidget(self.dedupe_mode_combo)
 
+        control_layout.addWidget(self.ordering_label)
+        control_layout.addWidget(self.ordering_combo)
+
         self.keep_one_button.setText(tr("btn_keep_one"))
         self.keep_one_button.setToolTip(tr("tooltip_delete_duplicates"))
         control_layout.addWidget(self.keep_one_button)
@@ -226,3 +233,18 @@ class Ui_MainWindow(object):
 
         # --- Placeholder ---
         self.extension_filter_input.setPlaceholderText(tr("placeholder_extensions"))
+
+        # --- Label and combo for ordering ---
+        self.ordering_label.setText(tr("label_ordering"))
+
+        # Populate ordering combo
+        ordering_items = [
+            ("Oldest_first", "OLDEST_FIRST"),
+            ("Newest_first", "NEWEST_FIRST")
+        ]
+        current_ordering_index = self.ordering_combo.currentIndex()
+        self.ordering_combo.clear()
+        for text, mode_key in ordering_items:
+            self.ordering_combo.addItem(tr(text), userData=mode_key)
+        if 0 <= current_ordering_index < self.ordering_combo.count():
+            self.ordering_combo.setCurrentIndex(current_ordering_index)

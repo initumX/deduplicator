@@ -81,6 +81,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.about_button.clicked.connect(self.show_about_dialog)
         self.lang_combo.currentIndexChanged.connect(self.change_language)
 
+        if not hasattr(self, '_ordering_connected'):
+            self.ordering_combo.currentIndexChanged.connect(self.on_ordering_changed)
+            self._ordering_connected = True
+
+    def on_ordering_changed(self):
+        """Re-sort all duplicate groups when ordering mode changes."""
+        if not hasattr(self, 'app') or not self.app.duplicate_groups:
+            return
+
+        order_mode = self.ordering_combo.currentData()
+        reverse = order_mode == "NEWEST_FIRST"  # Newest first = reverse chronological
+
+        # Sort by creating time
+        for group in self.app.duplicate_groups:
+            group.files.sort(
+                key=lambda f: (f.is_from_fav_dir, f.creation_time),  # favs first, then sort by date
+                reverse=reverse
+            )
+
+        # Обновляем отображение
+        self.groups_list.set_groups(self.app.duplicate_groups)
+
     def change_language(self, index):
         lang_code = "en" if index == 0 else "ru"
         self.translator = DictTranslator(lang_code)
@@ -304,6 +326,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.progress_dialog.deleteLater()
             self.progress_dialog = None
         self.groups_list.set_groups(duplicate_groups)
+
+        self.on_ordering_changed()
+
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
         self.stats_window.setWindowTitle(self.translator.tr("message_stats_title"))
@@ -344,6 +369,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.settings_manager.save_settings("splitter_sizes", list(self.splitter.sizes()))
         self.settings_manager.save_settings("favorite_dirs", self.app.favorite_dirs)
         self.settings_manager.save_settings("language", self.translator.lang_code)
+        self.settings_manager.save_settings("ordering_mode", self.ordering_combo.currentIndex())
 
     def restore_settings(self):
         self.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
@@ -381,6 +407,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         lang_index = self.supported_languages.index(saved_lang) if saved_lang in self.supported_languages else 0
         self.lang_combo.setCurrentIndex(lang_index)
 
+        ordering_index = self.settings_manager.load_settings("ordering_mode", 0)
+        self.ordering_combo.setCurrentIndex(int(ordering_index))
+        self.on_ordering_changed()
 
 # Import after class definition to avoid circular import
 from translator import DictTranslator

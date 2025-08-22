@@ -15,7 +15,7 @@ This module defines the central class `FileDeduplicateApp`, which acts as a faca
 The class provides a unified interface for GUI or CLI applications to interact with the core functionality,
 including support for progress reporting and cancellation via callbacks.
 """
-import os
+
 from typing import List, Optional, Callable, Tuple
 
 from core.scanner import FileScannerImpl

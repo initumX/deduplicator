@@ -5,7 +5,7 @@ translations = {
   "select_root_dir": "Выберите папку для сканирования",
   "error_please_select_root": "Выберите папку для сканирования!",
   "label_root_folder": "Корневая папка:",
-  "btn_keep_one": "Оставить по одному файлу на группу",
+  "btn_keep_one": "Оставить только первый файл в каждой группе",
   "btn_about": "О программе",
   "btn_manage_favorites": "Управление избранными папками",
   "btn_start_deduplication": "Найти дубликаты",
@@ -14,6 +14,10 @@ translations = {
   "mode_fast": "Быстрый",
   "mode_normal": "Обычный",
   "mode_full": "Полный",
+
+  "label_ordering": "Упорядочить:",
+  "Oldest_first": "Старые вначале",
+  "Newest_first": "Новые вначале",
 
   "group_box_filters": "Фильтры",
   "label_min_size": "Минимум:",

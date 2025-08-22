@@ -5,7 +5,7 @@ translations = {
   "select_root_dir": "Select Folder to scan",
   "error_please_select_root": "Please, select Folder to scan!",
   "label_root_folder": "Root Folder:",
-  "btn_keep_one": "Keep One File Per Group",
+  "btn_keep_one": "Keep One (The first one) File Per Group",
   "btn_about": "About",
   "btn_manage_favorites": "Manage Favorite Folders",
   "btn_start_deduplication": "Find Duplicates",
@@ -14,6 +14,10 @@ translations = {
   "mode_fast": "Fast",
   "mode_normal": "Normal",
   "mode_full": "Full",
+
+  "label_ordering": "Order by date:",
+  "Oldest_first": "Oldest goes first",
+  "Newest_first": "Newest goes first",
 
   "group_box_filters": "Filters",
   "label_min_size": "Min size:",
