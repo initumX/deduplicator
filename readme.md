@@ -1,5 +1,5 @@
 
-# File Deduplicator
+# [File Deduplicator](https://initumx.github.io/deduplicator/)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
@@ -35,7 +35,6 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 Or just download binary from [realeases](https://github.com/initumX/deduplicator/releases)
 
-[Git Pages](https://initumx.github.io/deduplicator/)
-
 © 2025 initumX (initum.x@gmail.com)
+
 
