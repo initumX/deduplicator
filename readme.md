@@ -35,10 +35,12 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 ## How to build with Pyinstaller
 `pyinstaller --noconfirm --clean --noconsole --onefile --exclude-module=PySide6.QtNetwork main_window.py`
 
-Or just download binary from [realeases](https://github.com/initumX/deduplicator/releases)
+Or just download binary from [realeases](https://github.com/initumX/deduplicator/releases)   
+
 [website/gitpages](https://initumx.github.io/deduplicator/)
 
 © 2025 initumX (initum.x@gmail.com)
+
 
 
 
