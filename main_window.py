@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings
-from core.models import DeduplicationMode
+from core.models import DeduplicationMode, DeduplicationParams
 from api import FileDeduplicateApp
 from utils.services import FileService
 from custom_widgets.favourite_dirs_dialog import FavoriteDirsDialog
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "Input Error", self.translator.tr("error_please_select_root"))
             return
         self.app.root_dir = root_dir
-        # Size filters
+
         min_size_value = self.min_size_spin.value()
         min_unit = self.min_unit_combo.currentText()
         max_size_value = self.max_size_spin.value()
@@ -284,13 +284,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.worker_thread.stop()
 
         self.progress_dialog.canceled.connect(cancel_action)
+        params = DeduplicationParams(
+            root_dir=root_dir,
+            min_size_bytes=min_size,
+            max_size_bytes=max_size,
+            extensions=extensions,
+            favorite_dirs=self.app.favorite_dirs,  # Preserved from original
+            mode=dedupe_mode
+        )
+
+        # Launch worker with SAME app instance + new params DTO
+        # Signature changed: (app, params) instead of (app, min, max, ext, fav, mode)
         self.worker_thread = DeduplicateWorker(
-            self.app,
-            min_size,
-            max_size,
-            extensions,
-            self.app.favorite_dirs,
-            dedupe_mode
+            self.app,  # Preserved: app instance with state (root_dir etc.)
+            params  # NEW: unified params DTO
         )
         self.worker_thread.progress.connect(self.update_progress)
         self.worker_thread.finished.connect(self.on_deduplicate_finished)

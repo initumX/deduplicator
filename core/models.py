@@ -7,7 +7,7 @@ Data models and domain logic for file scanning and deduplication.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Union, Any, Callable
+from typing import List, Dict, Optional, Union, Callable
 import os
 from enum import Enum
 
@@ -59,22 +59,6 @@ class FileHashes:
             if value is not None and not isinstance(value, bytes):
                 raise ValueError(f"Field '{key}' must be bytes or None")
 
-    # def to_dict(self) -> Dict[str, str]:
-    #     result = {}
-    #     fields = getattr(self, '__dataclass_fields__', {})
-    #     for key in fields:
-    #         value = getattr(self, key)
-    #         if value is not None:
-    #             result[key] = value.hex()
-    #     return result
-    #
-    # @classmethod
-    # def from_dict(cls, data: Dict[str, str]) -> 'FileHashes':
-    #     return cls(**{
-    #         key: bytes.fromhex(val) if val else None
-    #         for key, val in data.items()
-    #     })
-
 @dataclass
 class File:
     """
@@ -118,41 +102,8 @@ class File:
                 return
         self.is_from_fav_dir = False
 
-    # def to_dict(self) -> Dict[str, Any]:
-    #     data = {
-    #         'path': self.path,
-    #         'size': self.size,
-    #         "creation_time": self.creation_time,
-    #         'name': self.name,
-    #         'extension': self.extension,
-    #         'is_from_fav_dir': self.is_from_fav_dir,
-    #         'is_confirmed_duplicate': self.is_confirmed_duplicate,
-    #         'chunk_size': self.chunk_size,
-    #         'hashes': self.hashes.to_dict(),
-    #     }
-    #     return {k: v for k, v in data.items() if v is not None}
-    #
-    # @classmethod
-    # def from_dict(cls, data: Dict[str, Any]) -> 'File':
-    #     """Reconstruct File from dict (after loading from JSON)"""
-    #     hash_data = data.get('hashes', {})
-    #     hashes = FileHashes.from_dict(hash_data)
-    #
-    #     return cls(
-    #         path=data['path'],
-    #         size=int(data['size']),
-    #         creation_time=float(data["creation_time"]) if data.get("creation_time") is not None else None,
-    #         name=data.get('name'),
-    #         extension=data.get('extension'),
-    #         is_from_fav_dir=data.get('is_from_fav_dir', False),
-    #         is_confirmed_duplicate=data.get('is_confirmed_duplicate', False),
-    #         hashes=hashes,
-    #         chunk_size=data.get('chunk_size')
-    #     )
-
     def __repr__(self):
         return f"<File path={self.path}, size={self.size}>"
-
 
 @dataclass
 class DuplicateGroup:
@@ -176,20 +127,6 @@ class DuplicateGroup:
     def is_duplicate(self) -> bool:
         """True if this group contains at least two files."""
         return self.duplicate_count >= 2
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "size": self.size,
-            "files": [file.to_dict() for file in self.files],
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'DuplicateGroup':
-        files = [File.from_dict(file_data) for file_data in data.get("files", [])]
-        return cls(
-            size=int(data["size"]),
-            files=files
-        )
 
     def __repr__(self):
         return f"<DuplicateGroup size={self.size}, count={len(self.files)}>"
@@ -250,10 +187,11 @@ class DeduplicationStats:
             "full": "🔍 Full Content Hash Groups",
         }
 
-        lines = []
-        lines.append("📊 Deduplication Statistics:")
-        lines.append(f"Total Execution Time: {self.total_time:.3f}s\n")
-        lines.append("Stage: GROUPS / FILES / TIME")
+        lines = [
+            "📊 Deduplication Statistics:",
+            f"Total Execution Time: {self.total_time:.3f}s\n",
+            "Stage: GROUPS / FILES / TIME"
+        ]
 
         for stage, data in self.stage_stats.items():
             label = labels.get(stage.lower(), stage.title())
@@ -317,3 +255,71 @@ class FileCollection:
 
     def __repr__(self):
         return f"<FileCollection({len(self.files)} files)>"
+
+"""
+DTO for deduplication parameters with built-in validation.
+Interface-agnostic — used by both GUI and CLI.
+"""
+from dataclasses import dataclass, field
+from typing import List, Optional
+from utils.convert_utils import ConvertUtils
+
+@dataclass
+class DeduplicationParams:
+    """Parameters for deduplication operation with validation."""
+    root_dir: str
+    min_size_bytes: int
+    max_size_bytes: int
+    extensions: List[str] = field(default_factory=list)
+    favorite_dirs: List[str] = field(default_factory=list)
+    mode: DeduplicationMode = DeduplicationMode.NORMAL
+
+    def __post_init__(self):
+        """Validate parameters immediately after creation."""
+        if not self.root_dir:
+            raise ValueError("Root directory cannot be empty")
+
+        if self.min_size_bytes < 0:
+            raise ValueError("Minimum size cannot be negative")
+
+        if self.max_size_bytes < self.min_size_bytes:
+            raise ValueError("Maximum size cannot be less than minimum size")
+
+        # Normalize extensions: ensure they start with dot and are lowercase
+        normalized = []
+        for ext in self.extensions:
+            ext = ext.strip().lower()
+            if ext and not ext.startswith('.'):
+                ext = f".{ext}"
+            if ext:
+                normalized.append(ext)
+        self.extensions = normalized
+
+    @staticmethod
+    def from_human_readable(
+            root_dir: str,
+            min_size_str: str,
+            max_size_str: str,
+            extensions_str: str = "",
+            favorite_dirs: Optional[List[str]] = None,
+            mode: DeduplicationMode = DeduplicationMode.NORMAL
+    ) -> 'DeduplicationParams':
+        """
+        Factory method to create params from human-readable inputs.
+        Useful for CLI argument parsing or GUI input conversion.
+        """
+        min_size = ConvertUtils.human_to_bytes(min_size_str)
+        max_size = ConvertUtils.human_to_bytes(max_size_str)
+
+        ext_list = [
+            ext.strip() for ext in extensions_str.split(",") if ext.strip()
+        ] if extensions_str else []
+
+        return DeduplicationParams(
+            root_dir=root_dir,
+            min_size_bytes=min_size,
+            max_size_bytes=max_size,
+            extensions=ext_list,
+            favorite_dirs=favorite_dirs or [],
+            mode=mode
+        )
