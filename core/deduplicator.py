@@ -10,8 +10,12 @@ Supports three modes:
     - full: size → front → middle → full_hash
 """
 import time
-from typing import List, Tuple, Dict, Optional, Callable
-from core.models import File, DuplicateGroup, DeduplicationStats, DeduplicationMode
+from typing import List, Tuple, Optional, Callable
+from core.models import (
+    File, DuplicateGroup, DeduplicationStats,
+    DeduplicationMode, DeduplicationParams,
+    SortOrder
+    )
 from core.grouper import FileGrouperImpl
 from core.interfaces import PartialHashStage, Deduplicator
 from core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
@@ -30,20 +34,11 @@ class DeduplicatorImpl(Deduplicator):
     def find_duplicates(
         self,
         files: List[File],
-        mode: DeduplicationMode,
+        params: DeduplicationParams,
         stopped_flag: Optional[Callable[[], bool]] = None,
         progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
-        """
-                Main deduplication pipeline using File objects.
-        Args:
-            files: List of scanned file objects
-            mode: Deduplication strategy ('fast', 'normal', or 'full')
-            stopped_flag (Optional[Callable[[], bool]]): Function that returns True if operation should be stopped.
-            progress_callback (Optional[Callable[[str, int, int], None]]): Reports progress per stage.
-        Returns:
-            Tuple[List[DuplicateGroup], DeduplicationStats]
-        """
+
         stats = DeduplicationStats()
         total_start_time = time.time()
 
@@ -61,7 +56,7 @@ class DeduplicatorImpl(Deduplicator):
         confirmed_duplicates = []
 
         # Build pipeline
-        pipeline = self._build_pipeline(mode)
+        pipeline = self._build_pipeline(params.mode)
 
         # Run all stages in sequence
         for stage_name, stage in pipeline:
@@ -77,6 +72,16 @@ class DeduplicatorImpl(Deduplicator):
 
         # Combine confirmed duplicates and unprocessed groups
         all_duplicates = confirmed_duplicates + groups
+
+        # Sorting inside each group
+        for group in all_duplicates:
+            group.files.sort(key=lambda f: (
+                not f.is_from_fav_dir,  # 1. Favorite files first (False < True)
+                -(f.creation_time or 0) if params.sort_order == SortOrder.NEWEST_FIRST
+                else (f.creation_time or 0),
+                f.path.lower(),  # 3. Path as deterministic tie-breaker
+                f.path
+            ))
 
         # Sort by descending size
         all_duplicates.sort(key=lambda g: -g.files[0].size if g.files else 0)

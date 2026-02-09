@@ -21,7 +21,7 @@ Key Components:
 from typing import Protocol, List, Dict, Tuple, Optional, Callable
 from core.models import (
     File,
-    DeduplicationMode,
+    DeduplicationParams,
     DuplicateGroup,
     DeduplicationStats,
     FileCollection,
@@ -188,7 +188,7 @@ class Deduplicator(Protocol):
     def find_duplicates(
         self,
         files: List[File],
-        mode: DeduplicationMode,
+        params: DeduplicationParams,
         stopped_flag: Optional[Callable[[], bool]] = None,
         progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
@@ -197,7 +197,8 @@ class Deduplicator(Protocol):
 
         Args:
             files: List of scanned files to analyze for duplicates.
-            mode: Deduplication strategy ('fast', 'normal', 'full').
+            params: Unified configuration parameters including root directory, size filters,
+                    file extensions, favorite directories, deduplication mode, and sort order
             stopped_flag: Optional function to check for cancellation.
             progress_callback: Optional callback for progress updates (stage, current, total).
 

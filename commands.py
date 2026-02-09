@@ -5,7 +5,8 @@ No Qt/PySide6 dependencies — pure Python.
 """
 from typing import List, Optional, Callable, Tuple
 from core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
-from api import FileDeduplicateApp
+from core.scanner import FileScannerImpl
+from core.deduplicator import DeduplicatorImpl
 
 class DeduplicationCommand:
     """
@@ -33,7 +34,8 @@ class DeduplicationCommand:
     """
 
     def __init__(self):
-        self.app: Optional[FileDeduplicateApp] = None
+        self._deduplicator = DeduplicatorImpl()
+        self._files: List[File] = []  # Local state storage (not in app/api layer)
 
     def execute(
             self,
@@ -56,17 +58,29 @@ class DeduplicationCommand:
             ValueError: If parameters are invalid
             RuntimeError: If scanning/deduplication fails
         """
-        # Initialize app with root directory
-        self.app = FileDeduplicateApp(params.root_dir)
-        self.app.favorite_dirs = params.favorite_dirs
-
-        # Execute core operation — SAME CODE PATH for GUI and CLI
-        groups, stats = self.app.find_duplicates(
+        # Step 1: Scan files using core scanner directly
+        scanner = FileScannerImpl(
+            root_dir=params.root_dir,
             min_size=params.min_size_bytes,
             max_size=params.max_size_bytes,
             extensions=params.extensions,
-            favorite_dirs=params.favorite_dirs,
-            mode=params.mode,
+            favorite_dirs=params.favorite_dirs
+        )
+
+        file_collection = scanner.scan(
+            stopped_flag=stopped_flag,
+            progress_callback=progress_callback
+        )
+
+        self._files = file_collection.files
+
+        if not self._files:
+            raise RuntimeError("No files found matching filters")
+
+        # Step 2: Find duplicates using core deduplicator directly
+        groups, stats = self._deduplicator.find_duplicates(
+            self._files,
+            params,  # ← Unified params object with sort_order, mode, etc.
             stopped_flag=stopped_flag,
             progress_callback=progress_callback
         )
@@ -75,12 +89,4 @@ class DeduplicationCommand:
 
     def get_files(self) -> List[File]:
         """Get scanned files after execution."""
-        if not self.app or not self.app.files:
-            raise RuntimeError("Execute command first before accessing files")
-        return self.app.files
-
-    def get_app(self) -> FileDeduplicateApp:
-        """Get the underlying app instance (for advanced use cases)."""
-        if not self.app:
-            raise RuntimeError("Command not executed yet")
-        return self.app
+        return self._files.copy()  # Return copy to prevent external mutation

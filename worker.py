@@ -1,24 +1,19 @@
 """
-Qt worker thread: changes to accept DeduplicationParams instead of separate arguments.
-All Qt-specific logic preserved exactly as in original.
+Qt worker thread — accepts DeduplicationParams instead of separate arguments.
 """
 from PySide6.QtCore import QThread, Signal, QMutex, QDeadlineTimer, QMutexLocker
 from core.models import DeduplicationParams
-from api import FileDeduplicateApp
+from commands import DeduplicationCommand
 
 class DeduplicateWorker(QThread):
     progress = Signal(str, int, object)  # stage, current, total
     finished = Signal(list, object)      # duplicate_groups, stats
     error = Signal(str)
 
-    def __init__(self, app: FileDeduplicateApp, params: DeduplicationParams):
-        """
-        Worker accepts BOTH app instance (for state) AND params DTO (for operation).
-        Replaces original signature: (app, min_size, max_size, extensions, favorite_dirs, mode)
-        """
+    def __init__(self, params: DeduplicationParams):
         super().__init__()
-        self.app = app
-        self.params = params  # Unified params DTO
+        self.params = params
+        self.command = DeduplicationCommand()
         self._stopped = False
         self._mutex = QMutex()
         self._progress_mutex = QMutex()
@@ -47,20 +42,14 @@ class DeduplicateWorker(QThread):
             if self.is_stopped():
                 return
 
-            # Execute using params DTO
-            groups, stats = self.app.find_duplicates(
-                min_size=self.params.min_size_bytes,
-                max_size=self.params.max_size_bytes,
-                extensions=self.params.extensions,
-                favorite_dirs=self.params.favorite_dirs,
-                mode=self.params.mode,
+            groups, stats = self.command.execute(
+                self.params,
                 stopped_flag=self.is_stopped,
-                progress_callback=self.safe_progress_emit  # ← Critical: matches original name
+                progress_callback=self.safe_progress_emit
             )
 
             if not self.is_stopped():
                 self.finished.emit(groups, stats)
-
         except Exception as e:
             if not self.is_stopped():
                 self.error.emit(f"{type(e).__name__}: {str(e)}")

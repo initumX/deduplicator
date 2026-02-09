@@ -39,6 +39,9 @@ class Stage(str, Enum):
     def get_all(cls):
         return [cls.SIZE, cls.FRONT, cls.MIDDLE, cls.END, cls.FULL]
 
+class SortOrder(Enum):
+    NEWEST_FIRST = "newest"
+    OLDEST_FIRST = "oldest"
 
 # ======================
 #  Core Data Models
@@ -273,6 +276,7 @@ class DeduplicationParams:
     extensions: List[str] = field(default_factory=list)
     favorite_dirs: List[str] = field(default_factory=list)
     mode: DeduplicationMode = DeduplicationMode.NORMAL
+    sort_order: SortOrder = SortOrder.NEWEST_FIRST
 
     def __post_init__(self):
         """Validate parameters immediately after creation."""
