@@ -2,7 +2,6 @@
 Integration tests for full deduplication pipeline.
 Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 """
-import pytest
 from pathlib import Path
 from core.scanner import FileScannerImpl
 from core.deduplicator import DeduplicatorImpl

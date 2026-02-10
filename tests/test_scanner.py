@@ -2,8 +2,6 @@
 Unit tests for FileScannerImpl.
 Verifies file discovery with size/extension filters, error handling, and edge cases.
 """
-import pytest
-import os
 from pathlib import Path
 from core.scanner import FileScannerImpl
 

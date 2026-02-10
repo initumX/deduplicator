@@ -2,7 +2,6 @@
 Unit tests for FileGrouperImpl.
 Verifies grouping logic for size and hash-based grouping with proper filtering.
 """
-import pytest
 from core.grouper import FileGrouperImpl
 from core.hasher import HasherImpl, XXHashAlgorithmImpl
 from core.models import File, FileHashes
