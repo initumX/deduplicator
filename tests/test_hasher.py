@@ -2,7 +2,6 @@
 Unit tests for HasherImpl with XXHashAlgorithmImpl.
 Verifies partial/full hashing returns 8-byte xxHash64 values.
 """
-import pytest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from core.hasher import HasherImpl, XXHashAlgorithmImpl
