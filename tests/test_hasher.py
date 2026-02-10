@@ -2,6 +2,7 @@
 Unit tests for HasherImpl with XXHashAlgorithmImpl.
 Verifies partial/full hashing returns 8-byte xxHash64 values.
 """
+import pytest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from core.hasher import HasherImpl, XXHashAlgorithmImpl
@@ -121,3 +122,34 @@ class TestHasherImpl:
                 assert hash1 == hash2
             finally:
                 Path(f.name).unlink()
+
+    def test_hasher_handles_deleted_file(self, tmp_path):
+        """
+        Hasher must NOT crash when attempting to hash a deleted file.
+        The exact return value is implementation-specific (may be b'' or hash of empty content),
+        but the critical requirement is graceful error handling without exceptions.
+        """
+        # Create and immediately delete a file
+        temp_file = tmp_path / "deleted.txt"
+        temp_file.write_bytes(b"content")
+        file = File(path=str(temp_file), size=7, creation_time=0.0)
+        file.chunk_size = 1024
+        temp_file.unlink()  # Delete BEFORE hashing
+
+        hasher = HasherImpl(XXHashAlgorithmImpl())
+
+        # CRITICAL: None of these should raise exceptions
+        full_hash = hasher.compute_full_hash(file)
+        front_hash = hasher.compute_front_hash(file)
+        middle_hash = hasher.compute_middle_hash(file)
+        end_hash = hasher.compute_end_hash(file)
+
+        # All methods must return bytes (any bytes - empty or valid hash)
+        assert isinstance(full_hash, bytes), "compute_full_hash must return bytes"
+        assert isinstance(front_hash, bytes), "compute_front_hash must return bytes"
+        assert isinstance(middle_hash, bytes), "compute_middle_hash must return bytes"
+        assert isinstance(end_hash, bytes), "compute_end_hash must return bytes"
+
+        # Verify error messages were printed (optional but useful for debugging)
+        # Note: We don't check exact message content to avoid fragile tests
+        # The key is that the application didn't crash
