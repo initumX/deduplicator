@@ -17,12 +17,12 @@ class DeduplicateWorker(QThread):
         self._stopped = False
         self._mutex = QMutex()
         self._progress_mutex = QMutex()
-        self._deadline = QDeadlineTimer(1000)
 
     def stop(self):
         with QMutexLocker(self._mutex):
             self._stopped = True
-        self.wait(self._deadline.remainingTime())
+        deadline = QDeadlineTimer(1000)
+        self.wait(deadline.remainingTime())
 
     def is_stopped(self) -> bool:
         with QMutexLocker(self._mutex):
