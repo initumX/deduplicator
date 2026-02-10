@@ -16,13 +16,13 @@ from core.models import DeduplicationMode, DeduplicationParams, SortOrder
 from utils.services import FileService, DuplicateService
 from custom_widgets.favourite_dirs_dialog import FavoriteDirsDialog
 from utils.convert_utils import ConvertUtils
-from core.interfaces import TranslatorProtocol
 from worker import DeduplicateWorker
 import os
 import sys
 import logging
 
 from main_window_ui import Ui_MainWindow
+from texts import TEXTS
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -42,10 +42,9 @@ class SettingsManager:
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    def __init__(self, ui_translator: TranslatorProtocol = None):
+    def __init__(self):
         super().__init__()
-        self.translator = ui_translator or DictTranslator("en")
-        self.setWindowTitle(self.translator.tr("window_title"))
+        self.setWindowTitle(TEXTS["window_title"])
         self.resize(900, 600)
 
         # Local state storage - app is stateless and does not store files/groups internally
@@ -72,7 +71,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.keep_one_button.clicked.connect(self.keep_one_file_per_group)
         self.groups_list.delete_requested.connect(self.handle_delete_files)
         self.about_button.clicked.connect(self.show_about_dialog)
-        self.lang_combo.currentIndexChanged.connect(self.change_language)
 
         if not hasattr(self, '_ordering_connected'):
             self.ordering_combo.currentIndexChanged.connect(self.on_ordering_changed)
@@ -94,12 +92,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.groups_list.set_groups(self.duplicate_groups)
 
-    def change_language(self, index):
-        lang_code = "en" if index == 0 else "ru"
-        self.translator = DictTranslator(lang_code)
-        self.groups_list.update_translator(self.translator)
-        self.update_ui_texts()
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, 'splitter'):
@@ -112,7 +104,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.splitter.setSizes([new_left, new_right])
 
     def select_root_folder(self):
-        dir_path = QFileDialog.getExistingDirectory(self, self.translator.tr("dialog_select_root_title"))
+        dir_path = QFileDialog.getExistingDirectory(self, TEXTS["dialog_select_root_title"])
         if dir_path:
             self.root_dir_input.setText(dir_path)
 
@@ -133,25 +125,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             QMessageBox.information(
                 self,
-                self.translator.tr("title_success"),
-                self.translator.tr("message_favorite_folders_updated").format(count=len(self.favorite_dirs))
+                TEXTS["title_success"],
+                TEXTS["message_favorite_folders_updated"].format(count=len(self.favorite_dirs))
             )
 
     def keep_one_file_per_group(self):
-        tr = self.translator.tr
         if not self.duplicate_groups:
-            QMessageBox.information(self, tr("title_nfo"), tr("message_no_duplicates_found"))
+            QMessageBox.information(self, TEXTS["title_info"], TEXTS["message_no_duplicates_found"])
             return
 
         files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(self.duplicate_groups)
         if not files_to_delete:
-            QMessageBox.information(self, tr("title_nfo"), tr("message_nothing_to_delete"))
+            QMessageBox.information(self, TEXTS["title_info"], TEXTS["message_nothing_to_delete"])
             return
 
         reply = QMessageBox.question(
             self,
-            tr("title_confirm_deletion"),
-            tr("text_confirm_deletion").format(count=len(files_to_delete)),
+            TEXTS["title_confirm_deletion"],
+            TEXTS["text_confirm_deletion"].format(count=len(files_to_delete)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -161,18 +152,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.handle_delete_files(files_to_delete)
 
     def handle_delete_files(self, file_paths):
-        tr = self.translator.tr
         if not file_paths:
             return
 
         total = len(file_paths)
         self.progress_dialog = QProgressDialog(
-            tr("text_progress_delete"),
-            tr("btn_cancel"),
+            TEXTS["text_progress_delete"],
+            TEXTS["btn_cancel"],
             0, total, self
         )
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress_dialog.setWindowTitle(tr("title_progress_dialog"))
+        self.progress_dialog.setWindowTitle(TEXTS["title_progress_dialog"])
         self.progress_dialog.show()
 
         try:
@@ -180,7 +170,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 FileService.move_to_trash(path)
                 self.progress_dialog.setValue(i + 1)
                 self.progress_dialog.setLabelText(
-                    tr("text_progress_deletion").format(filename=os.path.basename(path))
+                    TEXTS["text_progress_deletion"].format(filename=os.path.basename(path))
                 )
                 QApplication.processEvents()
                 if self.progress_dialog.wasCanceled():
@@ -197,31 +187,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if removed_group_count > 0:
                 QMessageBox.information(
                     self,
-                    tr("title_removing_groups_from_a_list"),
-                    tr("text_removing_groups_from_a_list").format(group_count=removed_group_count)
+                    TEXTS["title_removing_groups_from_a_list"],
+                    TEXTS["text_removing_groups_from_a_list"].format(group_count=removed_group_count)
                 )
 
             QMessageBox.information(
                 self,
-                tr("title_success"),
-                tr("text_files_moved_to_trash").format(count=total)
+                TEXTS["title_success"],
+                TEXTS["text_files_moved_to_trash"].format(count=total)
             )
         except Exception as e:
-            QMessageBox.critical(self, tr("title_error"), f"{tr('error_occurred')}:\n{e}")
+            QMessageBox.critical(self, TEXTS["title_error"], f"{TEXTS['error_occurred']}:\n{e}")
         finally:
             if self.progress_dialog:
                 self.progress_dialog.close()
                 self.progress_dialog = None
 
     def show_about_dialog(self):
-        about_title = self.translator.tr("title_about")
-        about_text = self.translator.tr("about_text")
-        QMessageBox.about(self, about_title, about_text)
+        QMessageBox.about(self, TEXTS["title_about"], TEXTS["about_text"])
 
     def start_deduplication(self):
         root_dir = self.root_dir_input.text().strip()
         if not root_dir:
-            QMessageBox.warning(self, "Input Error", self.translator.tr("error_please_select_root"))
+            QMessageBox.warning(self, "Input Error", TEXTS["error_please_select_root"])
             return
 
         # Parse size filters
@@ -236,7 +224,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             min_size = ConvertUtils.human_to_bytes(min_size_str)
             max_size = ConvertUtils.human_to_bytes(max_size_str)
         except ValueError as e:
-            QMessageBox.warning(self, "Input Error", f"{self.translator.tr('error_invalid_size_format')}: {e}")
+            QMessageBox.warning(self, "Input Error", f"{TEXTS['error_invalid_size_format']}: {e}")
             return
 
         # Parse extensions
@@ -260,13 +248,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Setup progress dialog
         self.progress_dialog = QProgressDialog(
-            self.translator.tr("text_progress_scanning"),
-            self.translator.tr("btn_cancel"),
+            TEXTS["text_progress_scanning"],
+            TEXTS["btn_cancel"],
             0, 100, self
         )
         self.progress_dialog.setMinimumDuration(1000)
         self.progress_dialog.setModal(True)
-        self.progress_dialog.setWindowTitle(self.translator.tr("title_processing"))
+        self.progress_dialog.setWindowTitle(TEXTS["title_processing"])
         self.progress_dialog.setAutoReset(False)
         self.progress_dialog.show()
 
@@ -326,7 +314,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Show statistics dialog
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
-        self.stats_window.setWindowTitle(self.translator.tr("message_stats_title"))
+        self.stats_window.setWindowTitle(TEXTS["message_stats_title"])
         self.stats_window.setText(stats_text)
         self.stats_window.setIcon(QMessageBox.Icon.Information)
         self.stats_window.exec()
@@ -337,8 +325,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.progress_dialog = None
         QMessageBox.critical(
             self,
-            self.translator.tr("title_error"),
-            f"{self.translator.tr('error_occurred')}:\n{error_message}"
+            TEXTS["title_error"],
+            f"{TEXTS['error_occurred']}:\n{error_message}"
         )
 
     def closeEvent(self, event):
@@ -364,7 +352,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.settings_manager.save_settings("extensions", self.extension_filter_input.text())
         self.settings_manager.save_settings("splitter_sizes", list(self.splitter.sizes()))
         self.settings_manager.save_settings("favorite_dirs", self.favorite_dirs)
-        self.settings_manager.save_settings("language", self.translator.lang_code)
         self.settings_manager.save_settings("ordering_mode", self.ordering_combo.currentIndex())
 
     def restore_settings(self):
@@ -392,21 +379,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for path in self.favorite_dirs:
             self.favorite_list_widget.addItem(path)
 
-        saved_lang = self.settings_manager.load_settings("language", "en")
-        if not isinstance(saved_lang, str) or saved_lang not in ["en", "ru"]:
-            saved_lang = "en"
-        self.translator = DictTranslator(saved_lang)
-        self.update_ui_texts()
-        lang_index = 0 if saved_lang == "en" else 1
-        self.lang_combo.setCurrentIndex(lang_index)
-
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
         self.ordering_combo.setCurrentIndex(ordering_index)
         self.on_ordering_changed()
 
-
-# Import after class definition to avoid circular import
-from translator import DictTranslator
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

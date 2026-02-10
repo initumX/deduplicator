@@ -17,8 +17,7 @@ from PySide6.QtCore import Qt, Signal
 from core.models import File, DuplicateGroup
 from utils.services import FileService
 from utils.convert_utils import ConvertUtils
-from core.interfaces import TranslatorProtocol
-from translator import DictTranslator
+from texts import TEXTS
 
 
 class DuplicateGroupsList(QListWidget):
@@ -39,16 +38,12 @@ class DuplicateGroupsList(QListWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.itemClicked.connect(self.on_item_clicked)
 
-        # Store groups for retranslation
+        # Store groups for display
         self.current_groups = []
-
-        # Use translator from parent or default to English
-        self.translator = parent.translator if parent and hasattr(parent, "translator") else DictTranslator("en")
-        self.tr = self.translator.tr
 
     def set_groups(self, groups: list[DuplicateGroup]):
         """Displays a list of duplicate groups in the UI."""
-        self.current_groups = groups  # Store groups for retranslation
+        self.current_groups = groups
         self._populate_list()
 
     def _populate_list(self):
@@ -58,10 +53,10 @@ class DuplicateGroupsList(QListWidget):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = ConvertUtils.bytes_to_human(group.size)
 
-            folder_title = f"📁 {self.tr('group_title_prefix')} {idx+1} | {self.tr('group_size_label')}: {size_str}"
-            folder_title = QListWidgetItem(folder_title)
-            folder_title.setFlags(Qt.ItemFlag.NoItemFlags)  # Inactive
-            self.addItem(folder_title)
+            folder_title = f"📁 {TEXTS['group_title_prefix']} {idx+1} | {TEXTS['group_size_label']}: {size_str}"
+            folder_title_item = QListWidgetItem(folder_title)
+            folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Inactive
+            self.addItem(folder_title_item)
 
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
@@ -79,13 +74,6 @@ class DuplicateGroupsList(QListWidget):
             empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(empty_item)
 
-    def update_translator(self, translator: TranslatorProtocol):
-        """Update the translator and retranslate the UI"""
-        self.translator = translator
-        self.tr = self.translator.tr
-        if self.current_groups:
-            self._populate_list()
-
     def on_item_clicked(self, item):
         """Emits signal when a file item is clicked."""
         file = item.data(Qt.ItemDataRole.UserRole)
@@ -102,9 +90,9 @@ class DuplicateGroupsList(QListWidget):
 
         if len(selected_items) == 1:
             file = selected_items[0].data(Qt.ItemDataRole.UserRole)
-            open_action = QAction(self.tr("context_menu_open"), self)
-            reveal_action = QAction(self.tr("context_menu_reveal"), self)
-            delete_action = QAction(self.tr("context_menu_move_to_trash"), self)
+            open_action = QAction(TEXTS["context_menu_open"], self)
+            reveal_action = QAction(TEXTS["context_menu_reveal"], self)
+            delete_action = QAction(TEXTS["context_menu_move_to_trash"], self)
 
             open_action.triggered.connect(lambda _: FileService.open_file(file.path))
             reveal_action.triggered.connect(lambda _: FileService.reveal_in_explorer(file.path))
@@ -116,7 +104,7 @@ class DuplicateGroupsList(QListWidget):
             menu.addAction(delete_action)
 
         else:
-            menu_text = self.tr("context_menu_move_multiple").format(count=len(selected_items))
+            menu_text = TEXTS["context_menu_move_multiple"].format(count=len(selected_items))
             delete_action = QAction(menu_text, self)
             delete_action.triggered.connect(lambda _: self.delete_selected_files(selected_items))
             menu.addAction(delete_action)

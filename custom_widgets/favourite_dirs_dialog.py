@@ -18,9 +18,7 @@ from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
     QVBoxLayout, QFileDialog, QAbstractItemView
 )
-
-# Import only DictTranslator instead of full Translator
-from translator import DictTranslator
+from texts import TEXTS
 
 
 class FavoriteDirsDialog(QDialog):
@@ -34,10 +32,7 @@ class FavoriteDirsDialog(QDialog):
     def __init__(self, parent=None, initial_dirs: list[str] = None):
         super().__init__(parent)
 
-        # Use injected translator if available, fallback to default language
-        self.translator = parent.translator if parent and hasattr(parent, "translator") else DictTranslator("en")
-
-        self.setWindowTitle(self.translator.tr("dialog_favorite_dirs_title"))
+        self.setWindowTitle(TEXTS["dialog_favorite_dirs_title"])
         self.setMinimumWidth(500)
 
         self.favorite_dirs = initial_dirs or []
@@ -51,10 +46,10 @@ class FavoriteDirsDialog(QDialog):
                 self.list_widget.addItem(path)
 
         # Buttons
-        add_button = QPushButton(self.translator.tr("btn_add_folder"))
-        remove_button = QPushButton(self.translator.tr("btn_remove_selected"))
-        ok_button = QPushButton(self.translator.tr("btn_ok"))
-        cancel_button = QPushButton(self.translator.tr("btn_cancel"))
+        add_button = QPushButton(TEXTS["btn_add_folder"])
+        remove_button = QPushButton(TEXTS["btn_remove_selected"])
+        ok_button = QPushButton(TEXTS["btn_ok"])
+        cancel_button = QPushButton(TEXTS["btn_cancel"])
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(add_button)
@@ -79,7 +74,7 @@ class FavoriteDirsDialog(QDialog):
 
     def on_add(self):
         """Handler for adding a new folder."""
-        dir_path = QFileDialog.getExistingDirectory(self, self.translator.tr("dialog_select_folder_title"))
+        dir_path = QFileDialog.getExistingDirectory(self, TEXTS["dialog_select_favorite_folder_title"])
         if dir_path:
             if dir_path not in self.favorite_dirs:
                 self.favorite_dirs.append(dir_path)
