@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QDialog, QMessageBox,
     QProgressDialog, QApplication,
 )
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import Qt, QSettings, QThreadPool
 from core.models import DeduplicationMode, DeduplicationParams, SortOrder
 from utils.services import FileService, DuplicateService
 from custom_widgets.favourite_dirs_dialog import FavoriteDirsDialog
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         self.duplicate_groups = []
         self.favorite_dirs = []
         self.settings_manager = SettingsManager()
-        self.worker_thread = None
+        self.worker = None  # Holds reference to current worker for cancellation
         self.progress_dialog = None
         self.original_image_preview_size = None
 
@@ -159,7 +159,7 @@ class MainWindow(QMainWindow):
             0, total, self
         )
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress_dialog.setWindowTitle(TEXTS["title_progress_dialog"])
+        self.progress_dialog.setWindowTitle(TEXTS["title_progress_delete"])
         self.progress_dialog.show()
 
         try:
@@ -208,6 +208,12 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Input Error", TEXTS["error_please_select_root"])
             return
 
+        # Cancel existing worker if any
+        if self.worker:
+            self.worker.stop()
+            self.worker = None
+
+        # Parse size filters
         min_size_value = self.ui.min_size_spin.value()
         min_unit = self.ui.min_unit_combo.currentText()
         max_size_value = self.ui.max_size_spin.value()
@@ -222,22 +228,19 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Input Error", f"{TEXTS['error_invalid_size_format']}: {e}")
             return
 
+        # Parse extensions
         extensions = [
             ext.strip() for ext in self.ui.extension_filter_input.text().split(",")
             if ext.strip()
         ]
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
 
+        # Get mode and sort order from UI controls
         mode_key = self.ui.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
         sort_order = SortOrder.NEWEST_FIRST if self.ui.ordering_combo.currentData() == "NEWEST_FIRST" else SortOrder.OLDEST_FIRST
 
-        if self.worker_thread:
-            self.worker_thread.stop()
-            self.worker_thread.wait()
-            self.worker_thread.deleteLater()
-            self.worker_thread = None
-
+        # Setup progress dialog
         self.progress_dialog = QProgressDialog(
             TEXTS["text_progress_scanning"],
             TEXTS["btn_cancel"],
@@ -249,12 +252,15 @@ class MainWindow(QMainWindow):
         self.progress_dialog.setAutoReset(False)
         self.progress_dialog.show()
 
+        # Connect cancel action to worker.stop()
         def cancel_action():
-            if self.worker_thread:
-                self.worker_thread.stop()
+            if self.worker:
+                self.worker.stop()
+                self.worker = None  # Release reference immediately
 
-        self.progress_dialog.canceled.connect(cancel_action)
+        self.progress_dialog.canceled.connect(cancel_action)  #
 
+        # Create unified parameters object
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=min_size,
@@ -265,14 +271,15 @@ class MainWindow(QMainWindow):
             sort_order=sort_order
         )
 
-        self.worker_thread = DeduplicateWorker(params)
-        self.worker_thread.progress.connect(self.update_progress)
-        self.worker_thread.finished.connect(self.on_deduplicate_finished)
-        self.worker_thread.error.connect(self.on_deduplicate_error)
-        self.worker_thread.start()
+        # Launch worker via thread pool
+        self.worker = DeduplicateWorker(params)
+        self.worker.signals.progress.connect(self.update_progress)
+        self.worker.signals.finished.connect(self.on_deduplicate_finished)
+        self.worker.signals.error.connect(self.on_deduplicate_error)
+        QThreadPool.globalInstance().start(self.worker)
 
     def update_progress(self, stage, current, total):
-        if not self.progress_dialog or not self.worker_thread:
+        if not self.progress_dialog or not self.worker:
             return
 
         try:
@@ -290,6 +297,8 @@ class MainWindow(QMainWindow):
                 self.progress_dialog = None
 
     def on_deduplicate_finished(self, duplicate_groups, stats):
+        self.worker = None  # Release reference - worker auto-deleted by pool
+
         if self.progress_dialog:
             self.progress_dialog.deleteLater()
             self.progress_dialog = None
@@ -305,9 +314,12 @@ class MainWindow(QMainWindow):
         self.stats_window.exec()
 
     def on_deduplicate_error(self, error_message):
+        self.worker = None  # Release reference
+
         if self.progress_dialog:
             self.progress_dialog.deleteLater()
             self.progress_dialog = None
+
         QMessageBox.critical(
             self,
             TEXTS["title_error"],
@@ -315,11 +327,10 @@ class MainWindow(QMainWindow):
         )
 
     def closeEvent(self, event):
-        if self.worker_thread:
-            self.worker_thread.stop()
-            if not self.worker_thread.wait(1000):
-                self.worker_thread.terminate()
-            self.worker_thread.deleteLater()
+        # Request cancellation of running worker
+        if self.worker:
+            self.worker.stop()
+            self.worker = None
 
         if self.progress_dialog:
             self.progress_dialog.deleteLater()
