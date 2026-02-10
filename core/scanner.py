@@ -93,6 +93,8 @@ class FileScannerImpl(FileScanner):
                     _debug("Scan interrupted by user")
                     return FileCollection([])
 
+                # Pre-filter inaccessible subdirectories BEFORE os.walk enters them
+                dirs[:] = [d for d in dirs if self._can_access_directory(Path(root) / d)]
                 for filename in files:
                     path = Path(root) / filename
                     file_info = self._process_file(path, stopped_flag=stopped_flag)
@@ -120,6 +122,14 @@ class FileScannerImpl(FileScanner):
 
         return FileCollection(found_files)
 
+    def _can_access_directory(self, path: Path) -> bool:
+        """Check if directory is accessible without raising exceptions. Python 3.9+ compatible."""
+        try:
+            return path.is_dir() and os.access(path, os.R_OK | os.X_OK)
+        except (OSError, PermissionError):
+            _debug(f"Skipping inaccessible directory: {path}")
+            return False
+
     def _process_file(self, path: Path, stopped_flag: Optional[Callable[[], bool]] = None) -> Optional[File]:
         """
         Process an individual file path and return a File if it passes all filters.
@@ -132,8 +142,12 @@ class FileScannerImpl(FileScanner):
         if stopped_flag and stopped_flag():
             return None
 
-        if path.is_symlink():
-            _debug(f"Skipping symbolic link: {path}")
+        try:
+            if path.is_symlink():
+                _debug(f"Skipping symbolic link: {path}")
+                return None
+        except (OSError, PermissionError) as e:
+            _debug(f"Could not check symlink status for {path}: {e}")
             return None
 
         try:
@@ -167,7 +181,11 @@ class FileScannerImpl(FileScanner):
             return None
 
         if self.favorite_dirs:
-            file.set_favorite_status(self.favorite_dirs)
+            try:
+                file.set_favorite_status(self.favorite_dirs)
+            except Exception as e:
+                _debug(f"Error setting favorite status for {path}: {e}")
+                # Continue processing — favorite status is optional metadata
 
         _debug(f"Accepted file: {path.name} ({size} bytes)")
         return file
