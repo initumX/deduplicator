@@ -59,6 +59,8 @@ class MainWindow(QMainWindow):
         self.progress_dialog = None
         self.original_image_preview_size = None
 
+        self._ordering_connected = False
+        self.stats_window = None
         self.restore_settings()
         self.setup_connections()
 
@@ -71,7 +73,7 @@ class MainWindow(QMainWindow):
         self.ui.groups_list.delete_requested.connect(self.handle_delete_files)
         self.ui.about_button.clicked.connect(self.show_about_dialog)
 
-        if not hasattr(self, '_ordering_connected'):
+        if not self._ordering_connected:
             self.ui.ordering_combo.currentIndexChanged.connect(self.on_ordering_changed)
             self._ordering_connected = True
 
@@ -162,35 +164,67 @@ class MainWindow(QMainWindow):
         self.progress_dialog.setWindowTitle(TEXTS["title_progress_delete"])
         self.progress_dialog.show()
 
+        failed_files = []  # List of (path, error) for files that could not be deleted
+        deleted_count = 0
+
         try:
             for i, path in enumerate(file_paths):
-                FileService.move_to_trash(path)
-                self.progress_dialog.setValue(i + 1)
+                if self.progress_dialog.wasCanceled():
+                    raise Exception("Operation was cancelled by the user.")
+
+                try:
+                    FileService.move_to_trash(path)
+                    deleted_count += 1
+                except Exception as e:
+                    # Continue deleting other files even if one fails
+                    failed_files.append((path, str(e)))
+                    continue
+
+                # Update progress ONLY for successfully deleted files
+                self.progress_dialog.setValue(deleted_count)
                 self.progress_dialog.setLabelText(
                     TEXTS["text_progress_deletion"].format(filename=os.path.basename(path))
                 )
                 QApplication.processEvents()
-                if self.progress_dialog.wasCanceled():
-                    raise Exception("Operation was cancelled by the user.")
 
-            self.files = DuplicateService.remove_files_from_file_list(self.files, file_paths)
-            updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, file_paths)
+            # Update file lists ONLY for successfully deleted files
+            successful_files = [path for path in file_paths if path not in [f[0] for f in failed_files]]
+            self.files = DuplicateService.remove_files_from_file_list(self.files, successful_files)
+            updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, successful_files)
             removed_group_count = len(self.duplicate_groups) - len(updated_groups)
 
             self.duplicate_groups = updated_groups
             self.ui.groups_list.set_groups(updated_groups)
 
+            # Build informative message for the user
+            messages = []
             if removed_group_count > 0:
-                QMessageBox.information(
-                    self,
-                    TEXTS["title_removing_groups_from_a_list"],
+                messages.append(
                     TEXTS["text_removing_groups_from_a_list"].format(group_count=removed_group_count)
                 )
 
+            if failed_files:
+                # Show first 5 errors + count of remaining failures
+                error_list = "\n".join([
+                    f"• {os.path.basename(path)}: {error.split(':')[-1].strip()}"
+                    for path, error in failed_files[:5]
+                ])
+                if len(failed_files) > 5:
+                    error_list += f"\n• ...and {len(failed_files) - 5} more files"
+
+                messages.append(
+                    f"⚠️ Could not delete {len(failed_files)} file(s):\n{error_list}\n\n"
+                    "These files may be in use, protected by the system, or require administrator privileges."
+                )
+                title = "Partial Success"
+            else:
+                messages.append(TEXTS["text_files_moved_to_trash"].format(count=deleted_count))
+                title = TEXTS["title_success"]
+
             QMessageBox.information(
                 self,
-                TEXTS["title_success"],
-                TEXTS["text_files_moved_to_trash"].format(count=total)
+                title,
+                "\n\n".join(messages)
             )
         except Exception as e:
             QMessageBox.critical(self, TEXTS["title_error"], f"{TEXTS['error_occurred']}:\n{e}")
