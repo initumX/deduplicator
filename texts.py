@@ -37,8 +37,8 @@ TEXTS = {
 
   "title_processing": "Processing",
   "text_progress_scanning": "Scanning...",
-  "title_progress_dialog": "Deleting Files",
-  "text_progress_dialog": "Moving files to trash...",
+  "title_progress_delete": "Deleting Files",
+  "text_progress_delete": "Moving files to trash...",
 
   "title_about": "About",
   "title_info": "Information",
