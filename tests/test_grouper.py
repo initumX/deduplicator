@@ -81,3 +81,40 @@ class TestFileGrouperImpl:
         assert group_files[1].is_from_fav_dir is False  # Second = non-favorite
         assert group_files[0].path == "/fav/file.txt"
         assert group_files[1].path == "/nonfav/file.txt"
+
+    def test_grouper_all_unique_files(self):
+        """
+        When all files are unique (different sizes or hashes), grouper should return empty result.
+        """
+        # Scenario 1: All files have different sizes
+        files_different_sizes = [
+            File(path="/file1.txt", size=100, creation_time=0.0),
+            File(path="/file2.txt", size=200, creation_time=0.0),
+            File(path="/file3.txt", size=300, creation_time=0.0),
+            File(path="/file4.txt", size=400, creation_time=0.0),
+        ]
+
+        grouper = FileGrouperImpl()
+        size_groups = grouper.group_by_size(files_different_sizes)
+
+        # No groups possible — all sizes unique
+        assert len(size_groups) == 0
+
+        # Scenario 2: Same size but different hashes (all unique content)
+        files_same_size_different_hashes = [
+            File(path="/fileA.txt", size=100, creation_time=0.0),
+            File(path="/fileB.txt", size=100, creation_time=0.0),
+            File(path="/fileC.txt", size=100, creation_time=0.0),
+        ]
+
+        # Set unique hashes for each file
+        files_same_size_different_hashes[0].hashes = FileHashes(front=b"hash_aaaa")
+        files_same_size_different_hashes[1].hashes = FileHashes(front=b"hash_bbbb")
+        files_same_size_different_hashes[2].hashes = FileHashes(front=b"hash_cccc")
+
+        hasher = HasherImpl(XXHashAlgorithmImpl())
+        grouper_with_hasher = FileGrouperImpl(hasher)
+        hash_groups = grouper_with_hasher.group_by_front_hash(files_same_size_different_hashes)
+
+        # No groups possible — all hashes unique
+        assert len(hash_groups) == 0

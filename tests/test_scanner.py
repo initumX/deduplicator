@@ -154,7 +154,7 @@ class TestFileScannerImpl:
                 raise PermissionError(f"Permission denied: {self}")
             return original_stat(self, *args, **kwargs)
 
-        monkeypatch.setattr(Path, 'stat', mocked_stat)  # ← is_symlink больше не нужно мокировать!
+        monkeypatch.setattr(Path, 'stat', mocked_stat)
 
         scanner = FileScannerImpl(
             root_dir=str(temp_dir),
