@@ -37,19 +37,19 @@ class FavoriteDirsDialog(QDialog):
 
         self.favorite_dirs = initial_dirs or []
 
-        # Folder list widget
-        self.list_widget = QListWidget()
+        # Folder list widget with explicit parent
+        self.list_widget = QListWidget(self)
         self.list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
 
         if self.favorite_dirs:
             for path in self.favorite_dirs:
                 self.list_widget.addItem(path)
 
-        # Buttons
-        add_button = QPushButton(TEXTS["btn_add_folder"])
-        remove_button = QPushButton(TEXTS["btn_remove_selected"])
-        ok_button = QPushButton(TEXTS["btn_ok"])
-        cancel_button = QPushButton(TEXTS["btn_cancel"])
+        # Buttons with explicit parent
+        add_button = QPushButton(TEXTS["btn_add_folder"], self)
+        remove_button = QPushButton(TEXTS["btn_remove_selected"], self)
+        ok_button = QPushButton(TEXTS["btn_ok"], self)
+        cancel_button = QPushButton(TEXTS["btn_cancel"], self)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(add_button)

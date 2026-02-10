@@ -20,7 +20,6 @@ from PySide6.QtGui import QPixmap
 from core.models import File
 
 
-
 class ImageLoaderSignals(QObject):
     image_loaded = Signal(object)
     loading_failed = Signal(str)
@@ -48,8 +47,8 @@ class ImageLoaderRunnable(QRunnable):
 
 
 class ImagePreviewLabel(QLabel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setText("Select an image file to preview...")
         self.setWordWrap(True)

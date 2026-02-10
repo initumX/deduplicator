@@ -11,7 +11,7 @@ Emits signals instead of handling deletion directly, which keeps this widget reu
 and decoupled from business logic.
 """
 
-from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView, QWidget
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
 from core.models import File, DuplicateGroup
@@ -29,16 +29,14 @@ class DuplicateGroupsList(QListWidget):
         delete_requested (list[str]): Emitted when files should be deleted.
     """
     file_selected = Signal(File)
-    delete_requested = Signal(list)  # Signal for deletion request
+    delete_requested = Signal(list)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.itemClicked.connect(self.on_item_clicked)
-
-        # Store groups for display
         self.current_groups = []
 
     def set_groups(self, groups: list[DuplicateGroup]):
@@ -55,7 +53,7 @@ class DuplicateGroupsList(QListWidget):
 
             folder_title = f"📁 {TEXTS['group_title_prefix']} {idx+1} | {TEXTS['group_size_label']}: {size_str}"
             folder_title_item = QListWidgetItem(folder_title)
-            folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Inactive
+            folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(folder_title_item)
 
             for file in group.files:

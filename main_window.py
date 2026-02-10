@@ -19,6 +19,7 @@ from utils.convert_utils import ConvertUtils
 from worker import DeduplicateWorker
 import os
 import sys
+from typing import Any
 import logging
 
 from main_window_ui import Ui_MainWindow
@@ -34,46 +35,44 @@ class SettingsManager:
     def __init__(self):
         self.settings = QSettings("MyCompany", "FileDeduplicator")
 
-    def save_settings(self, key: str, value: any):
+    def save_settings(self, key: str, value: Any):
         self.settings.setValue(key, value)
 
-    def load_settings(self, key: str, default: any = None) -> any:
+    def load_settings(self, key: str, default: Any = None) -> Any:
         return self.settings.value(key, default)
 
 
-class MainWindow(QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow):
+    """Main application window using composition with Ui_MainWindow."""
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(TEXTS["window_title"])
-        self.resize(900, 600)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
-        # Local state storage - app is stateless and does not store files/groups internally
+        # Local state storage
         self.files = []
         self.duplicate_groups = []
         self.favorite_dirs = []
-
-        # Initialize app with empty root_dir placeholder (required by current api.py signature)
         self.settings_manager = SettingsManager()
         self.worker_thread = None
         self.progress_dialog = None
         self.original_image_preview_size = None
 
-        self.setupUi(self)
-        self.init_ui()
         self.restore_settings()
         self.setup_connections()
 
     def setup_connections(self):
-        self.groups_list.file_selected.connect(self.image_preview.set_file)
-        self.select_dir_button.clicked.connect(self.select_root_folder)
-        self.favorite_dirs_button.clicked.connect(self.select_favorite_dirs)
-        self.find_duplicates_button.clicked.connect(self.start_deduplication)
-        self.keep_one_button.clicked.connect(self.keep_one_file_per_group)
-        self.groups_list.delete_requested.connect(self.handle_delete_files)
-        self.about_button.clicked.connect(self.show_about_dialog)
+        self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
+        self.ui.select_dir_button.clicked.connect(self.select_root_folder)
+        self.ui.favorite_dirs_button.clicked.connect(self.select_favorite_dirs)
+        self.ui.find_duplicates_button.clicked.connect(self.start_deduplication)
+        self.ui.keep_one_button.clicked.connect(self.keep_one_file_per_group)
+        self.ui.groups_list.delete_requested.connect(self.handle_delete_files)
+        self.ui.about_button.clicked.connect(self.show_about_dialog)
 
         if not hasattr(self, '_ordering_connected'):
-            self.ordering_combo.currentIndexChanged.connect(self.on_ordering_changed)
+            self.ui.ordering_combo.currentIndexChanged.connect(self.on_ordering_changed)
             self._ordering_connected = True
 
     def on_ordering_changed(self):
@@ -81,7 +80,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.duplicate_groups:
             return
 
-        order_mode = self.ordering_combo.currentData()
+        order_mode = self.ui.ordering_combo.currentData()
         reverse = order_mode == "NEWEST_FIRST"
 
         for group in self.duplicate_groups:
@@ -90,38 +89,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 reverse=reverse
             )
 
-        self.groups_list.set_groups(self.duplicate_groups)
+        self.ui.groups_list.set_groups(self.duplicate_groups)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'splitter'):
-            sizes = self.splitter.sizes()
-            total = sum(sizes)
-            if total > 0:
-                ratio = sizes[0] / total
-                new_left = int(self.splitter.width() * ratio)
-                new_right = self.splitter.width() - new_left
-                self.splitter.setSizes([new_left, new_right])
+        sizes = self.ui.splitter.sizes()
+        total = sum(sizes)
+        if total > 0:
+            ratio = sizes[0] / total
+            new_left = int(self.ui.splitter.width() * ratio)
+            new_right = self.ui.splitter.width() - new_left
+            self.ui.splitter.setSizes([new_left, new_right])
 
     def select_root_folder(self):
         dir_path = QFileDialog.getExistingDirectory(self, TEXTS["dialog_select_root_title"])
         if dir_path:
-            self.root_dir_input.setText(dir_path)
+            self.ui.root_dir_input.setText(dir_path)
 
     def select_favorite_dirs(self):
         dialog = FavoriteDirsDialog(self, self.favorite_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.favorite_dirs = dialog.get_selected_dirs()
-            self.favorite_list_widget.clear()
+            self.ui.favorite_list_widget.clear()
             for path in self.favorite_dirs:
-                self.favorite_list_widget.addItem(path)
+                self.ui.favorite_list_widget.addItem(path)
 
-            # Update favorite status for already-scanned files
             if self.files:
                 DuplicateService.update_favorite_status(self.files, self.favorite_dirs)
                 for group in self.duplicate_groups:
                     group.files.sort(key=lambda f: not f.is_from_fav_dir)
-                self.groups_list.set_groups(self.duplicate_groups)
+                self.ui.groups_list.set_groups(self.duplicate_groups)
 
             QMessageBox.information(
                 self,
@@ -176,13 +173,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if self.progress_dialog.wasCanceled():
                     raise Exception("Operation was cancelled by the user.")
 
-            # Update local state - app remains stateless
             self.files = DuplicateService.remove_files_from_file_list(self.files, file_paths)
             updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, file_paths)
             removed_group_count = len(self.duplicate_groups) - len(updated_groups)
 
             self.duplicate_groups = updated_groups
-            self.groups_list.set_groups(updated_groups)
+            self.ui.groups_list.set_groups(updated_groups)
 
             if removed_group_count > 0:
                 QMessageBox.information(
@@ -207,16 +203,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QMessageBox.about(self, TEXTS["title_about"], TEXTS["about_text"])
 
     def start_deduplication(self):
-        root_dir = self.root_dir_input.text().strip()
+        root_dir = self.ui.root_dir_input.text().strip()
         if not root_dir:
             QMessageBox.warning(self, "Input Error", TEXTS["error_please_select_root"])
             return
 
-        # Parse size filters
-        min_size_value = self.min_size_spin.value()
-        min_unit = self.min_unit_combo.currentText()
-        max_size_value = self.max_size_spin.value()
-        max_unit = self.max_unit_combo.currentText()
+        min_size_value = self.ui.min_size_spin.value()
+        min_unit = self.ui.min_unit_combo.currentText()
+        max_size_value = self.ui.max_size_spin.value()
+        max_unit = self.ui.max_unit_combo.currentText()
         min_size_str = f"{min_size_value}{min_unit}"
         max_size_str = f"{max_size_value}{max_unit}"
 
@@ -227,26 +222,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "Input Error", f"{TEXTS['error_invalid_size_format']}: {e}")
             return
 
-        # Parse extensions
         extensions = [
-            ext.strip() for ext in self.extension_filter_input.text().split(",")
+            ext.strip() for ext in self.ui.extension_filter_input.text().split(",")
             if ext.strip()
         ]
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
 
-        # Get mode and sort order from UI controls
-        mode_key = self.dedupe_mode_combo.currentData()
+        mode_key = self.ui.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
-        sort_order = SortOrder.NEWEST_FIRST if self.ordering_combo.currentData() == "NEWEST_FIRST" else SortOrder.OLDEST_FIRST
+        sort_order = SortOrder.NEWEST_FIRST if self.ui.ordering_combo.currentData() == "NEWEST_FIRST" else SortOrder.OLDEST_FIRST
 
-        # Cancel existing worker if any
         if self.worker_thread:
             self.worker_thread.stop()
             self.worker_thread.wait()
             self.worker_thread.deleteLater()
             self.worker_thread = None
 
-        # Setup progress dialog
         self.progress_dialog = QProgressDialog(
             TEXTS["text_progress_scanning"],
             TEXTS["btn_cancel"],
@@ -264,7 +255,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.progress_dialog.canceled.connect(cancel_action)
 
-        # Create unified parameters object - single source of truth for all settings
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=min_size,
@@ -275,7 +265,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             sort_order=sort_order
         )
 
-        # Launch worker thread with stateless app and unified parameters
         self.worker_thread = DeduplicateWorker(params)
         self.worker_thread.progress.connect(self.update_progress)
         self.worker_thread.finished.connect(self.on_deduplicate_finished)
@@ -305,13 +294,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.progress_dialog.deleteLater()
             self.progress_dialog = None
 
-        # Store results in local state
         self.duplicate_groups = duplicate_groups
-
-        # Re-sort groups based on current UI selection
         self.on_ordering_changed()
 
-        # Show statistics dialog
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
         self.stats_window.setWindowTitle(TEXTS["message_stats_title"])
@@ -343,31 +328,31 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().closeEvent(event)
 
     def save_settings(self):
-        self.settings_manager.save_settings("root_dir", self.root_dir_input.text())
-        self.settings_manager.save_settings("min_size", self.min_size_spin.value())
-        self.settings_manager.save_settings("max_size", self.max_size_spin.value())
-        self.settings_manager.save_settings("min_unit_index", self.min_unit_combo.currentIndex())
-        self.settings_manager.save_settings("max_unit_index", self.max_unit_combo.currentIndex())
-        self.settings_manager.save_settings("dedupe_mode", self.dedupe_mode_combo.currentIndex())
-        self.settings_manager.save_settings("extensions", self.extension_filter_input.text())
-        self.settings_manager.save_settings("splitter_sizes", list(self.splitter.sizes()))
+        self.settings_manager.save_settings("root_dir", self.ui.root_dir_input.text())
+        self.settings_manager.save_settings("min_size", self.ui.min_size_spin.value())
+        self.settings_manager.save_settings("max_size", self.ui.max_size_spin.value())
+        self.settings_manager.save_settings("min_unit_index", self.ui.min_unit_combo.currentIndex())
+        self.settings_manager.save_settings("max_unit_index", self.ui.max_unit_combo.currentIndex())
+        self.settings_manager.save_settings("dedupe_mode", self.ui.dedupe_mode_combo.currentIndex())
+        self.settings_manager.save_settings("extensions", self.ui.extension_filter_input.text())
+        self.settings_manager.save_settings("splitter_sizes", list(self.ui.splitter.sizes()))
         self.settings_manager.save_settings("favorite_dirs", self.favorite_dirs)
-        self.settings_manager.save_settings("ordering_mode", self.ordering_combo.currentIndex())
+        self.settings_manager.save_settings("ordering_mode", self.ui.ordering_combo.currentIndex())
 
     def restore_settings(self):
-        self.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
-        self.min_size_spin.setValue(int(self.settings_manager.load_settings("min_size", "100")))
-        self.max_size_spin.setValue(int(self.settings_manager.load_settings("max_size", "100")))
-        self.min_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("min_unit_index", "0")))
-        self.max_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("max_unit_index", "1")))
-        self.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", "1")))
-        self.extension_filter_input.setText(self.settings_manager.load_settings("extensions", ""))
+        self.ui.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
+        self.ui.min_size_spin.setValue(int(self.settings_manager.load_settings("min_size", "100")))
+        self.ui.max_size_spin.setValue(int(self.settings_manager.load_settings("max_size", "100")))
+        self.ui.min_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("min_unit_index", "0")))
+        self.ui.max_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("max_unit_index", "1")))
+        self.ui.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", "1")))
+        self.ui.extension_filter_input.setText(self.settings_manager.load_settings("extensions", ""))
 
         splitter_sizes = self.settings_manager.load_settings("splitter_sizes", None)
         if splitter_sizes:
-            self.splitter.setSizes([int(x) for x in splitter_sizes])
+            self.ui.splitter.setSizes([int(x) for x in splitter_sizes])
         else:
-            self.splitter.setSizes([400, 600])
+            self.ui.splitter.setSizes([400, 600])
 
         saved_dirs = self.settings_manager.load_settings("favorite_dirs", [])
         if isinstance(saved_dirs, str):
@@ -375,12 +360,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif not isinstance(saved_dirs, list):
             saved_dirs = []
         self.favorite_dirs = saved_dirs
-        self.favorite_list_widget.clear()
+        self.ui.favorite_list_widget.clear()
         for path in self.favorite_dirs:
-            self.favorite_list_widget.addItem(path)
+            self.ui.favorite_list_widget.addItem(path)
 
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
-        self.ordering_combo.setCurrentIndex(ordering_index)
+        self.ui.ordering_combo.setCurrentIndex(ordering_index)
         self.on_ordering_changed()
 
 
