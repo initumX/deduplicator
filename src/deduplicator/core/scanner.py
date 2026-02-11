@@ -12,6 +12,7 @@ Features:
 """
 
 import os
+import sys
 from typing import List, Optional, Callable
 from pathlib import Path
 import time
@@ -51,8 +52,8 @@ class FileScannerImpl(FileScanner):
         self.favourite_dirs = [os.path.normpath(d) for d in favourite_dirs] if favourite_dirs else []
 
     def scan(self,
-             stopped_flag: Optional[Callable[[], bool]] = None,
-             progress_callback: Optional[Callable[[str, int, object], None]] = None) -> FileCollection:
+            stopped_flag: Optional[Callable[[], bool]] = None,
+            progress_callback: Optional[Callable[[str, int, object], None]] = None) -> FileCollection:
         """
         Single-pass scanner with real-time progress updates and debug logging.
         Returns a filtered collection of files found in the directory tree.
@@ -88,8 +89,9 @@ class FileScannerImpl(FileScanner):
                     logger.debug("Scan interrupted by user")
                     return FileCollection([])
 
-                # Pre-filter inaccessible subdirectories BEFORE os.walk enters them
-                dirs[:] = [d for d in dirs if self._can_access_directory(Path(root) / d)]
+                # Pre-filter subdirectories BEFORE os.walk enters them
+                dirs[:] = [d for d in dirs if self._prefilter_dirs(Path(root) / d)]
+
                 for filename in files:
                     path = Path(root) / filename
                     file_info = self._process_file(path, stopped_flag=stopped_flag)
@@ -116,8 +118,42 @@ class FileScannerImpl(FileScanner):
         return FileCollection(found_files)
 
     @staticmethod
-    def _can_access_directory(path: Path) -> bool:
-        """Check if directory is accessible without raising exceptions. Python 3.9+ compatible."""
+    def _is_system_trash(path: Path) -> bool:
+        """
+        Check if path belongs to OS trash/recycle bin (cross-platform).
+        Returns False on any error (fail-safe: better to scan than skip valid data).
+        """
+        try:
+            # Resolve to absolute path for reliable substring matching
+            path_str = str(path.resolve(strict=False))
+
+            if sys.platform == "win32":
+                # Windows: $Recycle.Bin on system drive (C: by default)
+                if "$Recycle.Bin" in path_str or "\\Recycler\\" in path_str:
+                    return True
+            elif sys.platform == "darwin":
+                # macOS: user-specific .Trash
+                if "/.Trash/" in path_str or path_str.endswith("/.Trash"):
+                    return True
+            else:
+                # Linux/BSD: freedesktop.org standard locations
+                if ".local/share/Trash" in path_str or "/.trash/" in path_str:
+                    return True
+
+            return False
+        except (OSError, ValueError):
+            # Fail-safe: on any filesystem error, assume NOT trash
+            return False
+
+    @staticmethod
+    def _prefilter_dirs(path: Path) -> bool:
+        """Pre-filter directories: skip system trash and inaccessible locations."""
+        # Skip system trash directories to avoid rescanning deleted files
+        if FileScannerImpl._is_system_trash(path):
+            logger.debug(f"Skipping system trash directory: {path}")
+            return False
+
+        # Skip inaccessible directories
         try:
             return path.is_dir() and os.access(path, os.R_OK | os.X_OK)
         except (OSError, PermissionError):
