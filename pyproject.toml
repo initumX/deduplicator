@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "deduplicator" 
+name = "deduplicator"
 version = "1.0.0"
 description = "Fast duplicate file finder with optional GUI"
 readme = "README.md"
@@ -32,9 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = [
-    "PySide6>=6.5.0"
-]
-images = [
+    "PySide6",
     "Pillow>=9.0.0"
 ]
 dev = [
@@ -44,8 +42,8 @@ dev = [
 ]
 
 [project.scripts]
-dedup-cli = "deduplicator.utils.cli:main"        
-dedup-gui = "deduplicator.gui.launcher:main"  
+dedup = "deduplicator.utils.cli:main"
+dedup-gui = "deduplicator.gui.launcher:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
