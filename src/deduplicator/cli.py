@@ -195,11 +195,15 @@ Examples:
                     ext if ext.startswith(".") else f".{ext}"
                     for ext in extensions
                 ]
-            # Resolve favourite directories to absolute paths
-            favourite_dirs = [
-                str(Path(d).resolve())
-                for d in args.favourite_dirs
-            ]
+
+            # Parse favourite directories: support space-separated AND comma-separated
+            favourite_dirs = []
+            for item in args.favourite_dirs:
+                favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
+
+            # Resolve to absolute paths
+            favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
+
             mode = DeduplicationMode[args.mode.upper()]
             sort_order = SortOrder(args.sort_order)
             return DeduplicationParams(
