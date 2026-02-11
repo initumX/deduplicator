@@ -24,7 +24,7 @@ from deduplicator.gui.main_window_ui import Ui_MainWindow
 
 class SettingsManager:
     def __init__(self):
-        self.settings = QSettings("MyCompany", "FileDeduplicator")
+        self.settings = QSettings("InitumSoft", "FileDeduplicator")
 
     def save_settings(self, key: str, value: Any):
         self.settings.setValue(key, value)
