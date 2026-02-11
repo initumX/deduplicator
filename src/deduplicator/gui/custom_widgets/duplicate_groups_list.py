@@ -17,7 +17,6 @@ from PySide6.QtCore import Qt, Signal
 from deduplicator.core.models import File, DuplicateGroup
 from deduplicator.services.file_service import FileService
 from deduplicator.utils.convert_utils import ConvertUtils
-from deduplicator.gui.texts import TEXTS
 
 
 class DuplicateGroupsList(QListWidget):
@@ -51,7 +50,7 @@ class DuplicateGroupsList(QListWidget):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = ConvertUtils.bytes_to_human(group.size)
 
-            folder_title = f"📁 {TEXTS['group_title_prefix']} {idx+1} | {TEXTS['group_size_label']}: {size_str}"
+            folder_title = f"📁 {"Group"} {idx+1} | {"Size"}: {size_str}"
             folder_title_item = QListWidgetItem(folder_title)
             folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(folder_title_item)
@@ -88,9 +87,9 @@ class DuplicateGroupsList(QListWidget):
 
         if len(selected_items) == 1:
             file = selected_items[0].data(Qt.ItemDataRole.UserRole)
-            open_action = QAction(TEXTS["context_menu_open"], self)
-            reveal_action = QAction(TEXTS["context_menu_reveal"], self)
-            delete_action = QAction(TEXTS["context_menu_move_to_trash"], self)
+            open_action = QAction("Open", self)
+            reveal_action = QAction("Reveal in Explorer", self)
+            delete_action = QAction("Move to Trash", self)
 
             open_action.triggered.connect(lambda _: FileService.open_file(file.path))
             reveal_action.triggered.connect(lambda _: FileService.reveal_in_explorer(file.path))
@@ -102,7 +101,7 @@ class DuplicateGroupsList(QListWidget):
             menu.addAction(delete_action)
 
         else:
-            menu_text = TEXTS["context_menu_move_multiple"].format(count=len(selected_items))
+            menu_text = f"Move {len(selected_items)} files to Trash"
             delete_action = QAction(menu_text, self)
             delete_action.triggered.connect(lambda _: self.delete_selected_files(selected_items))
             menu.addAction(delete_action)

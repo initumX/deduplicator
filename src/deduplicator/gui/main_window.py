@@ -19,12 +19,10 @@ from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsD
 from deduplicator.utils.convert_utils import ConvertUtils
 from deduplicator.gui.worker import DeduplicateWorker
 import os
-import sys
 from typing import Any
 import logging
 
 from deduplicator.gui.main_window_ui import Ui_MainWindow
-from deduplicator.gui.texts import TEXTS
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -105,7 +103,7 @@ class MainWindow(QMainWindow):
             self.ui.splitter.setSizes([new_left, new_right])
 
     def select_root_folder(self):
-        dir_path = QFileDialog.getExistingDirectory(self, TEXTS["dialog_select_root_title"])
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Root Folder")
         if dir_path:
             self.ui.root_dir_input.setText(dir_path)
 
@@ -125,24 +123,24 @@ class MainWindow(QMainWindow):
 
             QMessageBox.information(
                 self,
-                TEXTS["title_success"],
-                TEXTS["message_favorite_folders_updated"].format(count=len(self.favorite_dirs))
+                "Success",
+                f"Favourite Folders Updated: {len(self.favorite_dirs)}"
             )
 
     def keep_one_file_per_group(self):
         if not self.duplicate_groups:
-            QMessageBox.information(self, TEXTS["title_info"], TEXTS["message_no_duplicates_found"])
+            QMessageBox.information(self, "Information", "No duplicate groups found")
             return
 
         files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(self.duplicate_groups)
         if not files_to_delete:
-            QMessageBox.information(self, TEXTS["title_info"], TEXTS["message_nothing_to_delete"])
+            QMessageBox.information(self, "Information", "Nothing to delete")
             return
 
         reply = QMessageBox.question(
             self,
-            TEXTS["title_confirm_deletion"],
-            TEXTS["text_confirm_deletion"].format(count=len(files_to_delete)),
+            "Confirm Deletion",
+            f"Are you sure you want to move {len(files_to_delete)} files to trash?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -157,12 +155,12 @@ class MainWindow(QMainWindow):
 
         total = len(file_paths)
         self.progress_dialog = QProgressDialog(
-            TEXTS["text_progress_delete"],
-            TEXTS["btn_cancel"],
+            "Moving files to trash...",
+            "Cancel",
             0, total, self
         )
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progress_dialog.setWindowTitle(TEXTS["title_progress_delete"])
+        self.progress_dialog.setWindowTitle("Deleting files")
         self.progress_dialog.show()
 
         failed_files = []  # List of (path, error) for files that could not be deleted
@@ -184,7 +182,7 @@ class MainWindow(QMainWindow):
                 # Update progress ONLY for successfully deleted files
                 self.progress_dialog.setValue(deleted_count)
                 self.progress_dialog.setLabelText(
-                    TEXTS["text_progress_deletion"].format(filename=os.path.basename(path))
+                    f"Deleting: {os.path.basename(path)}"
                 )
                 QApplication.processEvents()
 
@@ -201,7 +199,7 @@ class MainWindow(QMainWindow):
             messages = []
             if removed_group_count > 0:
                 messages.append(
-                    TEXTS["text_removing_groups_from_a_list"].format(group_count=removed_group_count)
+                    f"{removed_group_count} groups had no duplicates left and were therefore removed from the list"
                 )
 
             if failed_files:
@@ -219,8 +217,8 @@ class MainWindow(QMainWindow):
                 )
                 title = "Partial Success"
             else:
-                messages.append(TEXTS["text_files_moved_to_trash"].format(count=deleted_count))
-                title = TEXTS["title_success"]
+                messages.append(f"{deleted_count} files moved to trash.")
+                title = "Success"
 
             QMessageBox.information(
                 self,
@@ -228,19 +226,35 @@ class MainWindow(QMainWindow):
                 "\n\n".join(messages)
             )
         except Exception as e:
-            QMessageBox.critical(self, TEXTS["title_error"], f"{TEXTS['error_occurred']}:\n{e}")
+            QMessageBox.critical(self, "Error", f"{"Error occurred"}:\n{e}")
         finally:
             if self.progress_dialog:
                 self.progress_dialog.close()
                 self.progress_dialog = None
 
     def show_about_dialog(self):
-        QMessageBox.about(self, TEXTS["title_about"], TEXTS["about_text"])
+        QMessageBox.about(
+            self,
+        "About",
+        """
+            <b>File Deduplicator</b><br><br>
+            Version: 2.2.4<br>A tool to find and remove duplicate files.<br><br><b>
+            Features:</b><br><br>
+            -Filtering by size and extension<br><br>
+            -Using xxhash (very fast)<br><br>
+            -Three deduplication modes (fast, normal, full)<br><br>
+            -Delete all duplicates with one click (keep one file per group)<br><br>
+            -Image preview, context menu, auto-save settings, tooltips<br><br>
+            -and much more<br><br>
+            © Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>
+            License: MIT License<br>
+            """
+        )
 
     def start_deduplication(self):
         root_dir = self.ui.root_dir_input.text().strip()
         if not root_dir:
-            QMessageBox.warning(self, "Input Error", TEXTS["error_please_select_root"])
+            QMessageBox.warning(self, "Input Error", "Please, select folder to scan!")
             return
 
         # Cancel existing worker if any
@@ -260,7 +274,7 @@ class MainWindow(QMainWindow):
             min_size = ConvertUtils.human_to_bytes(min_size_str)
             max_size = ConvertUtils.human_to_bytes(max_size_str)
         except ValueError as e:
-            QMessageBox.warning(self, "Input Error", f"{TEXTS['error_invalid_size_format']}: {e}")
+            QMessageBox.warning(self, "Input Error", f"Invalid size format: {e}")
             return
 
         # Parse extensions
@@ -277,13 +291,13 @@ class MainWindow(QMainWindow):
 
         # Setup progress dialog
         self.progress_dialog = QProgressDialog(
-            TEXTS["text_progress_scanning"],
-            TEXTS["btn_cancel"],
+            "Scanning...",
+            "Cancel",
             0, 100, self
         )
         self.progress_dialog.setMinimumDuration(1000)
         self.progress_dialog.setModal(True)
-        self.progress_dialog.setWindowTitle(TEXTS["title_processing"])
+        self.progress_dialog.setWindowTitle("Processing")
         self.progress_dialog.setAutoReset(False)
         self.progress_dialog.show()
 
@@ -343,7 +357,7 @@ class MainWindow(QMainWindow):
 
         stats_text = stats.print_summary()
         self.stats_window = QMessageBox(self)
-        self.stats_window.setWindowTitle(TEXTS["message_stats_title"])
+        self.stats_window.setWindowTitle("Deduplication Statistics")
         self.stats_window.setText(stats_text)
         self.stats_window.setIcon(QMessageBox.Icon.Information)
         self.stats_window.exec()
@@ -357,8 +371,8 @@ class MainWindow(QMainWindow):
 
         QMessageBox.critical(
             self,
-            TEXTS["title_error"],
-            f"{TEXTS['error_occurred']}:\n{error_message}"
+            "Error"
+            f"{"Error occurred"}:\n{error_message}"
         )
 
     def closeEvent(self, event):

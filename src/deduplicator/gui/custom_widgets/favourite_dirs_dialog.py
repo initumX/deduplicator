@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
     QVBoxLayout, QFileDialog, QAbstractItemView
 )
-from deduplicator.gui.texts import TEXTS
 
 
 class FavouriteDirsDialog(QDialog):
@@ -32,7 +31,7 @@ class FavouriteDirsDialog(QDialog):
     def __init__(self, parent=None, initial_dirs: list[str] = None):
         super().__init__(parent)
 
-        self.setWindowTitle(TEXTS["dialog_favorite_dirs_title"])
+        self.setWindowTitle("Favourite Folders")
         self.setMinimumWidth(500)
 
         self.favorite_dirs = initial_dirs or []
@@ -46,10 +45,10 @@ class FavouriteDirsDialog(QDialog):
                 self.list_widget.addItem(path)
 
         # Buttons with explicit parent
-        add_button = QPushButton(TEXTS["btn_add_folder"], self)
-        remove_button = QPushButton(TEXTS["btn_remove_selected"], self)
-        ok_button = QPushButton(TEXTS["btn_ok"], self)
-        cancel_button = QPushButton(TEXTS["btn_cancel"], self)
+        add_button = QPushButton("Add Folder", self)
+        remove_button = QPushButton("Remove Selected", self)
+        ok_button = QPushButton("OK", self)
+        cancel_button = QPushButton("Cancel", self)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(add_button)
@@ -74,7 +73,7 @@ class FavouriteDirsDialog(QDialog):
 
     def on_add(self):
         """Handler for adding a new folder."""
-        dir_path = QFileDialog.getExistingDirectory(self, TEXTS["dialog_select_favorite_folder_title"])
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Favourite Folder to add")
         if dir_path:
             if dir_path not in self.favorite_dirs:
                 self.favorite_dirs.append(dir_path)

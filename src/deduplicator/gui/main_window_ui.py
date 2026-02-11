@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt
 from deduplicator.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
 from deduplicator.gui.custom_widgets.image_preview_label import ImagePreviewLabel
 from deduplicator.core.models import DeduplicationMode
-from deduplicator.gui.texts import TEXTS
 
 
 class Ui_MainWindow:
@@ -26,7 +25,7 @@ class Ui_MainWindow:
         self.root_layout.addWidget(self.label_root_folder)
         self.root_dir_input = QLineEdit(central_widget)
         self.select_dir_button = QPushButton(central_widget)
-        self.root_dir_input.setPlaceholderText(TEXTS["select_root_dir"])
+        self.root_dir_input.setPlaceholderText("Select Folder to scan")
         self.root_layout.addWidget(self.root_dir_input)
         self.root_layout.addWidget(self.select_dir_button)
 
@@ -54,8 +53,11 @@ class Ui_MainWindow:
         self.label_extensions = QLabel(central_widget)
         self.extension_layout_inside.addWidget(self.label_extensions)
         self.extension_filter_input = QLineEdit(central_widget)
-        self.extension_filter_input.setPlaceholderText(TEXTS["placeholder_extensions"])
-        self.extension_filter_input.setToolTip(TEXTS["tooltip_extensions"])
+        self.extension_filter_input.setPlaceholderText(".jpg,.png")
+        self.extension_filter_input.setToolTip(
+            """Enter comma-separated file extensions to filter (e.g., .jpg, .png, .pdf).
+                Leave empty to disable extension filtering."""
+        )
         self.extension_layout_inside.addWidget(self.extension_filter_input)
 
         # Filters group
@@ -70,7 +72,9 @@ class Ui_MainWindow:
         # Favorite folders
         self.favorite_group = QGroupBox(central_widget)
         self.favorite_dirs_button = QPushButton(central_widget)
-        self.favorite_dirs_button.setToolTip(TEXTS["tooltip_favorite_dirs"])
+        self.favorite_dirs_button.setToolTip(
+            "Files from favorite folders are prioritized (goes first, as 'original') in each group.\n"
+        )
         self.favorite_list_widget = QListWidget(central_widget)
         self.favorite_list_widget.setContentsMargins(0, 0, 0, 0)
         self.favorite_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
@@ -97,19 +101,31 @@ class Ui_MainWindow:
         self.mode_label = QLabel(central_widget)
         self.dedupe_mode_combo = QComboBox(central_widget)
         self.dedupe_mode_combo.addItems([mode.value.upper() for mode in DeduplicationMode])
-        self.dedupe_mode_combo.setToolTip(TEXTS["tooltip_dedupe_mode"])
+        self.dedupe_mode_combo.setToolTip(
+            """
+            FAST: Size + checksum from the first few KB (fastest, but may produce false positives)
+            NORMAL: Size + checksums from 3 parts of the file (generally reliable)
+            FULL: Size + checksums from 2 parts of the file + checksum of entire file (very slow for large files)
+            
+            ** This staged approach minimizes expensive full-hash computations: each filtering step 
+            eliminates non-matching files early, ensuring that only highly probable duplicates 
+            reach the final FULL comparison stage.
+            """
+        )
 
         self.ordering_label = QLabel(central_widget)
         self.ordering_combo = QComboBox(central_widget)
 
         self.find_duplicates_button = QPushButton(central_widget)
-        self.find_duplicates_button.setToolTip(TEXTS["tooltip_find_duplicates"])
+        self.find_duplicates_button.setToolTip(
+            "Start searching for duplicate files.\nFiles from favorite folders are marked with ✅"
+        )
 
         self.keep_one_button = QPushButton(central_widget)
-        self.keep_one_button.setToolTip(TEXTS["tooltip_delete_duplicates"])
+        self.keep_one_button.setToolTip("Keep one file (the first) in the group and delete the rest")
 
         self.about_button = QPushButton(central_widget)
-        self.about_button.setToolTip(TEXTS["tooltip_about"])
+        self.about_button.setToolTip("Learn more about the program and its author")
 
         control_layout = QHBoxLayout()
         control_layout.addWidget(self.find_duplicates_button)
@@ -154,33 +170,33 @@ class Ui_MainWindow:
 
     def retranslateUi(self, MainWindow: QMainWindow):
         """Apply all UI texts - single source of truth for strings."""
-        MainWindow.setWindowTitle(TEXTS["window_title"])
+        MainWindow.setWindowTitle("File Deduplicator")
 
         # Buttons and input fields
-        self.select_dir_button.setText(TEXTS["btn_select_root"])
-        self.root_dir_input.setPlaceholderText(TEXTS["select_root_dir"])
-        self.find_duplicates_button.setText(TEXTS["btn_start_deduplication"])
-        self.keep_one_button.setText(TEXTS["btn_keep_one"])
-        self.about_button.setText(TEXTS["btn_about"])
-        self.favorite_dirs_button.setText(TEXTS["btn_manage_favorites"])
+        self.select_dir_button.setText("Select Folder")
+        self.root_dir_input.setPlaceholderText("Select Folder to scan")
+        self.find_duplicates_button.setText("Find Duplicates")
+        self.keep_one_button.setText("Keep One (The first one) File Per Group")
+        self.about_button.setText("About")
+        self.favorite_dirs_button.setText("Manage Favourite Folders List")
 
         # Group box titles
-        self.filters_group.setTitle(TEXTS["group_box_filters"])
-        self.favorite_group.setTitle(TEXTS["group_box_favorites"])
+        self.filters_group.setTitle("Filters")
+        self.favorite_group.setTitle("Favourite Folders")
 
         # Labels
-        self.label_root_folder.setText(TEXTS["label_root_folder"])
-        self.label_min_size.setText(TEXTS["label_min_size"])
-        self.label_max_size.setText(TEXTS["label_max_size"])
-        self.label_extensions.setText(TEXTS["label_extensions"])
-        self.mode_label.setText(TEXTS["label_dedupe_mode"])
-        self.ordering_label.setText(TEXTS["label_ordering"])
+        self.label_root_folder.setText("Root Folder")
+        self.label_min_size.setText("Min size:")
+        self.label_max_size.setText("Max size:")
+        self.label_extensions.setText("Extensions:")
+        self.mode_label.setText("Mode:")
+        self.ordering_label.setText("Order by Date:")
 
         # Deduplication mode combo box
         dedupe_mode_items = [
-            TEXTS["mode_fast"],
-            TEXTS["mode_normal"],
-            TEXTS["mode_full"]
+            "Fast",
+            "Normal",
+            "Full"
         ]
         current_index = self.dedupe_mode_combo.currentIndex()
         self.dedupe_mode_combo.clear()
@@ -191,8 +207,8 @@ class Ui_MainWindow:
 
         # Ordering combo box
         ordering_items = [
-            (TEXTS["Oldest_first"], "OLDEST_FIRST"),
-            (TEXTS["Newest_first"], "NEWEST_FIRST")
+            ("Oldest goes first", "OLDEST_FIRST"),
+            ("Newest goes first", "NEWEST_FIRST")
         ]
         current_index = self.ordering_combo.currentIndex()
         self.ordering_combo.clear()
