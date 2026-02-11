@@ -121,7 +121,7 @@ Examples:
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
         )
         parser.add_argument(
-            "--favorite-dirs", "-f",
+            "--favourite-dirs", "-f",
             nargs="+",
             default=[],
             type=str,
@@ -141,7 +141,7 @@ Examples:
         parser.add_argument(
             "--keep-one",
             action="store_true",
-            help="Keep one file per duplicate group (first file from favorite dirs if available)"
+            help="Keep one file per duplicate group (first file from favourite dirs if available)"
         )
         parser.add_argument(
             "--sort-order",
@@ -184,13 +184,13 @@ Examples:
                 self.error_exit("Maximum size cannot be less than minimum size")
         except ValueError as e:
             self.error_exit(f"{self.translator.tr('error_invalid_size_format')}: {e}")
-        # Validate favorite directories
-        for fav_dir in args.favorite_dirs:
+        # Validate favourite directories
+        for fav_dir in args.favourite_dirs:
             fav_path = Path(fav_dir).resolve()
             if not fav_path.exists():
-                self.warning(f"Warning: Favorite directory not found: {fav_dir}")
+                self.warning(f"Warning: Favourite directory not found: {fav_dir}")
             elif not fav_path.is_dir():
-                self.warning(f"Warning: Favorite path is not a directory: {fav_dir}")
+                self.warning(f"Warning: Favourite path is not a directory: {fav_dir}")
 
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
@@ -209,10 +209,10 @@ Examples:
                     ext if ext.startswith(".") else f".{ext}"
                     for ext in extensions
                 ]
-            # Resolve favorite directories to absolute paths
-            favorite_dirs = [
+            # Resolve favourite directories to absolute paths
+            favourite_dirs = [
                 str(Path(d).resolve())
-                for d in args.favorite_dirs
+                for d in args.favourite_dirs
             ]
             mode = DeduplicationMode[args.mode.upper()]
             sort_order = SortOrder(args.sort_order)
@@ -221,7 +221,7 @@ Examples:
                 min_size_bytes=min_size_bytes,
                 max_size_bytes=max_size_bytes,
                 extensions=extensions,
-                favourite_dirs=favorite_dirs,
+                favourite_dirs=favourite_dirs,
                 sort_order=sort_order,
                 mode=mode
             )
@@ -290,7 +290,7 @@ Examples:
         for idx, group in enumerate(groups, 1):
             size_str = ConvertUtils.bytes_to_human(group.size)
             print(f"\n📁 Group {idx} | Size: {size_str} | Files: {len(group.files)}")
-            # Use order from core (already sorted by favorite dirs + sort_order)
+            # Use order from core (already sorted by favourite dirs + sort_order)
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
                 time_str = ConvertUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
@@ -326,7 +326,7 @@ Examples:
                 print(f"   [KEEP] {preserved_file.path}")
                 print(f"          Size: {ConvertUtils.bytes_to_human(preserved_file.size)}{fav_marker}")
                 if preserved_file.is_from_fav_dir:
-                    print(f"          Reason: from favorite directory")
+                    print(f"          Reason: from favourite directory")
                 else:
                     print(f"          Reason: based on sort order ({params.sort_order.value})")
                 # Files that would be deleted
@@ -353,7 +353,7 @@ Examples:
             print(f"   [KEEP] {preserved_file.path}")
             print(f"          Size: {ConvertUtils.bytes_to_human(preserved_file.size)}{fav_marker}")
             if preserved_file.is_from_fav_dir:
-                print(f"          Reason: from favorite directory")
+                print(f"          Reason: from favourite directory")
             else:
                 print(f"          Reason: based on sort order ({params.sort_order.value})")
             # Files that would be deleted

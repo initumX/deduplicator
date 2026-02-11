@@ -12,7 +12,7 @@ class DeduplicationCommand:
     """
     Orchestrates the entire deduplication workflow:
     1. Initialize app with root directory
-    2. Set favorite directories
+    2. Set favourite directories
     3. Execute find_duplicates with progress/cancellation support
 
     Usage:

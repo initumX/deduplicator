@@ -87,18 +87,18 @@ class File:
             _, ext = os.path.splitext(self.name)
             self.extension = ext.lower()  # ".JPG" → ".jpg"
 
-    def set_favorite_status(self, favorite_dirs: List[str]) -> None:
+    def set_favourite_status(self, favourite_dirs: List[str]) -> None:
         """
-        Sets the is_from_fav_dir flag if the file is located in one of the favorite directories.
-        The path is checked strictly: a file is considered to be from a favorite directory
-        if its path starts with one of the paths from favorite_dirs.
+        Sets the is_from_fav_dir flag if the file is located in one of the favourite directories.
+        The path is checked strictly: a file is considered to be from a favourite directory
+        if its path starts with one of the paths from favourite_dirs.
         """
         normalized_path = os.path.normpath(self.path)
 
-        for fav_dir in favorite_dirs:
+        for fav_dir in favourite_dirs:
             normalized_fav_dir = os.path.normpath(fav_dir)
 
-            # Check if the file's path is a subpath of the favorite directory
+            # Check if the file's path is a subpath of the favourite directory
             if normalized_path.startswith(normalized_fav_dir + os.sep) or \
                     normalized_path == normalized_fav_dir:
                 self.is_from_fav_dir = True
@@ -305,7 +305,7 @@ class DeduplicationParams:
             min_size_str: str,
             max_size_str: str,
             extensions_str: str = "",
-            favorite_dirs: Optional[List[str]] = None,
+            favourite_dirs: Optional[List[str]] = None,
             mode: DeduplicationMode = DeduplicationMode.NORMAL
     ) -> 'DeduplicationParams':
         """
@@ -324,6 +324,6 @@ class DeduplicationParams:
             min_size_bytes=min_size,
             max_size_bytes=max_size,
             extensions=ext_list,
-            favourite_dirs=favorite_dirs or [],
+            favourite_dirs=favourite_dirs or [],
             mode=mode
         )

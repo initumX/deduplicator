@@ -69,32 +69,32 @@ class Ui_MainWindow:
         self.filters_group.setLayout(filters_group_layout)
         self.filters_group.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        # Favorite folders
-        self.favorite_group = QGroupBox(central_widget)
+        # Favourite folders
+        self.favourite_group = QGroupBox(central_widget)
         self.favourite_dirs_button = QPushButton(central_widget)
         self.favourite_dirs_button.setToolTip(
-            "Files from favorite folders are prioritized (goes first, as 'original') in each group.\n"
+            "Files from favourite folders are prioritized (goes first, as 'original') in each group.\n"
         )
-        self.favorite_list_widget = QListWidget(central_widget)
-        self.favorite_list_widget.setContentsMargins(0, 0, 0, 0)
-        self.favorite_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        self.favorite_list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.favorite_list_widget.setStyleSheet("padding: 0px; margin: 0px;")
+        self.favourite_list_widget = QListWidget(central_widget)
+        self.favourite_list_widget.setContentsMargins(0, 0, 0, 0)
+        self.favourite_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.favourite_list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.favourite_list_widget.setStyleSheet("padding: 0px; margin: 0px;")
 
-        favorite_layout = QVBoxLayout()
-        favorite_layout.addWidget(self.favourite_dirs_button)
-        favorite_layout.addWidget(self.favorite_list_widget)
-        self.favorite_group.setLayout(favorite_layout)
-        self.favorite_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        favourite_layout = QVBoxLayout()
+        favourite_layout.addWidget(self.favourite_dirs_button)
+        favourite_layout.addWidget(self.favourite_list_widget)
+        self.favourite_group.setLayout(favourite_layout)
+        self.favourite_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # Sync height with filters group
         MainWindow.updateGeometry()
-        self.favorite_group.setMaximumHeight(self.filters_group.sizeHint().height() + 20)
+        self.favourite_group.setMaximumHeight(self.filters_group.sizeHint().height() + 20)
 
-        # Top-level layout: filters + favorites side by side
+        # Top-level layout: filters + favourites side by side
         level_layout = QHBoxLayout()
         level_layout.addWidget(self.filters_group)
-        level_layout.addWidget(self.favorite_group)
+        level_layout.addWidget(self.favourite_group)
         level_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # Control buttons and mode selection
@@ -118,7 +118,7 @@ class Ui_MainWindow:
 
         self.find_duplicates_button = QPushButton(central_widget)
         self.find_duplicates_button.setToolTip(
-            "Start searching for duplicate files.\nFiles from favorite folders are marked with ✅"
+            "Start searching for duplicate files.\nFiles from favourite folders are marked with ✅"
         )
 
         self.keep_one_button = QPushButton(central_widget)
@@ -182,7 +182,7 @@ class Ui_MainWindow:
 
         # Group box titles
         self.filters_group.setTitle("Filters")
-        self.favorite_group.setTitle("Favourite Folders")
+        self.favourite_group.setTitle("Favourite Folders")
 
         # Labels
         self.label_root_folder.setText("Root Folder")

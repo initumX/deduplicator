@@ -198,7 +198,7 @@ class Deduplicator(Protocol):
         Args:
             files: List of scanned files to analyze for duplicates.
             params: Unified configuration parameters including root directory, size filters,
-                    file extensions, favorite directories, deduplication mode, and sort order
+                    file extensions, favourite directories, deduplication mode, and sort order
             stopped_flag: Optional function to check for cancellation.
             progress_callback: Optional callback for progress updates (stage, current, total).
 

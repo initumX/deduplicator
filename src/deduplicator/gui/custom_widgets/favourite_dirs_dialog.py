@@ -68,7 +68,7 @@ class FavouriteDirsDialog(QDialog):
         cancel_button.clicked.connect(self.reject)
 
     def get_selected_dirs(self) -> list[str]:
-        """Returns the selected favorite folders."""
+        """Returns the selected favourite folders."""
         return [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 
     def on_add(self):

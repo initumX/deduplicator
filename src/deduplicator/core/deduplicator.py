@@ -76,7 +76,7 @@ class DeduplicatorImpl(Deduplicator):
         # Sorting inside each group
         for group in all_duplicates:
             group.files.sort(key=lambda f: (
-                not f.is_from_fav_dir,  # 1. Favorite files first (False < True)
+                not f.is_from_fav_dir,  # 1. Favourite files first (False < True)
                 -(f.creation_time or 0) if params.sort_order == SortOrder.NEWEST_FIRST
                 else (f.creation_time or 0),
                 f.path.lower(),  # 3. Path as deterministic tie-breaker

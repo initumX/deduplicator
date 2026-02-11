@@ -105,12 +105,12 @@ class MainWindow(QMainWindow):
         dialog = FavouriteDirsDialog(self, self.favourite_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.favourite_dirs = dialog.get_selected_dirs()
-            self.ui.favorite_list_widget.clear()
+            self.ui.favourite_list_widget.clear()
             for path in self.favourite_dirs:
-                self.ui.favorite_list_widget.addItem(path)
+                self.ui.favourite_list_widget.addItem(path)
 
             if self.files:
-                DuplicateService.update_favorite_status(self.files, self.favourite_dirs)
+                DuplicateService.update_favourite_status(self.files, self.favourite_dirs)
                 for group in self.duplicate_groups:
                     group.files.sort(key=lambda f: not f.is_from_fav_dir)
                 self.ui.groups_list.set_groups(self.duplicate_groups)
@@ -414,9 +414,9 @@ class MainWindow(QMainWindow):
         elif not isinstance(saved_dirs, list):
             saved_dirs = []
         self.favourite_dirs = saved_dirs
-        self.ui.favorite_list_widget.clear()
+        self.ui.favourite_list_widget.clear()
         for path in self.favourite_dirs:
-            self.ui.favorite_list_widget.addItem(path)
+            self.ui.favourite_list_widget.addItem(path)
 
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
         self.ui.ordering_combo.setCurrentIndex(ordering_index)

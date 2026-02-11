@@ -39,21 +39,21 @@ class DuplicateService:
         return [f for f in files if f.path not in file_paths]
 
     @staticmethod
-    def update_favorite_status(files: List[File], favorite_dirs: List[str]):
+    def update_favourite_status(files: List[File], favourite_dirs: List[str]):
         """
-        Updates the `is_from_fav_dir` flag on all files based on the current favorite directories.
+        Updates the `is_from_fav_dir` flag on all files based on the current favourite directories.
 
-        This method checks whether each file's path starts with one of the favorite directory paths,
+        This method checks whether each file's path starts with one of the favourite directory paths,
         and sets its `is_from_fav_dir` attribute accordingly.
 
         Args:
             files (List[File]): List of files to update.
-            favorite_dirs (List[str]): List of favorite directory paths.
+            favourite_dirs (List[str]): List of favourite directory paths.
         """
         if not files:
             return
         for file in files:
-            file.set_favorite_status(favorite_dirs)
+            file.set_favourite_status(favourite_dirs)
 
     @staticmethod
     def keep_only_one_file_per_group(groups: List[DuplicateGroup]) -> Tuple[List[str], List[DuplicateGroup]]:

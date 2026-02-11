@@ -15,7 +15,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - **Statistics** Dialog Box
 - **Context menu** (with open,reveal in explorer and delete file(s) options)
 - **One click deletion** ( using 'Keep One File Per Group' button)
-- Manage **favorite directories** for prioritization
+- Manage **favourite directories** for prioritization
 - tooltips
 
 ## Built With
