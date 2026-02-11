@@ -11,22 +11,17 @@ Features:
 - Returns a FileCollection containing scanned files
 """
 
-import os, sys
+import os
 from typing import List, Optional, Callable
 from pathlib import Path
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Local imports
 from deduplicator.core.models import File, FileCollection
 from deduplicator.core.interfaces import FileScanner
-
-# Debug mode enabled only when DEBUG=1 environment variable is set
-_DEBUG = os.environ.get("DEBUG", "0") == "1"
-
-def _debug(msg: str) -> None:
-    """Print debug message to stderr when DEBUG=1."""
-    if _DEBUG:
-        print(f"[DEBUG scanner] {msg}", file=sys.stderr)
 
 class FileScannerImpl(FileScanner):
     """
@@ -38,7 +33,7 @@ class FileScannerImpl(FileScanner):
         min_size: Minimum file size in bytes (optional)
         max_size: Maximum file size in bytes (optional)
         extensions: List of allowed file extensions (e.g., [".txt", ".jpg"])
-        favorite_dirs: Directories marked as favorites for special processing
+        favourite_dirs: Directories marked as favourites for special processing
     """
 
     def __init__(
@@ -53,7 +48,7 @@ class FileScannerImpl(FileScanner):
         self.min_size = min_size
         self.max_size = max_size
         self.extensions = [ext.lower() for ext in extensions] if extensions else []
-        self.favorite_dirs = [os.path.normpath(d) for d in favourite_dirs] if favourite_dirs else []
+        self.favourite_dirs = [os.path.normpath(d) for d in favourite_dirs] if favourite_dirs else []
 
     def scan(self,
              stopped_flag: Optional[Callable[[], bool]] = None,
@@ -62,35 +57,35 @@ class FileScannerImpl(FileScanner):
         Single-pass scanner with real-time progress updates and debug logging.
         Returns a filtered collection of files found in the directory tree.
         """
-        _debug("Starting scan operation")
-        _debug(f"Root directory: {self.root_dir}")
-        _debug(f"Filters: min_size={self.min_size}, max_size={self.max_size}, extensions={self.extensions}")
+        logger.debug("Starting scan operation")
+        logger.debug(f"Root directory: {self.root_dir}")
+        logger.debug(f"Filters: min_size={self.min_size}, max_size={self.max_size}, extensions={self.extensions}")
 
         found_files = []
         root_path = Path(self.root_dir)
         processed_files = 0
 
         if stopped_flag and stopped_flag():
-            _debug("Scan cancelled before start")
+            logger.debug("Scan cancelled before start")
             return FileCollection([])
 
         if not root_path.exists():
             error_msg = f"Directory does not exist: {self.root_dir}"
-            print(f"❌ Error: {error_msg}", file=sys.stderr)
+            logger.error(error_msg)
             raise RuntimeError(error_msg)
         if not root_path.is_dir():
             error_msg = f"Not a directory: {self.root_dir}"
-            print(f"❌ Error: {error_msg}", file=sys.stderr)
+            logger.error(error_msg)
             raise RuntimeError(error_msg)
 
         try:
-            _debug(f"Scanning directory: {self.root_dir}")
+            logger.debug(f"Scanning directory: {self.root_dir}")
             start_time = time.time()
 
             # Use os.walk instead of Path.rglob for faster traversal
             for root, dirs, files in os.walk(str(root_path)):
                 if stopped_flag and stopped_flag():
-                    _debug("Scan interrupted by user")
+                    logger.debug("Scan interrupted by user")
                     return FileCollection([])
 
                 # Pre-filter inaccessible subdirectories BEFORE os.walk enters them
@@ -108,26 +103,25 @@ class FileScannerImpl(FileScanner):
             end_time = time.time()
             elapsed_time = end_time - start_time
 
-            _debug(f"Total scan time: {elapsed_time:.2f} seconds")
-            _debug(f"Scan completed. Found {len(found_files)} matching files.")
+            logger.debug(f"Total scan time: {elapsed_time:.2f} seconds")
+            logger.debug(f"Scan completed. Found {len(found_files)} matching files.")
 
         except PermissionError as pe:
-            print(f"⚠️  Permission denied during scan: {pe}", file=sys.stderr)
+            logger.warning(f"Permission denied during scan: {pe}")
 
-        except Exception as e:
-            print(f"❌ Unexpected error during scanning: {e}", file=sys.stderr)
-            if _DEBUG:
-                import traceback
-                traceback.print_exc()
+        except Exception:
+            logger.exception("Unexpected error during scanning")
+            raise
 
         return FileCollection(found_files)
 
-    def _can_access_directory(self, path: Path) -> bool:
+    @staticmethod
+    def _can_access_directory(path: Path) -> bool:
         """Check if directory is accessible without raising exceptions. Python 3.9+ compatible."""
         try:
             return path.is_dir() and os.access(path, os.R_OK | os.X_OK)
         except (OSError, PermissionError):
-            _debug(f"Skipping inaccessible directory: {path}")
+            logger.debug(f"Skipping inaccessible directory: {path}")
             return False
 
     def _process_file(self, path: Path, stopped_flag: Optional[Callable[[], bool]] = None) -> Optional[File]:
@@ -144,10 +138,10 @@ class FileScannerImpl(FileScanner):
 
         try:
             if path.is_symlink():
-                _debug(f"Skipping symbolic link: {path}")
+                logger.debug(f"Skipping symbolic link: {path}")
                 return None
         except (OSError, PermissionError) as e:
-            _debug(f"Could not check symlink status for {path}: {e}")
+            logger.debug(f"Could not check symlink status for {path}: {e}")
             return None
 
         try:
@@ -155,39 +149,39 @@ class FileScannerImpl(FileScanner):
             stat_result = path.stat()
             size = stat_result.st_size
         except (OSError, PermissionError) as e:
-            _debug(f"Could not get size of {path}: {e}")
+            logger.debug(f"Could not get size of {path}: {e}")
             return None
 
         # Skip zero-byte files
         if size == 0:
-            _debug(f"Skipping zero-byte file: {path}")
+            logger.debug(f"Skipping zero-byte file: {path}")
             return None
 
         # Apply size filter
         if not self._size_passes(size):
-            _debug(f"Skipping {path} (size {size} bytes outside range)")
+            logger.debug(f"Skipping {path} (size {size} bytes outside range)")
             return None
 
         # Apply extension filter
         if not self._extension_passes(path):
-            _debug(f"Skipping {path} (extension not allowed)")
+            logger.debug(f"Skipping {path} (extension not allowed)")
             return None
 
         try:
             creation_time = getattr(stat_result, 'st_birthtime', stat_result.st_ctime)
             file = File(path=str(path), size=size, creation_time=creation_time)
         except Exception as e:
-            _debug(f"Failed to create File object for {path}: {e}")
+            logger.debug(f"Failed to create File object for {path}: {e}")
             return None
 
-        if self.favorite_dirs:
+        if self.favourite_dirs:
             try:
-                file.set_favorite_status(self.favorite_dirs)
+                file.set_favourite_status(self.favourite_dirs)
             except Exception as e:
-                _debug(f"Error setting favorite status for {path}: {e}")
-                # Continue processing — favorite status is optional metadata
+                logger.debug(f"Error setting favourite status for {path}: {e}")
+                # Continue processing — favourite status is optional metadata
 
-        _debug(f"Accepted file: {path.name} ({size} bytes)")
+        logger.debug(f"Accepted file: {path.name} ({size} bytes)")
         return file
 
     def _size_passes(self, size: int) -> bool:
