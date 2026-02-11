@@ -9,7 +9,12 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional
-from deduplicator.core.models import SortOrder
+
+import logging
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(levelname)-8s | %(name)-25s | %(message)s"
+)
 
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
@@ -29,43 +34,17 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup
-from commands import DeduplicationCommand
-from utils.convert_utils import ConvertUtils
-from services.file_service import FileService
-from services.duplicate_service import DuplicateService
-from core.interfaces import TranslatorProtocol
+from deduplicator.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
+from deduplicator.commands import DeduplicationCommand
+from deduplicator.utils.convert_utils import ConvertUtils
+from deduplicator.services.file_service import FileService
+from deduplicator.services.duplicate_service import DuplicateService
 
-class CLITranslator(TranslatorProtocol):
-    """Minimal translator for CLI output."""
-    def tr(self, key: str) -> str:
-        translations = {
-            "error_please_select_root": "Please specify a root directory with --root",
-            "error_invalid_size_format": "Invalid size format",
-            "error_directory_not_found": "Directory not found: {}",
-            "error_permission_denied": "Permission denied accessing: {}",
-            "message_no_duplicates_found": "No duplicate groups found.",
-            "message_found_groups": "Found {} duplicate groups ({} files)",
-            "message_dry_run_header": "DRY RUN - No files will be deleted",
-            "message_confirm_deletion": "Are you sure you want to move {} files to trash? [y/N]: ",
-            "message_deletion_confirmed": "Moving {} files to trash...",
-            "message_deletion_cancelled": "Deletion cancelled by user.",
-            "message_files_deleted": "Successfully moved {} files to trash.",
-            "message_keep_one_preview": "Would keep 1 file per group ({} files preserved, {} files deleted)",
-            "message_scanning": "Scanning files...",
-            "message_deduplicating": "Finding duplicates (mode: {})...",
-            "message_stats_header": "Deduplication Statistics",
-            "message_total_space_saved": "Total space saved: {}",
-            "error_deduplication_failed": "Deduplication failed: {}",
-            "error_deletion_failed": "Failed to delete files: {}",
-        }
-        return translations.get(key, key)
 
 class CLIApplication:
     """Main CLI application controller."""
+
     def __init__(self):
-        self.translator: TranslatorProtocol = CLITranslator()
-        self.command: Optional[DeduplicationCommand] = None
         self.start_time: float = time.time()
         self.verbose: bool = False
         self.quiet: bool = False
@@ -84,11 +63,14 @@ Examples:
   # Filter by size and extensions
   %(prog)s -r ./photos -m 500KB -M 10MB -e .jpg,.png
 
-  # Prioritize files in 'keep' folder when deleting duplicates
-  %(prog)s -r ./photos -f ./photos/keep --keep-one
+  # Preview and delete duplicates (with confirmation)
+  %(prog)s -r ./photos --keep-one
 
-  # Dry run to see what would be deleted
-  %(prog)s -r ./photos --keep-one --dry-run
+  # Delete duplicates without confirmation (for scripts)
+  %(prog)s -r ./photos --keep-one --force
+
+  # Prioritize files in 'keep' folder when deleting
+  %(prog)s -r ./photos -f ./photos/keep --keep-one
 
   # Full content comparison (slowest but most accurate)
   %(prog)s -r ./photos --mode full
@@ -141,7 +123,8 @@ Examples:
         parser.add_argument(
             "--keep-one",
             action="store_true",
-            help="Keep one file per duplicate group (first file from favourite dirs if available)"
+            help="Preview and delete all but one file per duplicate group "
+                 "(first file from favourite dirs if available). Always shows preview before deletion."
         )
         parser.add_argument(
             "--sort-order",
@@ -151,9 +134,9 @@ Examples:
         )
         # Output options
         parser.add_argument(
-            "--dry-run",
+            "--force",
             action="store_true",
-            help="Show what would be deleted without actually deleting files"
+            help="Skip confirmation prompt when used with --keep-one (for automation/scripts)"
         )
         parser.add_argument(
             "--quiet", "-q",
@@ -169,9 +152,12 @@ Examples:
 
     def validate_args(self, args: argparse.Namespace) -> None:
         """Validate command-line arguments before execution."""
+        if args.force and not args.keep_one:
+            self.error_exit("--force can only be used with --keep-one")
+
         root_path = Path(args.root).resolve()
         if not root_path.exists():
-            self.error_exit(self.translator.tr("error_directory_not_found").format(args.root))
+            self.error_exit(f"Directory not found: {args.root}")
         if not root_path.is_dir():
             self.error_exit(f"Path is not a directory: {args.root}")
         # Validate size formats
@@ -183,14 +169,14 @@ Examples:
             if max_size < min_size:
                 self.error_exit("Maximum size cannot be less than minimum size")
         except ValueError as e:
-            self.error_exit(f"{self.translator.tr('error_invalid_size_format')}: {e}")
+            self.error_exit(f"Invalid size format: {e}")
         # Validate favourite directories
         for fav_dir in args.favourite_dirs:
             fav_path = Path(fav_dir).resolve()
             if not fav_path.exists():
-                self.warning(f"Warning: Favourite directory not found: {fav_dir}")
+                self.warning(f"Favourite directory not found: {fav_dir}")
             elif not fav_path.is_dir():
-                self.warning(f"Warning: Favourite path is not a directory: {fav_dir}")
+                self.warning(f"Favourite path is not a directory: {fav_dir}")
 
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
@@ -260,33 +246,33 @@ Examples:
 
     def run_deduplication(self, params: DeduplicationParams) -> List[DuplicateGroup]:
         """Execute deduplication workflow."""
-        self.command = DeduplicationCommand()
+        command = DeduplicationCommand()
         if self.verbose:
             mode_display = params.mode.value.capitalize()
-            print(self.translator.tr("message_deduplicating").format(mode_display))
+            print(f"Finding duplicates (mode: {mode_display})...")
         try:
-            groups, stats = self.command.execute(
+            groups, stats = command.execute(
                 params,
                 progress_callback=self.progress_callback if self.verbose else None,
                 stopped_flag=self.stopped_flag
             )
             if self.verbose:
                 sys.stderr.write("\n")
-                print(f"\n{self.translator.tr('message_stats_header')}:")
+                print("\nDeduplication Statistics:")
                 print(stats.print_summary())
             return groups
         except Exception as e:
-            self.error_exit(self.translator.tr("error_deduplication_failed").format(e))
+            self.error_exit(f"Deduplication failed: {e}")
 
     def output_results(self, groups: List[DuplicateGroup]) -> None:
         """Output duplicate groups as plain text without additional sorting."""
         if self.quiet:
             return
         if not groups:
-            print(self.translator.tr("message_no_duplicates_found"))
+            print("No duplicate groups found.")
             return
         total_files = sum(len(g.files) for g in groups)
-        print(self.translator.tr("message_found_groups").format(len(groups), total_files))
+        print(f"Found {len(groups)} duplicate groups ({total_files} files)")
         for idx, group in enumerate(groups, 1):
             size_str = ConvertUtils.bytes_to_human(group.size)
             print(f"\n📁 Group {idx} | Size: {size_str} | Files: {len(group.files)}")
@@ -296,11 +282,11 @@ Examples:
                 time_str = ConvertUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
                 print(f"   {file.path} [{ConvertUtils.bytes_to_human(file.size)}] ({time_str}){fav_marker}")
 
-    def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, dry_run: bool = False) -> None:
-        """Keep one file per group, delete the rest."""
+    def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, force: bool = False) -> None:
+        """Keep one file per group, delete the rest. Always shows preview before deletion."""
         if not groups:
             if not self.quiet:
-                print(self.translator.tr("message_no_duplicates_found"))
+                print("No duplicate groups found.")
             return
         files_to_delete, _ = DuplicateService.keep_only_one_file_per_group(groups)
         if not files_to_delete:
@@ -310,44 +296,15 @@ Examples:
         # Calculate space savings
         space_saved = self.calculate_space_savings(groups, files_to_delete)
         space_saved_str = ConvertUtils.bytes_to_human(space_saved)
-        # Always show deletion preview before action
+
+        # Always show deletion preview before action (safety first)
         print()
-        if dry_run:
-            print(self.translator.tr("message_dry_run_header"))
-            print()
-            preserved = len(groups)
-            for idx, group in enumerate(groups, 1):
-                size_str = ConvertUtils.bytes_to_human(group.size)
-                print(f"📁 Group {idx} | Total size: {size_str} | Files: {len(group.files)}")
-                print("-" * 60)
-                # File that will be preserved (first file after core sorting)
-                preserved_file = group.files[0]
-                fav_marker = " ⭐" if preserved_file.is_from_fav_dir else ""
-                print(f"   [KEEP] {preserved_file.path}")
-                print(f"          Size: {ConvertUtils.bytes_to_human(preserved_file.size)}{fav_marker}")
-                if preserved_file.is_from_fav_dir:
-                    print(f"          Reason: from favourite directory")
-                else:
-                    print(f"          Reason: based on sort order ({params.sort_order.value})")
-                # Files that would be deleted
-                for file in group.files[1:]:
-                    fav_marker = " ⭐" if file.is_from_fav_dir else ""
-                    print(f"   [DEL]  {file.path}")
-                    print(f"          Size: {ConvertUtils.bytes_to_human(file.size)}{fav_marker}")
-                print()
-            print("=" * 60)
-            print(self.translator.tr("message_keep_one_preview").format(preserved, len(files_to_delete)))
-            print(self.translator.tr("message_total_space_saved").format(space_saved_str))
-            print()
-            print("ℹ️  No files were deleted. This was a dry run simulation.")
-            return
-        # Show marked list BEFORE asking for confirmation (no unmarked list shown first)
         preserved = len(groups)
         for idx, group in enumerate(groups, 1):
             size_str = ConvertUtils.bytes_to_human(group.size)
             print(f"📁 Group {idx} | Total size: {size_str} | Files: {len(group.files)}")
             print("-" * 60)
-            # File that will be preserved
+            # File that will be preserved (first file after core sorting)
             preserved_file = group.files[0]
             fav_marker = " ⭐" if preserved_file.is_from_fav_dir else ""
             print(f"   [KEEP] {preserved_file.path}")
@@ -363,25 +320,31 @@ Examples:
                 print(f"          Size: {ConvertUtils.bytes_to_human(file.size)}{fav_marker}")
             print()
         print("=" * 60)
-        print(self.translator.tr("message_keep_one_preview").format(preserved, len(files_to_delete)))
-        print(self.translator.tr("message_total_space_saved").format(space_saved_str))
+        print(f"Summary: Keep 1 file per group ({preserved} files preserved, {len(files_to_delete)} files deleted)")
+        print(f"Total space saved: {space_saved_str}")
         print()
-        # Ask for confirmation before actual deletion
-        response = input(self.translator.tr("message_confirm_deletion").format(len(files_to_delete)))
-        if response.strip().lower() not in ("y", "yes"):
-            print(self.translator.tr("message_deletion_cancelled"))
-            return
+
+        # Skip confirmation if --force is used
+        if force:
+            print("⚠️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
+        else:
+            # Ask for confirmation before actual deletion
+            response = input(f"Are you sure you want to move {len(files_to_delete)} files to trash? [y/N]: ")
+            if response.strip().lower() not in ("y", "yes"):
+                print("Deletion cancelled by user.")
+                return
+
         # Execute deletion
-        print(self.translator.tr("message_deletion_confirmed").format(len(files_to_delete)))
+        print(f"Moving {len(files_to_delete)} files to trash...")
         try:
             for i, path in enumerate(files_to_delete, 1):
                 if self.verbose:
                     print(f"  [{i}/{len(files_to_delete)}] {os.path.basename(path)}")
                 FileService.move_to_trash(path)
-            print(self.translator.tr("message_files_deleted").format(len(files_to_delete)))
-            print(self.translator.tr("message_total_space_saved").format(space_saved_str))
+            print(f"✅ Successfully moved {len(files_to_delete)} files to trash.")
+            print(f"Total space saved: {space_saved_str}")
         except Exception as e:
-            self.error_exit(self.translator.tr("error_deletion_failed").format(e))
+            self.error_exit(f"Failed to delete files: {e}")
 
     def warning(self, message: str) -> None:
         """Print a warning message to stderr."""
@@ -399,25 +362,24 @@ Examples:
         args = self.parse_args()
         self.verbose = args.verbose
         self.quiet = args.quiet
-        # Validate arguments
         self.validate_args(args)
-        # Create params
         params = self.create_params(args)
-        # Scan and find duplicates
+
         if not self.quiet:
-            print(self.translator.tr("message_scanning"))
+            print("Scanning files...")
         groups = self.run_deduplication(params)
-        # Conditional output based on flags - NO redundant output
+        # Conditional output based on flags
         if args.keep_one:
-            # Show ONLY marked list with [KEEP]/[DEL] - skip unmarked output entirely
-            self.execute_keep_one(groups, params=params, dry_run=args.dry_run)
+            # Always show preview before deletion (safety first)
+            self.execute_keep_one(groups, params=params, force=args.force)
         else:
-            # Show standard unmarked duplicate groups list
+            # Show standard duplicate groups list
             self.output_results(groups)
         # Show completion time
         elapsed = time.time() - self.start_time
         if self.verbose:
             print(f"\n✅ Completed in {elapsed:.2f} seconds")
+
 
 def main() -> None:
     """Application entry point."""
@@ -432,6 +394,7 @@ def main() -> None:
             raise
         print(f"❌ Unexpected error: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
