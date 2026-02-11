@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-dedup = "deduplicator.utils.cli:main"
+dedup = "deduplicator.cli:main"
 dedup-gui = "deduplicator.gui.launcher:main"
 
 [tool.setuptools.packages.find]
