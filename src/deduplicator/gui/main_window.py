@@ -5,6 +5,8 @@ main_window.py
 File Deduplicator GUI Application
 A PyQt-based graphical interface for finding and removing duplicate files.
 """
+import os
+from typing import Any
 
 from PySide6.QtWidgets import (
     QMainWindow, QFileDialog,
@@ -18,17 +20,7 @@ from deduplicator.services.duplicate_service import DuplicateService
 from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
 from deduplicator.utils.convert_utils import ConvertUtils
 from deduplicator.gui.worker import DeduplicateWorker
-import os
-from typing import Any
-import logging
-
 from deduplicator.gui.main_window_ui import Ui_MainWindow
-
-logging.basicConfig(
-    level=logging.ERROR,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-)
-
 
 class SettingsManager:
     def __init__(self):
@@ -39,7 +31,6 @@ class SettingsManager:
 
     def load_settings(self, key: str, default: Any = None) -> Any:
         return self.settings.value(key, default)
-
 
 class MainWindow(QMainWindow):
     """Main application window using composition with Ui_MainWindow."""
