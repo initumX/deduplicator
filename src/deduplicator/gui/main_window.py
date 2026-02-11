@@ -63,6 +63,9 @@ class MainWindow(QMainWindow):
         self.restore_settings()
         self.setup_connections()
 
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self.restore_settings)
+
     def setup_connections(self):
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
