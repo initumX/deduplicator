@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         # Local state storage
         self.files = []
         self.duplicate_groups = []
-        self.favorite_dirs = []
+        self.favourite_dirs = []
         self.settings_manager = SettingsManager()
         self.worker = None  # Holds reference to current worker for cancellation
         self.progress_dialog = None
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
     def setup_connections(self):
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
-        self.ui.favorite_dirs_button.clicked.connect(self.select_favourite_dirs)
+        self.ui.favourite_dirs_button.clicked.connect(self.select_favourite_dirs)
         self.ui.find_duplicates_button.clicked.connect(self.start_deduplication)
         self.ui.keep_one_button.clicked.connect(self.keep_one_file_per_group)
         self.ui.groups_list.delete_requested.connect(self.handle_delete_files)
@@ -111,15 +111,15 @@ class MainWindow(QMainWindow):
             self.ui.root_dir_input.setText(dir_path)
 
     def select_favourite_dirs(self):
-        dialog = FavouriteDirsDialog(self, self.favorite_dirs)
+        dialog = FavouriteDirsDialog(self, self.favourite_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            self.favorite_dirs = dialog.get_selected_dirs()
+            self.favourite_dirs = dialog.get_selected_dirs()
             self.ui.favorite_list_widget.clear()
-            for path in self.favorite_dirs:
+            for path in self.favourite_dirs:
                 self.ui.favorite_list_widget.addItem(path)
 
             if self.files:
-                DuplicateService.update_favorite_status(self.files, self.favorite_dirs)
+                DuplicateService.update_favorite_status(self.files, self.favourite_dirs)
                 for group in self.duplicate_groups:
                     group.files.sort(key=lambda f: not f.is_from_fav_dir)
                 self.ui.groups_list.set_groups(self.duplicate_groups)
@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "Success",
-                f"Favourite Folders Updated: {len(self.favorite_dirs)}"
+                f"Favourite Folders Updated: {len(self.favourite_dirs)}"
             )
 
     def keep_one_file_per_group(self):
@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
             min_size_bytes=min_size,
             max_size_bytes=max_size,
             extensions=extensions,
-            favorite_dirs=self.favorite_dirs,
+            favourite_dirs=self.favourite_dirs,
             mode=dedupe_mode,
             sort_order=sort_order
         )
@@ -399,7 +399,7 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("dedupe_mode", self.ui.dedupe_mode_combo.currentIndex())
         self.settings_manager.save_settings("extensions", self.ui.extension_filter_input.text())
         self.settings_manager.save_settings("splitter_sizes", list(self.ui.splitter.sizes()))
-        self.settings_manager.save_settings("favorite_dirs", self.favorite_dirs)
+        self.settings_manager.save_settings("favourite_dirs", self.favourite_dirs)
         self.settings_manager.save_settings("ordering_mode", self.ui.ordering_combo.currentIndex())
 
     def restore_settings(self):
@@ -417,14 +417,14 @@ class MainWindow(QMainWindow):
         else:
             self.ui.splitter.setSizes([400, 600])
 
-        saved_dirs = self.settings_manager.load_settings("favorite_dirs", [])
+        saved_dirs = self.settings_manager.load_settings("favourite_dirs", [])
         if isinstance(saved_dirs, str):
             saved_dirs = [d.strip() for d in saved_dirs.split(";") if d.strip()]
         elif not isinstance(saved_dirs, list):
             saved_dirs = []
-        self.favorite_dirs = saved_dirs
+        self.favourite_dirs = saved_dirs
         self.ui.favorite_list_widget.clear()
-        for path in self.favorite_dirs:
+        for path in self.favourite_dirs:
             self.ui.favorite_list_widget.addItem(path)
 
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))

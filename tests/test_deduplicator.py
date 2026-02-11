@@ -20,7 +20,7 @@ class TestDeduplicatorIntegration:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -30,7 +30,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -69,7 +69,7 @@ class TestDeduplicatorIntegration:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -78,7 +78,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -114,7 +114,7 @@ class TestDeduplicatorIntegration:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -123,7 +123,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -149,7 +149,7 @@ class TestDeduplicatorIntegration:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -158,7 +158,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -181,7 +181,7 @@ class TestDeduplicatorIntegration:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -190,7 +190,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -219,7 +219,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -236,9 +236,9 @@ class TestDeduplicatorIntegration:
         assert len(groups) == 0
         assert stats.total_time >= 0  # Time should be non-negative
 
-    def test_deduplicator_favorite_dirs_sorting(self, temp_dir):
+    def test_deduplicator_favourite_dirs_sorting(self, temp_dir):
         """
-        Files from favorite directories must appear first within each duplicate group.
+        Files from favourite directories must appear first within each duplicate group.
         This ensures users' preferred versions are kept when deleting duplicates.
         """
         # Create identical files (same size, same hash)
@@ -251,8 +251,8 @@ class TestDeduplicatorIntegration:
         # Create File objects with identical hashes
         file_obj1 = File(path=str(file1), size=len(content), creation_time=1000.0)
         file_obj2 = File(path=str(file2), size=len(content), creation_time=2000.0)
-        file_obj1.is_from_fav_dir = True   # Mark as favorite
-        file_obj2.is_from_fav_dir = False  # Not favorite
+        file_obj1.is_from_fav_dir = True   # Mark as favourite
+        file_obj2.is_from_fav_dir = False  # Not favourite
 
         # Set identical hashes to force grouping
         identical_hash = b"same_hash8"
@@ -264,7 +264,7 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[str(temp_dir)],  # temp_dir is favorite
+            favourite_dirs=[str(temp_dir)],  # temp_dir is favourite
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.NEWEST_FIRST  # Newer files first (file2 is newer)
         )
@@ -282,15 +282,15 @@ class TestDeduplicatorIntegration:
         group = groups[0]
         assert len(group.files) == 2
 
-        # CRITICAL: Favorite file must be FIRST regardless of creation time
-        # Business rule: favorite status > creation time
+        # CRITICAL: Favourite file must be FIRST regardless of creation time
+        # Business rule: favourite status > creation time
         assert group.files[0].is_from_fav_dir is True
         assert group.files[1].is_from_fav_dir is False
-        assert group.files[0].path == str(file1)  # Favorite file first
-        assert group.files[1].path == str(file2)  # Non-favorite second
+        assert group.files[0].path == str(file1)  # Favourite file first
+        assert group.files[1].path == str(file2)  # Non-favourite second
 
-        # Verify secondary sort (creation time) works for files with same favorite status
-        # Create 3 files: 2 favorites (different times) + 1 non-favorite
+        # Verify secondary sort (creation time) works for files with same favourite status
+        # Create 3 files: 2 favourites (different times) + 1 non-favourite
         file3 = temp_dir / "fav_old.txt"
         file3.write_bytes(content)
         file_obj3 = File(path=str(file3), size=len(content), creation_time=500.0)
@@ -302,9 +302,9 @@ class TestDeduplicatorIntegration:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[str(temp_dir)],
+            favourite_dirs=[str(temp_dir)],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.OLDEST_FIRST  # Oldest first within favorites
+            sort_order=SortOrder.OLDEST_FIRST  # Oldest first within favourites
         )
 
         groups2, _ = deduper.find_duplicates(
@@ -315,11 +315,11 @@ class TestDeduplicatorIntegration:
         )
 
         group2 = groups2[0]
-        # Favorites first (file_obj3 and file_obj1), then non-favorite (file_obj2)
+        # Favourites first (file_obj3 and file_obj1), then non-favourite (file_obj2)
         assert group2.files[0].is_from_fav_dir is True
         assert group2.files[1].is_from_fav_dir is True
         assert group2.files[2].is_from_fav_dir is False
 
-        # Within favorites: oldest first (file_obj3 created at 500.0 < file_obj1 at 1000.0)
-        assert group2.files[0].creation_time == 500.0  # Oldest favorite
-        assert group2.files[1].creation_time == 1000.0  # Newer favorite
+        # Within favourites: oldest first (file_obj3 created at 500.0 < file_obj1 at 1000.0)
+        assert group2.files[0].creation_time == 500.0  # Oldest favourite
+        assert group2.files[1].creation_time == 1000.0  # Newer favourite

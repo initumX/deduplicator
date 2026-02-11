@@ -274,7 +274,7 @@ class DeduplicationParams:
     min_size_bytes: int
     max_size_bytes: int
     extensions: List[str] = field(default_factory=list)
-    favorite_dirs: List[str] = field(default_factory=list)
+    favourite_dirs: List[str] = field(default_factory=list)
     mode: DeduplicationMode = DeduplicationMode.NORMAL
     sort_order: SortOrder = SortOrder.NEWEST_FIRST
 
@@ -324,6 +324,6 @@ class DeduplicationParams:
             min_size_bytes=min_size,
             max_size_bytes=max_size,
             extensions=ext_list,
-            favorite_dirs=favorite_dirs or [],
+            favourite_dirs=favorite_dirs or [],
             mode=mode
         )

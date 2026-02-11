@@ -71,8 +71,8 @@ class Ui_MainWindow:
 
         # Favorite folders
         self.favorite_group = QGroupBox(central_widget)
-        self.favorite_dirs_button = QPushButton(central_widget)
-        self.favorite_dirs_button.setToolTip(
+        self.favourite_dirs_button = QPushButton(central_widget)
+        self.favourite_dirs_button.setToolTip(
             "Files from favorite folders are prioritized (goes first, as 'original') in each group.\n"
         )
         self.favorite_list_widget = QListWidget(central_widget)
@@ -82,7 +82,7 @@ class Ui_MainWindow:
         self.favorite_list_widget.setStyleSheet("padding: 0px; margin: 0px;")
 
         favorite_layout = QVBoxLayout()
-        favorite_layout.addWidget(self.favorite_dirs_button)
+        favorite_layout.addWidget(self.favourite_dirs_button)
         favorite_layout.addWidget(self.favorite_list_widget)
         self.favorite_group.setLayout(favorite_layout)
         self.favorite_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -178,7 +178,7 @@ class Ui_MainWindow:
         self.find_duplicates_button.setText("Find Duplicates")
         self.keep_one_button.setText("Keep One (The first one) File Per Group")
         self.about_button.setText("About")
-        self.favorite_dirs_button.setText("Manage Favourite Folders List")
+        self.favourite_dirs_button.setText("Manage Favourite Folders List")
 
         # Group box titles
         self.filters_group.setTitle("Filters")

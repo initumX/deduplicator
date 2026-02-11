@@ -16,7 +16,7 @@ class TestFileScannerImpl:
             min_size=None,
             max_size=None,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         collection = scanner.scan(stopped_flag=lambda: False)
         files = collection.files
@@ -34,7 +34,7 @@ class TestFileScannerImpl:
             min_size=1025,  # Larger than dup1 files (1024 bytes)
             max_size=None,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -50,7 +50,7 @@ class TestFileScannerImpl:
             min_size=None,
             max_size=2000,  # Smaller than dup2 files (2048 bytes) and unique2 (2500B)
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -66,7 +66,7 @@ class TestFileScannerImpl:
             min_size=None,
             max_size=None,
             extensions=[".tmp"],  # Only .tmp files
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -81,7 +81,7 @@ class TestFileScannerImpl:
             min_size=None,
             max_size=None,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -97,7 +97,7 @@ class TestFileScannerImpl:
             min_size=None,
             max_size=None,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -127,7 +127,7 @@ class TestFileScannerImpl:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -161,7 +161,7 @@ class TestFileScannerImpl:
             min_size=0,
             max_size=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 
@@ -186,7 +186,7 @@ class TestFileScannerImpl:
             min_size=1024,   # Inclusive lower bound
             max_size=2048,   # Inclusive upper bound
             extensions=[".txt"],
-            favorite_dirs=[]
+            favourite_dirs=[]
         )
         files = scanner.scan(stopped_flag=lambda: False).files
 

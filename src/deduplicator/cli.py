@@ -221,7 +221,7 @@ Examples:
                 min_size_bytes=min_size_bytes,
                 max_size_bytes=max_size_bytes,
                 extensions=extensions,
-                favorite_dirs=favorite_dirs,
+                favourite_dirs=favorite_dirs,
                 sort_order=sort_order,
                 mode=mode
             )

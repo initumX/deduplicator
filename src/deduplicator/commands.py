@@ -64,7 +64,7 @@ class DeduplicationCommand:
             min_size=params.min_size_bytes,
             max_size=params.max_size_bytes,
             extensions=params.extensions,
-            favorite_dirs=params.favorite_dirs
+            favourite_dirs=params.favourite_dirs
         )
 
         file_collection = scanner.scan(

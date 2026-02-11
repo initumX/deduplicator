@@ -2,12 +2,12 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-favorite_dirs_dialog.py
+favourite_dirs_dialog.py
 
-This module contains the FavoriteDirsDialog class, a dialog window for managing favorite folders.
+This module contains the FavouriteDirsDialog class, a dialog window for managing favourite folders.
 
 The dialog allows users to:
-- Add new favorite folders via file dialog
+- Add new favourite folders via file dialog
 - Remove selected folders from the list
 - Save or discard changes via OK/Cancel buttons
 
@@ -22,10 +22,10 @@ from PySide6.QtWidgets import (
 
 class FavouriteDirsDialog(QDialog):
     """
-    Dialog for managing the list of favorite folders.
+    Dialog for managing the list of favourite folders.
 
     Attributes:
-        favorite_dirs (list[str]): List of current favorite folders.
+        favourite_dirs (list[str]): List of current favourite folders.
         list_widget (QListWidget): Widget for displaying folder list.
     """
     def __init__(self, parent=None, initial_dirs: list[str] = None):
@@ -34,14 +34,14 @@ class FavouriteDirsDialog(QDialog):
         self.setWindowTitle("Favourite Folders")
         self.setMinimumWidth(500)
 
-        self.favorite_dirs = initial_dirs or []
+        self.favourite_dirs = initial_dirs or []
 
         # Folder list widget with explicit parent
         self.list_widget = QListWidget(self)
         self.list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
 
-        if self.favorite_dirs:
-            for path in self.favorite_dirs:
+        if self.favourite_dirs:
+            for path in self.favourite_dirs:
                 self.list_widget.addItem(path)
 
         # Buttons with explicit parent
@@ -75,8 +75,8 @@ class FavouriteDirsDialog(QDialog):
         """Handler for adding a new folder."""
         dir_path = QFileDialog.getExistingDirectory(self, "Select Favourite Folder to add")
         if dir_path:
-            if dir_path not in self.favorite_dirs:
-                self.favorite_dirs.append(dir_path)
+            if dir_path not in self.favourite_dirs:
+                self.favourite_dirs.append(dir_path)
                 self.list_widget.addItem(dir_path)
 
     def on_remove(self):
@@ -84,6 +84,6 @@ class FavouriteDirsDialog(QDialog):
         selected_items = self.list_widget.selectedItems()
         for item in selected_items:
             text = item.text()
-            if text in self.favorite_dirs:
-                self.favorite_dirs.remove(text)
+            if text in self.favourite_dirs:
+                self.favourite_dirs.remove(text)
             self.list_widget.takeItem(self.list_widget.row(item))

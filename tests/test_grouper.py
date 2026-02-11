@@ -54,8 +54,8 @@ class TestFileGrouperImpl:
         assert len(group_files) == 2
         assert {f.path for f in group_files} == {"/dup1.txt", "/dup2.txt"}
 
-    def test_preserves_favorite_status_in_groups(self):
-        """Grouped files should retain favorite directory status."""
+    def test_preserves_favourite_status_in_groups(self):
+        """Grouped files should retain favourite directory status."""
         files = [
             File(path="/fav/file.txt", size=100, creation_time=0.0),
             File(path="/nonfav/file.txt", size=100, creation_time=0.0),
@@ -76,9 +76,9 @@ class TestFileGrouperImpl:
         assert len(hash_groups) == 1
         group_files = list(hash_groups.values())[0]
 
-        # Verify metadata preserved and sorting applied (favorites first)
-        assert group_files[0].is_from_fav_dir is True   # First = favorite
-        assert group_files[1].is_from_fav_dir is False  # Second = non-favorite
+        # Verify metadata preserved and sorting applied (favourites first)
+        assert group_files[0].is_from_fav_dir is True   # First = favourite
+        assert group_files[1].is_from_fav_dir is False  # Second = non-favourite
         assert group_files[0].path == "/fav/file.txt"
         assert group_files[1].path == "/nonfav/file.txt"
 

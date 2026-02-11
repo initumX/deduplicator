@@ -47,13 +47,13 @@ class FileScannerImpl(FileScanner):
         min_size: Optional[int] = None,
         max_size: Optional[int] = None,
         extensions: Optional[List[str]] = None,
-        favorite_dirs: Optional[List[str]] = None
+        favourite_dirs: Optional[List[str]] = None
     ):
         self.root_dir = root_dir
         self.min_size = min_size
         self.max_size = max_size
         self.extensions = [ext.lower() for ext in extensions] if extensions else []
-        self.favorite_dirs = [os.path.normpath(d) for d in favorite_dirs] if favorite_dirs else []
+        self.favorite_dirs = [os.path.normpath(d) for d in favourite_dirs] if favourite_dirs else []
 
     def scan(self,
              stopped_flag: Optional[Callable[[], bool]] = None,

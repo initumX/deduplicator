@@ -21,7 +21,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -42,7 +42,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -67,7 +67,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -96,7 +96,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -134,7 +134,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -165,7 +165,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
@@ -202,7 +202,7 @@ class TestDeduplicateWorker:
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
-            favorite_dirs=[],
+            favourite_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.OLDEST_FIRST
         )
