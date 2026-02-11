@@ -58,30 +58,30 @@ class CLIApplication:
             epilog="""
 Examples:
   # Basic usage - find duplicates in photos folder
-  %(prog)s --root ./photos
+  %(prog)s --input ./photos
 
   # Filter by size and extensions
-  %(prog)s -r ./photos -m 500KB -M 10MB -e .jpg,.png
+  %(prog)s -i ./photos -m 500KB -M 10MB -x .jpg,.png
 
   # Preview and delete duplicates (with confirmation)
-  %(prog)s -r ./photos --keep-one
+  %(prog)s -i ./photos --keep-one
 
   # Delete duplicates without confirmation (for scripts)
-  %(prog)s -r ./photos --keep-one --force
+  %(prog)s -i ./photos --keep-one --force
 
   # Prioritize files in 'keep' folder when deleting
-  %(prog)s -r ./photos -f ./photos/keep --keep-one
+  %(prog)s -i ./photos -f ./photos/keep --keep-one
 
   # Full content comparison (slowest but most accurate)
-  %(prog)s -r ./photos --mode full
+  %(prog)s -i ./photos --mode full
 """
         )
         # Required arguments
         parser.add_argument(
-            "--root", "-r",
+            "--input", "-i",
             required=True,
             type=str,
-            help="Root directory to scan for duplicates"
+            help="Input directory to scan for duplicates"
         )
         # Filtering options
         parser.add_argument(
@@ -97,7 +97,7 @@ Examples:
             help="Maximum file size (e.g., 10MB, 1GB). Default: 100GB"
         )
         parser.add_argument(
-            "--extensions", "-e",
+            "--extensions", "-x",
             default="",
             type=str,
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
@@ -155,11 +155,11 @@ Examples:
         if args.force and not args.keep_one:
             self.error_exit("--force can only be used with --keep-one")
 
-        root_path = Path(args.root).resolve()
+        root_path = Path(args.input).resolve()
         if not root_path.exists():
-            self.error_exit(f"Directory not found: {args.root}")
+            self.error_exit(f"Directory not found: {args.input}")
         if not root_path.is_dir():
-            self.error_exit(f"Path is not a directory: {args.root}")
+            self.error_exit(f"Path is not a directory: {args.input}")
         # Validate size formats
         try:
             min_size = ConvertUtils.human_to_bytes(args.min_size)
@@ -203,7 +203,7 @@ Examples:
             mode = DeduplicationMode[args.mode.upper()]
             sort_order = SortOrder(args.sort_order)
             return DeduplicationParams(
-                root_dir=str(Path(args.root).resolve()),
+                root_dir=str(Path(args.input).resolve()),
                 min_size_bytes=min_size_bytes,
                 max_size_bytes=max_size_bytes,
                 extensions=extensions,
