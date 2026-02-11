@@ -7,7 +7,6 @@ from send2trash import send2trash
 # Optional import Pillow
 try:
     from PIL import Image
-
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
