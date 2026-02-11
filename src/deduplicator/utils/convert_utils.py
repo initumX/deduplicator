@@ -26,34 +26,46 @@ class ConvertUtils:
     def human_to_bytes(size_str: str) -> int:
         """
         Convert human-readable size string to bytes.
-        Supports formats like '1.5GB', '2048KB', '1000', etc.
+        Supports formats: '1.5GB', '2048KB', '1000', '1K', '1M', '1G', etc.
+        Raises ValueError for negative sizes or invalid formats.
         """
         size_str = size_str.strip().upper()
+
+        # Define units with both full (KB) and short (K) forms
         units = {
+            'PB': 1024 ** 5, 'P': 1024 ** 5,
+            'TB': 1024 ** 4, 'T': 1024 ** 4,
+            'GB': 1024 ** 3, 'G': 1024 ** 3,
+            'MB': 1024 ** 2, 'M': 1024 ** 2,
+            'KB': 1024, 'K': 1024,
             'B': 1,
-            'KB': 1024,
-            'MB': 1024 ** 2,
-            'GB': 1024 ** 3,
-            'TB': 1024 ** 4,
-            'PB': 1024 ** 5,
         }
 
-        for unit in sorted(units.keys(), key=lambda u: -len(u)):
+        # Check for unit suffix (longest first to avoid 'KB' matching as 'K' + 'B')
+        for unit in sorted(units.keys(), key=len, reverse=True):
             if size_str.endswith(unit):
                 value_str = size_str[:-len(unit)].strip()
                 try:
-                    return int(float(value_str) * units[unit])
+                    value = float(value_str)
                 except ValueError:
                     raise ValueError(f"Invalid numeric value in size: '{value_str}'")
 
-        # If no unit specified, assume bytes
+                if value < 0:
+                    raise ValueError(f"Negative size not allowed: '{size_str}'")
+                return int(value * units[unit])
+
+        # No unit specified — treat as bytes
         try:
-            return int(size_str)
+            value = int(size_str)
         except ValueError:
             raise ValueError(
                 f"Invalid size format: '{size_str}'. "
-                f"Supported formats: 1.5GB, 2048KB, 1000, etc."
+                f"Supported formats: 1.5GB, 2048KB, 1000, 1K, 1M, etc."
             )
+
+        if value < 0:
+            raise ValueError(f"Negative size not allowed: '{size_str}'")
+        return value
 
     @staticmethod
     def is_valid_size_format(size_str: str) -> bool:
