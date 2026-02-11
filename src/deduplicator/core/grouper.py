@@ -9,9 +9,9 @@ Replaces multiple standalone groupers with a single class implementing FileGroup
 
 from typing import List, Dict, Any, Callable
 from collections import defaultdict
-from core.interfaces import FileGrouper
-from core.models import File
-from core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
+from deduplicator.core.interfaces import FileGrouper
+from deduplicator.core.models import File
+from deduplicator.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
 
 
 class FileGrouperImpl(FileGrouper):

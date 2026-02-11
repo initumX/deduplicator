@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Callable
-from core.models import File, DuplicateGroup
-from core.grouper import FileGrouperImpl
-from core.interfaces import SizeStage, PartialHashStage
+from deduplicator.core.models import File, DuplicateGroup
+from deduplicator.core.grouper import FileGrouperImpl
+from deduplicator.core.interfaces import SizeStage, PartialHashStage
 
 #=============================
 # Base Class and Config

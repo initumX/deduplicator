@@ -12,18 +12,19 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from core.models import DeduplicationMode, DeduplicationParams, SortOrder
-from utils.services import FileService, DuplicateService
-from custom_widgets.favourite_dirs_dialog import FavoriteDirsDialog
-from utils.convert_utils import ConvertUtils
-from worker import DeduplicateWorker
+from deduplicator.core.models import DeduplicationMode, DeduplicationParams, SortOrder
+from deduplicator.services.file_service import FileService
+from deduplicator.services.duplicate_service import DuplicateService
+from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
+from deduplicator.utils.convert_utils import ConvertUtils
+from deduplicator.gui.worker import DeduplicateWorker
 import os
 import sys
 from typing import Any
 import logging
 
-from main_window_ui import Ui_MainWindow
-from texts import TEXTS
+from deduplicator.gui.main_window_ui import Ui_MainWindow
+from deduplicator.gui.texts import TEXTS
 
 logging.basicConfig(
     level=logging.ERROR,
@@ -67,7 +68,7 @@ class MainWindow(QMainWindow):
     def setup_connections(self):
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
-        self.ui.favorite_dirs_button.clicked.connect(self.select_favorite_dirs)
+        self.ui.favorite_dirs_button.clicked.connect(self.select_favourite_dirs)
         self.ui.find_duplicates_button.clicked.connect(self.start_deduplication)
         self.ui.keep_one_button.clicked.connect(self.keep_one_file_per_group)
         self.ui.groups_list.delete_requested.connect(self.handle_delete_files)
@@ -108,8 +109,8 @@ class MainWindow(QMainWindow):
         if dir_path:
             self.ui.root_dir_input.setText(dir_path)
 
-    def select_favorite_dirs(self):
-        dialog = FavoriteDirsDialog(self, self.favorite_dirs)
+    def select_favourite_dirs(self):
+        dialog = FavouriteDirsDialog(self, self.favorite_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.favorite_dirs = dialog.get_selected_dirs()
             self.ui.favorite_list_widget.clear()
@@ -412,10 +413,3 @@ class MainWindow(QMainWindow):
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
         self.ui.ordering_combo.setCurrentIndex(ordering_index)
         self.on_ordering_changed()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())

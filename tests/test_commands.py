@@ -4,8 +4,8 @@ Verifies correct wiring of scanner → deduplicator with progress/cancellation s
 """
 import pytest
 from pathlib import Path
-from core.models import DeduplicationParams, DeduplicationMode, SortOrder
-from commands import DeduplicationCommand
+from deduplicator import DeduplicationParams, DeduplicationMode, SortOrder
+from deduplicator import DeduplicationCommand
 
 
 class TestDeduplicationCommand:

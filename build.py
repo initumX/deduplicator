@@ -7,7 +7,7 @@ import sys
 import os
 
 # Check if we're in the correct directory
-if not os.path.exists("main_window.py"):
+if not os.path.exists("src/deduplicator/gui/main_window.py"):
     print("❌ ERROR: 'main_window.py' not found in current directory.")
     print("Make sure you're running this script from the project root folder.")
     sys.exit(1)

@@ -14,10 +14,10 @@ and decoupled from business logic.
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView, QWidget
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
-from core.models import File, DuplicateGroup
-from utils.services import FileService
-from utils.convert_utils import ConvertUtils
-from texts import TEXTS
+from deduplicator.core.models import File, DuplicateGroup
+from deduplicator.services.file_service import FileService
+from deduplicator.utils.convert_utils import ConvertUtils
+from deduplicator.gui.texts import TEXTS
 
 
 class DuplicateGroupsList(QListWidget):

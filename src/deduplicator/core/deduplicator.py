@@ -11,14 +11,14 @@ Supports three modes:
 """
 import time
 from typing import List, Tuple, Optional, Callable
-from core.models import (
+from deduplicator.core.models import (
     File, DuplicateGroup, DeduplicationStats,
     DeduplicationMode, DeduplicationParams,
     SortOrder
     )
-from core.grouper import FileGrouperImpl
-from core.interfaces import PartialHashStage, Deduplicator
-from core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
+from deduplicator.core.grouper import FileGrouperImpl
+from deduplicator.core.interfaces import PartialHashStage, Deduplicator
+from deduplicator.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
 
 # =============================
 # Main Deduplicator Class

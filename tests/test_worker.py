@@ -4,8 +4,11 @@ Verifies thread-safe cancellation, signal emission, and error handling.
 """
 
 from unittest.mock import Mock
-from core.models import DeduplicationParams, DeduplicationMode, SortOrder, DuplicateGroup, DeduplicationStats
-from worker import DeduplicateWorker
+from deduplicator.core import (
+    DeduplicationParams, DeduplicationMode,
+    SortOrder, DuplicateGroup, DeduplicationStats
+)
+from deduplicator.gui import DeduplicateWorker
 
 
 class TestDeduplicateWorker:

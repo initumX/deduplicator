@@ -17,7 +17,7 @@ Implements a QLabel-based image viewer that:
 from PySide6.QtWidgets import QLabel, QSizePolicy
 from PySide6.QtCore import Qt, QRunnable, QThreadPool, QObject, Signal
 from PySide6.QtGui import QPixmap
-from core.models import File
+from deduplicator.core.models import File
 
 
 class ImageLoaderSignals(QObject):

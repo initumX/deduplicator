@@ -18,10 +18,10 @@ from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
     QVBoxLayout, QFileDialog, QAbstractItemView
 )
-from texts import TEXTS
+from deduplicator.gui.texts import TEXTS
 
 
-class FavoriteDirsDialog(QDialog):
+class FavouriteDirsDialog(QDialog):
     """
     Dialog for managing the list of favorite folders.
 

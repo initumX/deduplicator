@@ -4,8 +4,8 @@ Verifies partial/full hashing returns 8-byte xxHash64 values.
 """
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from core.hasher import HasherImpl, XXHashAlgorithmImpl
-from core.models import File, FileHashes
+from deduplicator.core import HasherImpl, XXHashAlgorithmImpl
+from deduplicator.core import File
 
 
 class TestHasherImpl:

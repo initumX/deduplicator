@@ -8,8 +8,8 @@ import sys
 import os
 import time
 from pathlib import Path
-from typing import List, Optional, Callable, Tuple
-from core.models import SortOrder
+from typing import List, Optional
+from deduplicator.core.models import SortOrder
 
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
@@ -29,10 +29,11 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, File
+from core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup
 from commands import DeduplicationCommand
 from utils.convert_utils import ConvertUtils
-from utils.services import DuplicateService, FileService
+from services.file_service import FileService
+from services.duplicate_service import DuplicateService
 from core.interfaces import TranslatorProtocol
 
 class CLITranslator(TranslatorProtocol):

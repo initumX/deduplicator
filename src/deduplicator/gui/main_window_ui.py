@@ -4,10 +4,10 @@ from PySide6.QtWidgets import (
     QListWidget, QGroupBox, QSizePolicy, QSplitter, QAbstractItemView, QMainWindow
 )
 from PySide6.QtCore import Qt
-from custom_widgets.duplicate_groups_list import DuplicateGroupsList
-from custom_widgets.image_preview_label import ImagePreviewLabel
-from core.models import DeduplicationMode
-from texts import TEXTS
+from deduplicator.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
+from deduplicator.gui.custom_widgets.image_preview_label import ImagePreviewLabel
+from deduplicator.core.models import DeduplicationMode
+from deduplicator.gui.texts import TEXTS
 
 
 class Ui_MainWindow:

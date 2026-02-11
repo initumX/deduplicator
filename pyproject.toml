@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deduplicator"  # ← Имя на PyPI (может отличаться от импорта)
+version = "1.0.0"
+description = "Fast duplicate file finder with optional GUI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "initumX", email = "initum.x@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities"
+]
+dependencies = [
+    "xxhash>=3.0.0",
+    "send2trash>=1.8.0"
+]
+
+[project.optional-dependencies]
+gui = [
+    "PySide6>=6.5.0"
+]
+images = [
+    "Pillow>=9.0.0"
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-qt>=4.0",
+    "pytest-cov>=4.0"
+]
+
+[project.scripts]
+dedup = "deduplicator.utils.cli:main"         # ← CLI без GUI
+dedup-gui = "deduplicator.gui.launcher:main"  # ← GUI (требует [gui])
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["deduplicator*"]

@@ -17,8 +17,8 @@ from pathlib import Path
 import time
 
 # Local imports
-from core.models import File, FileCollection
-from core.interfaces import FileScanner
+from deduplicator.core.models import File, FileCollection
+from deduplicator.core.interfaces import FileScanner
 
 # Debug mode enabled only when DEBUG=1 environment variable is set
 _DEBUG = os.environ.get("DEBUG", "0") == "1"

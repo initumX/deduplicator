@@ -3,7 +3,7 @@ Unit tests for FileScannerImpl.
 Verifies file discovery with size/extension filters, error handling, and edge cases.
 """
 from pathlib import Path
-from core.scanner import FileScannerImpl
+from deduplicator.core import FileScannerImpl
 
 
 class TestFileScannerImpl:

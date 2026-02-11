@@ -4,9 +4,9 @@ This is the SINGLE source of truth for business logic — used by both GUI and C
 No Qt/PySide6 dependencies — pure Python.
 """
 from typing import List, Optional, Callable, Tuple
-from core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
-from core.scanner import FileScannerImpl
-from core.deduplicator import DeduplicatorImpl
+from deduplicator.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
+from deduplicator.core.scanner import FileScannerImpl
+from deduplicator.core.deduplicator import DeduplicatorImpl
 
 class DeduplicationCommand:
     """

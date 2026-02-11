@@ -3,9 +3,8 @@ Integration tests for full deduplication pipeline.
 Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 """
 from pathlib import Path
-from core.scanner import FileScannerImpl
-from core.deduplicator import DeduplicatorImpl
-from core.models import DeduplicationParams, DeduplicationMode, SortOrder, File, FileHashes
+from deduplicator.core import FileScannerImpl, DeduplicatorImpl
+from deduplicator.core import DeduplicationParams, DeduplicationMode, SortOrder, File, FileHashes
 
 
 class TestDeduplicatorIntegration:

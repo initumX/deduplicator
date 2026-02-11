@@ -10,8 +10,8 @@ caching results in the File object's Hashes container.
 """
 
 import xxhash
-from core.models import File
-from core.interfaces import Hasher, HashAlgorithm
+from deduplicator.core.models import File
+from deduplicator.core.interfaces import Hasher, HashAlgorithm
 
 
 # Use the same way to implement and use any other hashing algorithm
