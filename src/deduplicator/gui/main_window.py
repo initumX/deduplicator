@@ -371,7 +371,7 @@ class MainWindow(QMainWindow):
 
         QMessageBox.critical(
             self,
-            "Error"
+            "Error",
             f"{"Error occurred"}:\n{error_message}"
         )
 
