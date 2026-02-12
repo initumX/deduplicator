@@ -8,7 +8,7 @@ import sys
 import os
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, NoReturn
 
 import logging
 logging.basicConfig(
@@ -359,7 +359,7 @@ Examples:
             print(f"⚠️  {message}", file=sys.stderr)
 
     @staticmethod
-    def error_exit(message: str, code: int = 1) -> None:
+    def error_exit(message: str, code: int = 1)-> NoReturn:
         """Print error and exit."""
         print(f"❌ Error: {message}", file=sys.stderr)
         sys.exit(code)
