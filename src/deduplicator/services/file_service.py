@@ -59,7 +59,16 @@ class FileService:
             except Exception as e:
                 errors.append((path, str(e)))
         if errors:
-            raise RuntimeError(f"Failed to delete {len(errors)} file(s): {errors}")
+            # Format errors for readability: show first 5 errors explicitly
+            error_summary = "\n".join(
+                f"  • {path}: {msg.split(':')[-1].strip()}"
+                for path, msg in errors[:5]
+            )
+            if len(errors) > 5:
+                error_summary += f"\n  • ...and {len(errors) - 5} more files"
+            raise RuntimeError(
+                f"Failed to move {len(errors)} file(s) to trash:\n{error_summary}"
+            )
 
     @staticmethod
     def is_valid_image(file_path: str) -> bool:
