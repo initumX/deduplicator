@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from deduplicator.core.models import DeduplicationMode, DeduplicationParams, SortOrder
+from deduplicator.core.models import DeduplicationMode, DeduplicationParams
+from deduplicator.core.sorter import Sorter
 from deduplicator.services.file_service import FileService
 from deduplicator.services.duplicate_service import DuplicateService
 from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
@@ -72,18 +73,8 @@ class MainWindow(QMainWindow):
 
     def on_ordering_changed(self):
         """Re-sort all duplicate groups when ordering mode changes."""
-        if not self.duplicate_groups:
-            return
-
-        order_mode = self.ui.ordering_combo.currentData()
-        reverse = order_mode == "NEWEST_FIRST"
-
-        for group in self.duplicate_groups:
-            group.files.sort(
-                key=lambda f: (not f.is_from_fav_dir, f.creation_time or 0),
-                reverse=reverse
-            )
-
+        sort_order = self.ui.ordering_combo.currentData()
+        Sorter.sort_files_inside_groups(self.duplicate_groups, sort_order)
         self.ui.groups_list.set_groups(self.duplicate_groups)
 
     def resizeEvent(self, event):
@@ -281,7 +272,7 @@ class MainWindow(QMainWindow):
         # Get mode and sort order from UI controls
         mode_key = self.ui.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
-        sort_order = SortOrder.NEWEST_FIRST if self.ui.ordering_combo.currentData() == "NEWEST_FIRST" else SortOrder.OLDEST_FIRST
+        sort_order = self.ui.ordering_combo.currentData()
 
         # Setup progress dialog
         self.progress_dialog = QProgressDialog(

@@ -42,6 +42,8 @@ class Stage(str, Enum):
 class SortOrder(Enum):
     NEWEST_FIRST = "newest"
     OLDEST_FIRST = "oldest"
+    SHALLOW_THEN_NEWEST = "shallow-newest"
+    SHALLOW_THEN_OLDEST = "shallow-oldest"
 
 # ======================
 #  Core Data Models
@@ -74,6 +76,7 @@ class File:
     name: Optional[str] = None
     extension: Optional[str] = None
     is_from_fav_dir: bool = False
+    path_depth: int = 0
     is_confirmed_duplicate: bool = False  # Mark files that have already been confirmed as duplicate
     hashes: FileHashes = field(default_factory=FileHashes)
     chunk_size: Optional[int] = None  # Will be set dynamically

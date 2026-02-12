@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt
 from deduplicator.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
 from deduplicator.gui.custom_widgets.image_preview_label import ImagePreviewLabel
 from deduplicator.core.models import DeduplicationMode
-
+from deduplicator.core.models import SortOrder
 
 class Ui_MainWindow:
     """Pure UI class following Qt's official pattern (composition, not inheritance)."""
@@ -207,12 +207,14 @@ class Ui_MainWindow:
 
         # Ordering combo box
         ordering_items = [
-            ("Oldest goes first", "OLDEST_FIRST"),
-            ("Newest goes first", "NEWEST_FIRST")
+            ("Oldest first", SortOrder.OLDEST_FIRST),
+            ("Newest first", SortOrder.NEWEST_FIRST),
+            ("Shallow first then oldest", SortOrder.SHALLOW_THEN_OLDEST),
+            ("Shallow first then newest", SortOrder.SHALLOW_THEN_NEWEST)
         ]
         current_index = self.ordering_combo.currentIndex()
         self.ordering_combo.clear()
-        for text, mode_key in ordering_items:
-            self.ordering_combo.addItem(text, userData=mode_key)
+        for text, sort_order in ordering_items:
+            self.ordering_combo.addItem(text, userData=sort_order)
         if 0 <= current_index < self.ordering_combo.count():
             self.ordering_combo.setCurrentIndex(current_index)

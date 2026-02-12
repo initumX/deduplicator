@@ -205,7 +205,13 @@ class FileScannerImpl(FileScanner):
 
         try:
             creation_time = getattr(stat_result, 'st_birthtime', stat_result.st_ctime)
-            file = File(path=str(path), size=size, creation_time=creation_time)
+            path_depth = str(path).rstrip(os.sep).count(os.sep) # number of path separators
+            file = File(
+                path=str(path),
+                size=size,
+                creation_time=creation_time,
+                path_depth=path_depth
+            )
         except Exception as e:
             logger.debug(f"Failed to create File object for {path}: {e}")
             return None

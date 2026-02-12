@@ -15,6 +15,7 @@ from .scanner import FileScannerImpl
 from .grouper import FileGrouperImpl
 from .hasher import HasherImpl, XXHashAlgorithmImpl
 from .deduplicator import Deduplicator, DeduplicatorImpl
+from .sorter import Sorter
 from .models import (
     File, DuplicateGroup, DeduplicationMode, DeduplicationParams, DeduplicationStats,
     SortOrder, FileHashes)
@@ -33,4 +34,5 @@ __all__ = [
     "DeduplicationStats",
     "SortOrder",
     "FileHashes",
+    "Sorter"
 ]
