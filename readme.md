@@ -9,11 +9,12 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 - **Scan** directories for duplicates by size and content(uses xxhash)
 - **Filter** by file size and extension
+- **Sorts** duplicate inside groups by path dept and creation time
 - Supports multiple **deduplication modes**: fast, normal, full
 - **Preview** images directly in the interface
 - **Progress tracking** both for searching duplicates and deleting them
 - **Statistics** Dialog Box
-- **Context menu** (with open,reveal in explorer and delete file(s) options)
+- **Context menu** (with open, reveal in explorer and delete file(s) options)
 - **One click deletion** ( using 'Keep One File Per Group' button)
 - Manage **favourite directories** for prioritization
 - tooltips
