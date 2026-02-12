@@ -128,9 +128,12 @@ Examples:
         )
         parser.add_argument(
             "--sort-order",
-            choices=["newest", "oldest"],
+            choices=["newest", "oldest", "shallow-newest", "shallow-oldest"],
             default="newest",
-            help="Which file to keep when deleting duplicates: newest or oldest. Default: newest"
+            help="Which file to keep when deleting duplicates: "
+                 "'newest' (newest first), 'oldest' (oldest first), "
+                 "'shallow-newest' (shallow path then newest), "
+                 "'shallow-oldest' (shallow path then oldest). Default: newest"
         )
         # Output options
         parser.add_argument(
