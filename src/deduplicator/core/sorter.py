@@ -17,9 +17,8 @@ class Sorter:
     Sorting priority (applied lexicographically):
     1. Favourite files ALWAYS first (absolute priority: never mixed with non-favourites)
     2. Secondary criterion depends on sort_order:
-       - TIME-FIRST modes (NEWEST/OLDEST): time → path depth
-       - DEPTH-FIRST modes (SHALLOW_*): path depth → time
-    3. Tertiary criterion resolves remaining ties
+       - SHORTEST_PATH mode: file with shortest path (closer to Root Folder) goes first (DEFAULT)
+       - SHORTEST_FILENAME mode: file with shortest filename goes first
     """
 
     @staticmethod
@@ -28,21 +27,19 @@ class Sorter:
             return
 
         if sort_order is None:
-            sort_order = SortOrder.NEWEST_FIRST
+            sort_order = SortOrder.SHORTEST_PATH
 
         for group in groups:
-            if sort_order in (SortOrder.SHALLOW_THEN_NEWEST, SortOrder.SHALLOW_THEN_OLDEST):
+            if sort_order == SortOrder.SHORTEST_FILENAME:
                 key_func = lambda f: (
                     not f.is_from_fav_dir,
-                    f.path_depth,
-                    -(f.creation_time or 0) if sort_order == SortOrder.SHALLOW_THEN_NEWEST
-                    else (f.creation_time or 0)
+                    len(f.name),
+                    f.path_depth
                 )
             else:
                 key_func = lambda f: (
                     not f.is_from_fav_dir,
-                    -(f.creation_time or 0) if sort_order == SortOrder.NEWEST_FIRST
-                    else (f.creation_time or 0),
-                    f.path_depth
+                    f.path_depth,
+                    len(f.name)
                 )
             group.files.sort(key=key_func)

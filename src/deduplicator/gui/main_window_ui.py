@@ -115,6 +115,13 @@ class Ui_MainWindow:
 
         self.ordering_label = QLabel(central_widget)
         self.ordering_combo = QComboBox(central_widget)
+        self.ordering_combo.setToolTip(
+            """
+            Which file should be kept/considered as "original"?
+                • The file closest to the root folder (shortest path)
+                • The file with the shortest filename
+            """
+        )
 
         self.find_duplicates_button = QPushButton(central_widget)
         self.find_duplicates_button.setToolTip(
@@ -125,7 +132,7 @@ class Ui_MainWindow:
         self.keep_one_button.setToolTip("Keep one file (the first) in the group and delete the rest")
 
         self.about_button = QPushButton(central_widget)
-        self.about_button.setToolTip("Learn more about the program and its author")
+        self.about_button.setToolTip("Show Help")
 
         control_layout = QHBoxLayout()
         control_layout.addWidget(self.find_duplicates_button)
@@ -177,7 +184,7 @@ class Ui_MainWindow:
         self.root_dir_input.setPlaceholderText("Select Folder to scan")
         self.find_duplicates_button.setText("Find Duplicates")
         self.keep_one_button.setText("Keep One (The first one) File Per Group")
-        self.about_button.setText("About")
+        self.about_button.setText("Help/About")
         self.favourite_dirs_button.setText("Manage Favourite Folders List")
 
         # Group box titles
@@ -190,7 +197,7 @@ class Ui_MainWindow:
         self.label_max_size.setText("Max size:")
         self.label_extensions.setText("Extensions:")
         self.mode_label.setText("Mode:")
-        self.ordering_label.setText("Order by Date:")
+        self.ordering_label.setText("Order:")
 
         # Deduplication mode combo box
         dedupe_mode_items = [
@@ -207,10 +214,8 @@ class Ui_MainWindow:
 
         # Ordering combo box
         ordering_items = [
-            ("Oldest first", SortOrder.OLDEST_FIRST),
-            ("Newest first", SortOrder.NEWEST_FIRST),
-            ("Shallow first then oldest", SortOrder.SHALLOW_THEN_OLDEST),
-            ("Shallow first then newest", SortOrder.SHALLOW_THEN_NEWEST)
+            ("Shortest Path First", SortOrder.SHORTEST_PATH),
+            ("Shortest Filename First", SortOrder.SHORTEST_FILENAME)
         ]
         current_index = self.ordering_combo.currentIndex()
         self.ordering_combo.clear()

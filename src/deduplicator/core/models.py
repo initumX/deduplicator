@@ -40,10 +40,8 @@ class Stage(str, Enum):
         return [cls.SIZE, cls.FRONT, cls.MIDDLE, cls.END, cls.FULL]
 
 class SortOrder(Enum):
-    NEWEST_FIRST = "newest"
-    OLDEST_FIRST = "oldest"
-    SHALLOW_THEN_NEWEST = "shallow-newest"
-    SHALLOW_THEN_OLDEST = "shallow-oldest"
+    SHORTEST_PATH = "shortest-path"
+    SHORTEST_FILENAME = "shortest-filename"
 
 # ======================
 #  Core Data Models
@@ -72,7 +70,6 @@ class File:
     """
     path: str
     size: int  # in bytes
-    creation_time: float = None
     name: Optional[str] = None
     extension: Optional[str] = None
     is_from_fav_dir: bool = False
@@ -279,7 +276,7 @@ class DeduplicationParams:
     extensions: List[str] = field(default_factory=list)
     favourite_dirs: List[str] = field(default_factory=list)
     mode: DeduplicationMode = DeduplicationMode.NORMAL
-    sort_order: SortOrder = SortOrder.NEWEST_FIRST
+    sort_order: SortOrder = SortOrder.SHORTEST_PATH
 
     def __post_init__(self):
         """Validate parameters immediately after creation."""

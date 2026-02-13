@@ -59,8 +59,7 @@ class DuplicateGroupsList(QListWidget):
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
                 item_text = f"     {file.name}{fav_marker}"
 
-                creation_time_str = ConvertUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
-                tooltip_text = f"Path: {file.path}\nCreation Time: {creation_time_str}"
+                tooltip_text = f"Path: {file.path}"
 
                 item = QListWidgetItem(item_text)
                 item.setToolTip(tooltip_text)
