@@ -22,6 +22,7 @@ from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsD
 from deduplicator.utils.convert_utils import ConvertUtils
 from deduplicator.gui.worker import DeduplicateWorker
 from deduplicator.gui.main_window_ui import Ui_MainWindow
+from deduplicator import __version__
 
 class SettingsManager:
     def __init__(self):
@@ -221,9 +222,9 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
         "About",
-        """
+        f"""
             <b>File Deduplicator</b><br><br>
-            Version: 2.2.4<br>A tool to find and remove duplicate files.<br><br><b>
+            deduplicator v{__version__}\n\n<br>A tool to find and remove duplicate files.<br><br><b>
             Features:</b><br><br>
             -Filtering by size and extension<br><br>
             -Using xxhash (very fast)<br><br>

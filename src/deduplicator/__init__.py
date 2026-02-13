@@ -8,7 +8,18 @@ Core features:
 - CLI interface for headless/server usage
 """
 
-__version__ = "0.1.0"
+# Get version
+try:
+    from importlib.metadata import version as _version
+    __version__ = _version("deduplicator")
+except Exception:
+    try:
+        import tomllib  # Python 3.11+
+    except ImportError:
+        import tomli as tomllib  # Python < 3.11: pip install tomli
+
+    with open("pyproject.toml", "rb") as f:
+        __version__ = tomllib.load(f)["project"]["version"]
 
 # Public API — only what users should import directly
 from deduplicator.commands import DeduplicationCommand
@@ -27,5 +38,6 @@ __all__ = [
     "DuplicateGroup",
     "ConvertUtils",
     "DuplicateService",
-    "FileService"
+    "FileService",
+    "__version__",
 ]
