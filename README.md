@@ -89,7 +89,6 @@ Which file is "first" depends on sorting:
    - `--verbose, -v` Show detailed statistics and progress
 
 ## Built With
-
 - Python 3.x
 - PySide6 (Qt)
 - send2trash
@@ -98,11 +97,6 @@ Which file is "first" depends on sorting:
 
 ## TESTS
 ` pytest tests/ -v`
-
-## How to build with Nuitka
-`pip install xxhash pillow send2trash pyside6 nuitka pyinstaller`
-
-`nuitka --standalone --onefile --windows-console-mode=disable --enable-plugins=pyside6 --output-dir=dist main_window.py`
 
 ## How to build with Pyinstaller
 `pyinstaller --noconfirm --clean --noconsole --onefile --exclude-module=PySide6.QtNetwork main_window.py`
