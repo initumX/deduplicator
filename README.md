@@ -53,8 +53,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 ### Deleting all duplicates at once
     The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.
----
-          
+    ---
     Which file is "first" depends on sorting:
       Priority files(files from **"Priority Folders"**, if set) always come first
       Among priorities: file with shortest path (by default) comes first
@@ -65,7 +64,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 ---
 
 
-                            How to use cli-version
+### How to use cli-version
     Examples:
     ----------
     Basic usage - find duplicates in Downloads folder
