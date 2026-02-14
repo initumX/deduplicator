@@ -116,7 +116,7 @@ Examples:
             nargs="+",
             default=[],
             type=str,
-            dest="favourite_dirs",
+            dest="priority_dirs",
             help="Directories with files to prioritize when deleting duplicates"
         )
 
@@ -199,7 +199,7 @@ Examples:
             self.error_exit(f"Invalid size format: {e}")
 
         # Validate favourite directories
-        for fav_dir in args.favourite_dirs:
+        for fav_dir in args.priority_dirs:
             fav_path = Path(fav_dir).resolve()
             if not fav_path.exists():
                 self.warning(f"Favourite directory not found: {fav_dir}")
@@ -225,9 +225,10 @@ Examples:
                     for ext in extensions
                 ]
 
-            # Parse favourite directories: support space-separated AND comma-separated
+            # Parse priority directories from CLI: support space-separated AND comma-separated
+            # convert it to internal favourite_dirs format for core engine
             favourite_dirs = []
-            for item in args.favourite_dirs:
+            for item in args.priority_dirs:
                 favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
             favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
 

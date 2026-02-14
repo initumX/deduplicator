@@ -39,23 +39,23 @@ class TestArgumentParsing:
             args = app.parse_args()
         assert args.extensions == ".jpg,.png,.gif"
 
-    def test_favourite_dirs_flag_variants(self):
+    def test_priority_dirs_flag_variants(self):
         """Test both short (-p) and alternative (--priority-dirs) forms."""
         app = CLIApplication()
 
-        # Using --favs (primary form)
+        # Using -p (short form)
         with mock.patch.object(sys, 'argv', [
             'highlander', '-i', '/tmp', '-p', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
-        assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]
+        assert args.priority_dirs == ["/tmp/dir1", "/tmp/dir2"]
 
-        # Using --favourite-dirs (alternative form)
+        # Using --priority-dirs (alternative form)
         with mock.patch.object(sys, 'argv', [
             'highlander', '-i', '/tmp', '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
-        assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]
+        assert args.priority_dirs == ["/tmp/dir1", "/tmp/dir2"]
 
     def test_mode_flag(self):
         """Test --mode flag with valid values."""
