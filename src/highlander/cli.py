@@ -79,7 +79,7 @@ Examples:
   %(prog)s -i ./photos --mode full
 
   # Sort by filename length instead of path depth
-  %(prog)s -i ./photos --sort filename-length
+  %(prog)s -i ./photos --sort shortest-filename
             """
         )
 
@@ -111,7 +111,7 @@ Examples:
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
         )
         parser.add_argument(
-            "--favs", "--favourite-dirs",  # Support both short and long form
+            "--favs", "--favourite-dirs",
             nargs="+",
             default=[],
             type=str,
@@ -132,12 +132,12 @@ Examples:
         )
         parser.add_argument(
             "--sort",
-            choices=["path-depth", "filename-length"],
-            default="path-depth",
+            choices=["shortest-path", "shortest-filename"],
+            default="shortest-path",
             type=str,
             help="Sorting inside duplicate groups: "
-                 "'path-depth' (files closer to root first), "
-                 "'filename-length' (shorter filenames first). Default: path-depth"
+                 "'shortest-path' (files closer to root first), "
+                 "'shortest-filename' (shorter filenames first). Default: shortest-path"
         )
 
         # Actions
@@ -222,12 +222,8 @@ Examples:
                 favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
             favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
 
-            # Map CLI sort option to core SortOrder enum
-            sort_map = {
-                "path-depth": SortOrder.SHORTEST_PATH,
-                "filename-length": SortOrder.SHORTEST_FILENAME
-            }
-            sort_order = sort_map[args.sort]
+            # Map CLI sort option directly to core SortOrder enum values
+            sort_order = SortOrder(args.sort)
 
             mode = DeduplicationMode[args.mode.upper()]
 
@@ -353,7 +349,7 @@ Examples:
             if preserved_file.is_from_fav_dir:
                 print(f"          Reason: from favourite directory")
             else:
-                # Show human-readable sort reason
+                # Show human-readable sort reason based on actual enum value
                 sort_reason = "shortest path" if params.sort_order == SortOrder.SHORTEST_PATH else "shortest filename"
                 print(f"          Reason: {sort_reason}")
 
