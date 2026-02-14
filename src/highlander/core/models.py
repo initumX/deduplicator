@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-models.py
+core/models.py
 Data models and domain logic for file scanning and deduplication.
 """
 

@@ -1,3 +1,46 @@
+"""
+Copyright (c) 2025 initumX (initum.x@gmail.com)
+Licensed under the MIT License
+
+core/stages.py
+Deduplication pipeline stages implementation for Highlander's multi-stage duplicate detection engine.
+
+CLASS HIERARCHY
+---------------
+HashStageBase          : Assigns chunk sizes before hashing operations
+PartialHashStageBase   : Abstract base for front/middle/end hash stages (shared grouping logic)
+SizeStageImpl          : Implements initial size-based grouping (SizeStage interface)
+Front/Middle/EndHash   : Concrete partial hash stages with increasing confirmation thresholds
+FullHashStage          : Final verification stage (no inheritance from PartialHashStageBase)
+
+CONFIGURATION
+-------------
+DeduplicationConfig centralizes all size thresholds and chunk-sizing policies:
+  • EARLY_CONFIRMATION_SIZE_LIMIT: Base threshold (128KB) for front-hash confirmation
+  • get_chunk_size(): File-size-aware chunk sizing strategy (128KB–2MB range)
+  • Stage-specific thresholds scale linearly (1×, 2×, 3× base limit)
+
+STAGE CONTRACTS
+---------------
+Each stage implements a consistent `process()` interface that:
+  • Accepts candidate groups from previous stage
+  • Returns refined groups for next stage
+  • Appends confirmed duplicates to shared list
+  • Reports progress via callback (stage name, processed count, total count)
+  • Respects cancellation via stopped_flag callback
+
+OPTIMIZATIONS
+-----------------
+• Progressive refinement: Each stage splits groups into smaller candidate sets using
+  different file regions, reducing false positives, etc
+• Early confirmation: Files below size thresholds are immediately confirmed as duplicates
+  after partial hash matches (avoids redundant I/O for small files)
+• Adaptive chunk sizing: Chunk sizes dynamically scale with file size (128KB–2MB) to
+  balance discrimination power with I/O efficiency
+• Cancellation support: All stages honor stopped_flag for responsive UI cancellation
+• Progress tracking: Uniform progress_callback interface for UI integration
+"""
+
 from typing import List, Dict, Optional, Callable
 from highlander.core.models import File, DuplicateGroup
 from highlander.core.grouper import FileGrouperImpl

@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-scanner.py
+core/scanner.py
 Implements file scanning functionality using object-oriented design and modern pathlib.
 Features:
 - Uses pathlib.Path for robust, cross-platform path handling

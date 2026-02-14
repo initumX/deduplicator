@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-grouper.py
+core/grouper.py
 Implements file grouping strategies using File objects and Hasher.
 Replaces multiple standalone groupers with a single class implementing FileGrouper.
 """

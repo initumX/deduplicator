@@ -3,7 +3,7 @@ Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
 core/sorter.py
-Pure sorting logic for duplicate groups — zero dependencies outside core.
+Pure sorting logic for duplicate groups.
 Respects absolute priority of favourite files while providing flexible tie-breaking strategies.
 """
 from typing import List

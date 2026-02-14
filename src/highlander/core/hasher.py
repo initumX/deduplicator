@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-hasher.py
+core/hasher.py
 Implements file hashing utilities using the File class and pluggable hash algorithms.
 
 The GenericHasher class provides methods to compute partial and full hashes efficiently,

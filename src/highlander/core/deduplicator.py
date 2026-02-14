@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-highlander.py
+core/deduplicator.py
 Implements a pipeline-based deduplication system using File objects.
 Supports three modes:
     - fast: size → front

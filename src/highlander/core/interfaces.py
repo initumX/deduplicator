@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-interfaces.py
+core/interfaces.py
 
 Defines core interfaces (Protocols) used throughout the deduplication system.
 These protocols enforce structural typing using Python's `typing.Protocol` to ensure
