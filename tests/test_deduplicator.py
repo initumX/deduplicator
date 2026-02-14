@@ -28,7 +28,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -65,7 +65,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.NORMAL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -96,7 +96,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -139,7 +139,7 @@ class TestDeduplicatorIntegration:
             extensions=[".bin"],
             favourite_dirs=[],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.NEWEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
@@ -176,7 +176,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.NORMAL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -213,7 +213,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
@@ -244,7 +244,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         groups, _ = DeduplicatorImpl().find_duplicates(
             files=files,
@@ -272,7 +272,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         groups, stats = DeduplicatorImpl().find_duplicates(
             files=files,
@@ -295,7 +295,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -314,8 +314,8 @@ class TestDeduplicatorIntegration:
         file2 = temp_dir / "nonfav_file.txt"
         file1.write_bytes(content)
         file2.write_bytes(content)
-        file_obj1 = File(path=str(file1), size=len(content), creation_time=1000.0)
-        file_obj2 = File(path=str(file2), size=len(content), creation_time=2000.0)
+        file_obj1 = File(path=str(file1), size=len(content))
+        file_obj2 = File(path=str(file2), size=len(content))
         file_obj1.is_from_fav_dir = True
         file_obj2.is_from_fav_dir = False
         identical_hash = b"same_hash8"
@@ -328,7 +328,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[str(temp_dir)],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.NEWEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
@@ -375,7 +375,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.NORMAL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -407,7 +407,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FULL,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
         deduper = DeduplicatorImpl()
         _, stats = deduper.find_duplicates(

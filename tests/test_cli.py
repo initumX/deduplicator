@@ -4,11 +4,9 @@ These tests prevent catastrophic bugs that could cause data loss.
 """
 import sys
 import os
-import time
 from pathlib import Path
 from unittest import mock
 import pytest
-
 from highlander.cli import CLIApplication
 from highlander.core.models import File, DuplicateGroup
 from highlander.services.file_service import FileService
@@ -17,10 +15,10 @@ from highlander.services.file_service import FileService
 class TestFileSortingAndSelection:
     """Test that correct files are selected for preservation (critical for data safety)."""
 
-    def test_favourite_dir_priority_over_timestamp(self, tmp_path):
+    def test_favourite_dir_priority_over_sort_order(self, tmp_path):
         """
         CRITICAL: Files from favourite directories MUST be preserved first,
-        even if they are older than non-favourite files.
+        regardless of sort order (path depth or filename length).
         """
         # Setup test structure
         fav_dir = tmp_path / "favourite"
@@ -28,21 +26,19 @@ class TestFileSortingAndSelection:
         normal_dir = tmp_path / "normal"
         normal_dir.mkdir()
 
-        # Create duplicates with different timestamps
-        # Favourite file is OLDEST
-        old_fav = fav_dir / "keep_me.jpg"
-        old_fav.write_bytes(b"identical content")
-        old_fav.touch(exist_ok=True)
-        time.sleep(0.05)  # Ensure timestamp difference
+        # Create duplicates with different path depths
+        # Favourite file has LONGER path (deeper nesting)
+        deep_fav = fav_dir / "subdir" / "keep_me.jpg"
+        deep_fav.parent.mkdir()
+        deep_fav.write_bytes(b"identical content")
 
-        # Normal file is NEWEST (should be deleted if sorting works correctly)
-        new_normal = normal_dir / "delete_me.jpg"
-        new_normal.write_bytes(b"identical content")
-        new_normal.touch(exist_ok=True)
+        # Normal file has SHORTER path (closer to root)
+        shallow_normal = normal_dir / "delete_me.jpg"
+        shallow_normal.write_bytes(b"identical content")
 
         # Run deduplication with favourite dir
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(tmp_path), '-f', str(fav_dir), '--keep-one', '--force'
+            'highlander', '--input', str(tmp_path), '--favs', str(fav_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -50,73 +46,61 @@ class TestFileSortingAndSelection:
 
         # Verify: ONLY non-favourite file was deleted
         deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
-        assert str(new_normal) in deleted_paths, "Newest non-favourite file should be deleted"
-        assert str(old_fav) not in deleted_paths, "OLDEST favourite file MUST be preserved (critical safety check!)"
+        assert str(shallow_normal) in deleted_paths, "Shallow non-favourite file should be deleted"
+        assert str(deep_fav) not in deleted_paths, "Deep favourite file MUST be preserved (critical safety check!)"
 
-    def test_sort_order_newest_preserved_when_no_favourites(self, tmp_path):
+    def test_sort_order_shortest_path_preserved_when_no_favourites(self, tmp_path):
         """
-        When no favourite dirs exist, newest file should be preserved by default.
+        When no favourite dirs exist, shortest path file should be preserved by default.
         """
         test_dir = tmp_path / "photos"
         test_dir.mkdir()
+        subdir = test_dir / "sub"
+        subdir.mkdir()
 
-        # Create duplicates: oldest first, newest last
-        oldest = test_dir / "oldest.jpg"
-        oldest.write_bytes(b"content")
-        oldest.touch(exist_ok=True)
-        time.sleep(0.05)
+        # Create duplicates: shallow first, deep last
+        shallow = test_dir / "shallow.jpg"
+        shallow.write_bytes(b"content")
+        deep = subdir / "deep.jpg"
+        deep.write_bytes(b"content")
 
-        middle = test_dir / "middle.jpg"
-        middle.write_bytes(b"content")
-        middle.touch(exist_ok=True)
-        time.sleep(0.05)
-
-        newest = test_dir / "newest.jpg"
-        newest.write_bytes(b"content")
-        newest.touch(exist_ok=True)
-
-        # Run with default sort order (newest)
+        # Run with default sort order (shortest-path)
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one', '--force'
+            'highlander', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
                 app.run()
 
-        # Verify: oldest and middle deleted, newest preserved
+        # Verify: deep file deleted, shallow preserved
         deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
-        assert str(oldest) in deleted_paths
-        assert str(middle) in deleted_paths
-        assert str(newest) not in deleted_paths, "Newest file should be preserved by default"
+        assert str(deep) in deleted_paths
+        assert str(shallow) not in deleted_paths, "Shallow file should be preserved by default"
 
-    def test_sort_order_oldest_preserved_explicitly(self, tmp_path):
+    def test_sort_order_shortest_filename_preserved_explicitly(self, tmp_path):
         """
-        When --sort-order=oldest is specified, oldest file should be preserved.
+        When --sort=shortest-filename is specified, shortest filename should be preserved.
         """
         test_dir = tmp_path / "photos"
         test_dir.mkdir()
 
-        oldest = test_dir / "oldest.jpg"
-        oldest.write_bytes(b"content")
-        oldest.touch(exist_ok=True)
-        time.sleep(0.05)
+        short_name = test_dir / "a.jpg"
+        short_name.write_bytes(b"content")
+        long_name = test_dir / "very_long_filename.jpg"
+        long_name.write_bytes(b"content")
 
-        newest = test_dir / "newest.jpg"
-        newest.write_bytes(b"content")
-        newest.touch(exist_ok=True)
-
-        # Run with explicit oldest sort order
+        # Run with explicit shortest-filename sort order
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one', '--sort-order', 'oldest', '--force'
+            'highlander', '--input', str(test_dir), '--keep-one', '--sort', 'shortest-filename', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
                 app.run()
 
-        # Verify: newest deleted, oldest preserved
+        # Verify: long filename deleted, short filename preserved
         deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
-        assert str(newest) in deleted_paths
-        assert str(oldest) not in deleted_paths, "Oldest file should be preserved when --sort-order=oldest"
+        assert str(long_name) in deleted_paths
+        assert str(short_name) not in deleted_paths, "Shortest filename should be preserved"
 
 
 class TestDeletionSafety:
@@ -139,7 +123,7 @@ class TestDeletionSafety:
 
         # Run deletion
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one', '--force'
+            'highlander', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -166,7 +150,7 @@ class TestDeletionSafety:
         (test_dir / "b.txt").write_bytes(content)
 
         # Run WITHOUT --keep-one
-        with mock.patch.object(sys, 'argv', ['dedup', '-i', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
                 app.run()
@@ -179,7 +163,7 @@ class TestDeletionSafety:
         CRITICAL: --force must be rejected without --keep-one to prevent accidental mass deletion.
         """
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(tmp_path), '--force'  # Missing --keep-one!
+            'highlander', '--input', str(tmp_path), '--force'  # Missing --keep-one!
         ]):
             app = CLIApplication()
             args = app.parse_args()
@@ -201,9 +185,10 @@ class TestPartialErrorHandling:
         test_dir = tmp_path / "test"
         test_dir.mkdir()
 
-        # Create 3 duplicates
+        # Create 3 duplicates (no need to store file objects - we track deletions via mock)
         content = b"content"
-        files = [(test_dir / f"file{i}.txt").write_bytes(content) or (test_dir / f"file{i}.txt") for i in range(3)]
+        for i in range(3):
+            (test_dir / f"file{i}.txt").write_bytes(content)
 
         # Track deletion attempts
         deletion_attempts = []
@@ -216,10 +201,10 @@ class TestPartialErrorHandling:
 
         # Run deletion with mocked failure
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one', '--force'
+            'highlander', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash', side_effect=mock_move_to_trash):
-                with mock.patch('builtins.print') as mock_print:
+                with mock.patch('builtins.print'):
                     app = CLIApplication()
                     try:
                         app.run()
@@ -237,33 +222,32 @@ class TestSpaceSavingsCalculation:
         """Verify space savings calculation for one duplicate group."""
         # Create mock group: 3 files of 1MB each (total 3MB, keep 1 → save 2MB)
         files = [
-            File(path="/a/f1", size=1024 * 1024, creation_time=1),
-            File(path="/a/f2", size=1024 * 1024, creation_time=2),
-            File(path="/a/f3", size=1024 * 1024, creation_time=3),
+            File(path="/a/f1", size=1024 * 1024, name="f1", extension=".txt"),
+            File(path="/a/f2", size=1024 * 1024, name="f2", extension=".txt"),
+            File(path="/a/f3", size=1024 * 1024, name="f3", extension=".txt"),
         ]
         # DuplicateGroup requires BOTH size (of one file) AND files list
         group = DuplicateGroup(size=1024 * 1024, files=files)
-
         app = CLIApplication()
+
         # Keep f1 (first after sorting), delete f2+f3
         savings = app.calculate_space_savings([group], ["/a/f2", "/a/f3"])
-
         assert savings == 2 * 1024 * 1024, "Should save exactly 2MB (2 files * 1MB each)"
 
     def test_space_savings_for_multiple_groups(self):
         """Verify space savings calculation across multiple groups."""
         # Group 1: 2 files of 1MB → save 1MB
         files1 = [
-            File(path="/a/f1", size=1024 * 1024, creation_time=1),
-            File(path="/a/f2", size=1024 * 1024, creation_time=2),
+            File(path="/a/f1", size=1024 * 1024, name="f1", extension=".txt"),
+            File(path="/a/f2", size=1024 * 1024, name="f2", extension=".txt"),
         ]
         group1 = DuplicateGroup(size=1024 * 1024, files=files1)
 
         # Group 2: 3 files of 512KB → save 1MB (2 * 512KB)
         files2 = [
-            File(path="/b/f1", size=512 * 1024, creation_time=1),
-            File(path="/b/f2", size=512 * 1024, creation_time=2),
-            File(path="/b/f3", size=512 * 1024, creation_time=3),
+            File(path="/b/f1", size=512 * 1024, name="f1", extension=".txt"),
+            File(path="/b/f2", size=512 * 1024, name="f2", extension=".txt"),
+            File(path="/b/f3", size=512 * 1024, name="f3", extension=".txt"),
         ]
         group2 = DuplicateGroup(size=512 * 1024, files=files2)
 
@@ -273,7 +257,6 @@ class TestSpaceSavingsCalculation:
             [group1, group2],
             ["/a/f2", "/b/f2", "/b/f3"]
         )
-
         expected = (1 * 1024 * 1024) + (2 * 512 * 1024)  # 1MB + 1MB = 2MB
         assert savings == expected, "Should save 2MB total across both groups"
 
@@ -281,7 +264,7 @@ class TestSpaceSavingsCalculation:
 class TestFullCycleIntegration:
     """End-to-end integration tests for complete deduplication workflow."""
 
-    def test_full_cycle_with_preview_and_confirmation(self, tmp_path):
+    def test_full_cycle_with_preview_and_confirmation(self, tmp_path, monkeypatch):
         """
         Test complete workflow: scan → preview → user confirmation → deletion.
         """
@@ -295,9 +278,13 @@ class TestFullCycleIntegration:
         original.write_bytes(content)
         duplicate.write_bytes(content)
 
+        # Mock interactive terminal for confirmation prompt
+        monkeypatch.setattr(sys.stdin, 'isatty', lambda: True)
+        monkeypatch.setattr(sys.stdout, 'isatty', lambda: True)
+
         # Run with preview (user confirms deletion)
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one'
+            'highlander', '--input', str(test_dir), '--keep-one'
         ]):
             with mock.patch('builtins.input', return_value='y'):  # User confirms
                 with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
@@ -313,7 +300,6 @@ class TestFullCycleIntegration:
         """
         test_dir = tmp_path / "photos"
         test_dir.mkdir()
-
         content = b"content"
         (test_dir / "a.jpg").write_bytes(content)
         (test_dir / "b.jpg").write_bytes(content)
@@ -327,7 +313,7 @@ class TestFullCycleIntegration:
 
         # Run with --force (should NOT show confirmation)
         with mock.patch.object(sys, 'argv', [
-            'dedup', '-i', str(test_dir), '--keep-one', '--force'
+            'highlander', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch('builtins.input', side_effect=mock_input) as mock_input_patch:
                 with mock.patch.object(FileService, 'move_to_trash'):
@@ -350,7 +336,7 @@ class TestFullCycleIntegration:
         (test_dir / "c.txt").write_bytes(b"unique content 3")
 
         # Capture output
-        with mock.patch.object(sys, 'argv', ['dedup', '-i', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()
@@ -380,7 +366,7 @@ class TestEdgeCases:
         (test_dir / "real2.txt").write_bytes(content)
 
         # Run scan
-        with mock.patch.object(sys, 'argv', ['dedup', '-i', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()
@@ -404,12 +390,11 @@ class TestEdgeCases:
         # Create real file and symlink to it
         real_file = test_dir / "real.txt"
         real_file.write_bytes(b"content")
-
         symlink = test_dir / "link.txt"
         symlink.symlink_to(real_file)
 
         # Run scan
-        with mock.patch.object(sys, 'argv', ['dedup', '-i', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()

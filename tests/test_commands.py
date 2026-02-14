@@ -25,7 +25,7 @@ class TestDeduplicationCommand:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         command = DeduplicationCommand()
@@ -49,7 +49,7 @@ class TestDeduplicationCommand:
             extensions=[".txt"],  # No .txt files in empty dir
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         command = DeduplicationCommand()
@@ -75,7 +75,7 @@ class TestDeduplicationCommand:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         command = DeduplicationCommand()
@@ -106,7 +106,7 @@ class TestDeduplicationCommand:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         command = DeduplicationCommand()
@@ -151,7 +151,7 @@ class TestDeduplicationCommand:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FULL,  # Longer pipeline = easier to cancel
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         command = DeduplicationCommand()

@@ -19,9 +19,9 @@ class TestKeepOnlyOneFilePerGroup:
         # Group is ALREADY sorted by upstream component (e.g., DeduplicationCommand)
         # First file = preserved, all others = marked for deletion
         files = [
-            File(path="/preserve/me.jpg", size=100, creation_time=2, is_from_fav_dir=True),  # ← Preserved (first)
-            File(path="/delete/this1.jpg", size=100, creation_time=1, is_from_fav_dir=False),  # ← Deleted
-            File(path="/delete/this2.jpg", size=100, creation_time=3, is_from_fav_dir=False),  # ← Deleted
+            File(path="/preserve/me.jpg", size=100, is_from_fav_dir=True),  # ← Preserved (first)
+            File(path="/delete/this1.jpg", size=100, is_from_fav_dir=False),  # ← Deleted
+            File(path="/delete/this2.jpg", size=100, is_from_fav_dir=False),  # ← Deleted
         ]
         group = DuplicateGroup(size=100, files=files)
 
@@ -35,13 +35,13 @@ class TestKeepOnlyOneFilePerGroup:
     def test_handles_multiple_groups_independently(self):
         """Each group is processed independently — files after first marked for deletion in each."""
         group1 = DuplicateGroup(size=100, files=[
-            File(path="/g1/preserve.jpg", size=100, creation_time=1, is_from_fav_dir=True),  # ← Preserve
-            File(path="/g1/delete.jpg", size=100, creation_time=2, is_from_fav_dir=False),    # ← Delete
+            File(path="/g1/preserve.jpg", size=100, is_from_fav_dir=True),  # ← Preserve
+            File(path="/g1/delete.jpg", size=100, is_from_fav_dir=False),    # ← Delete
         ])
         group2 = DuplicateGroup(size=200, files=[
-            File(path="/g2/preserve.jpg", size=200, creation_time=1, is_from_fav_dir=False),  # ← Preserve
-            File(path="/g2/delete1.jpg", size=200, creation_time=2, is_from_fav_dir=False),   # ← Delete
-            File(path="/g2/delete2.jpg", size=200, creation_time=3, is_from_fav_dir=False),   # ← Delete
+            File(path="/g2/preserve.jpg", size=200, is_from_fav_dir=False),  # ← Preserve
+            File(path="/g2/delete1.jpg", size=200, is_from_fav_dir=False),   # ← Delete
+            File(path="/g2/delete2.jpg", size=200, is_from_fav_dir=False),   # ← Delete
         ])
 
         files_to_delete, _ = DuplicateService.keep_only_one_file_per_group([group1, group2])
@@ -57,7 +57,7 @@ class TestKeepOnlyOneFilePerGroup:
 
     def test_skips_deletion_for_single_file_groups(self):
         """Groups with only one file have nothing to delete."""
-        single_file = File(path="/single.jpg", size=100, creation_time=1, is_from_fav_dir=False)
+        single_file = File(path="/single.jpg", size=100, is_from_fav_dir=False)
         group = DuplicateGroup(size=100, files=[single_file])
 
         files_to_delete, _ = DuplicateService.keep_only_one_file_per_group([group])
@@ -79,9 +79,9 @@ class TestKeepOnlyOneFilePerGroup:
         """
         # Group pre-sorted: favourites first (newest favourite first)
         files = [
-            File(path="/fav/newest.jpg", size=100, creation_time=3, is_from_fav_dir=True),   # ← Preserve (first)
-            File(path="/fav/oldest.jpg", size=100, creation_time=1, is_from_fav_dir=True),   # ← Delete (second favourite)
-            File(path="/normal/middle.jpg", size=100, creation_time=2, is_from_fav_dir=False), # ← Delete
+            File(path="/fav/newest.jpg", size=100, is_from_fav_dir=True),   # ← Preserve (first)
+            File(path="/fav/oldest.jpg", size=100, is_from_fav_dir=True),   # ← Delete (second favourite)
+            File(path="/normal/middle.jpg", size=100, is_from_fav_dir=False), # ← Delete
         ]
         group = DuplicateGroup(size=100, files=files)
 
@@ -99,9 +99,9 @@ class TestRemoveFilesFromGroups:
     def test_removes_specified_files_and_preserves_others(self):
         """Specified files are removed; remaining files stay in group."""
         group = DuplicateGroup(size=100, files=[
-            File(path="/keep/a.jpg", size=100, creation_time=1, is_from_fav_dir=False),
-            File(path="/remove/b.jpg", size=100, creation_time=2, is_from_fav_dir=False),
-            File(path="/keep/c.jpg", size=100, creation_time=3, is_from_fav_dir=False),
+            File(path="/keep/a.jpg", size=100, is_from_fav_dir=False),
+            File(path="/remove/b.jpg", size=100, is_from_fav_dir=False),
+            File(path="/keep/c.jpg", size=100, is_from_fav_dir=False),
         ])
 
         updated_groups = DuplicateService.remove_files_from_groups(
@@ -120,8 +120,8 @@ class TestRemoveFilesFromGroups:
     def test_discards_groups_that_become_empty(self):
         """Groups with all files removed are discarded."""
         group = DuplicateGroup(size=100, files=[
-            File(path="/a.jpg", size=100, creation_time=1, is_from_fav_dir=False),
-            File(path="/b.jpg", size=100, creation_time=2, is_from_fav_dir=False),
+            File(path="/a.jpg", size=100, is_from_fav_dir=False),
+            File(path="/b.jpg", size=100, is_from_fav_dir=False),
         ])
 
         updated_groups = DuplicateService.remove_files_from_groups(
@@ -134,8 +134,8 @@ class TestRemoveFilesFromGroups:
     def test_ignores_nonexistent_files(self):
         """Removing non-existent files has no effect on groups."""
         group = DuplicateGroup(size=100, files=[
-            File(path="/a.jpg", size=100, creation_time=1, is_from_fav_dir=False),
-            File(path="/b.jpg", size=100, creation_time=2, is_from_fav_dir=False),
+            File(path="/a.jpg", size=100, is_from_fav_dir=False),
+            File(path="/b.jpg", size=100, is_from_fav_dir=False),
         ])
 
         updated_groups = DuplicateService.remove_files_from_groups(
@@ -155,9 +155,9 @@ class TestRemoveFilesFromFileList:
 
     def test_removes_specified_files(self):
         files = [
-            File(path="/keep/a.jpg", size=100, creation_time=1, is_from_fav_dir=False),
-            File(path="/remove/b.jpg", size=100, creation_time=2, is_from_fav_dir=False),
-            File(path="/keep/c.jpg", size=100, creation_time=3, is_from_fav_dir=False),
+            File(path="/keep/a.jpg", size=100, is_from_fav_dir=False),
+            File(path="/remove/b.jpg", size=100, is_from_fav_dir=False),
+            File(path="/keep/c.jpg", size=100, is_from_fav_dir=False),
         ]
 
         remaining = DuplicateService.remove_files_from_file_list(
@@ -172,7 +172,7 @@ class TestRemoveFilesFromFileList:
         assert "/remove/b.jpg" not in paths
 
     def test_handles_empty_removal_list(self):
-        files = [File(path="/a.jpg", size=100, creation_time=1, is_from_fav_dir=False)]
+        files = [File(path="/a.jpg", size=100, is_from_fav_dir=False)]
         remaining = DuplicateService.remove_files_from_file_list(files, [])
         assert len(remaining) == 1
         assert remaining[0].path == "/a.jpg"
@@ -192,10 +192,10 @@ class TestUpdateFavouriteStatus:
 
         # Create test files
         files = [
-            File(path=str(fav1 / "a.jpg"), size=100, creation_time=1, is_from_fav_dir=False),
-            File(path=str(fav2 / "b.jpg"), size=100, creation_time=2, is_from_fav_dir=False),
-            File(path=str(normal / "c.jpg"), size=100, creation_time=3, is_from_fav_dir=False),
-            File(path=str(fav1 / "sub" / "d.jpg"), size=100, creation_time=4, is_from_fav_dir=False),
+            File(path=str(fav1 / "a.jpg"), size=100, is_from_fav_dir=False),
+            File(path=str(fav2 / "b.jpg"), size=100, is_from_fav_dir=False),
+            File(path=str(normal / "c.jpg"), size=100, is_from_fav_dir=False),
+            File(path=str(fav1 / "sub" / "d.jpg"), size=100, is_from_fav_dir=False),
         ]
 
         # Update status
@@ -208,6 +208,6 @@ class TestUpdateFavouriteStatus:
         assert files[3].is_from_fav_dir is True  # fav1/sub/d.jpg (subdirectory of favourite)
 
     def test_handles_empty_favourite_list(self):
-        files = [File(path="/a.jpg", size=100, creation_time=1, is_from_fav_dir=True)]
+        files = [File(path="/a.jpg", size=100, is_from_fav_dir=True)]
         DuplicateService.update_favourite_status(files, [])
         assert files[0].is_from_fav_dir is False  # Reset to False when no favourites specified
