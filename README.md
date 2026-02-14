@@ -21,11 +21,11 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 * **Recursively scans** root folder using filters (min/max size, extension)
 * **Apply the cheapest check first** (compare by size)
-  * **Further checking** depends on mode: 
+* **Further checking** depends on mode: 
   
-    * "fast" mode: checks hash-sum of first 64+ KB of the file (false positives very possible)<br>
-    * "normal" mode: checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
-    * "full" mode: checks hash-sum of front -> middle -> entire file (very slow for large files)
+  * "fast" mode: checks hash-sum of first 64+ KB of the file (false positives very possible)<br>
+  * "normal" mode: checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
+  * "full" mode: checks hash-sum of front -> middle -> entire file (very slow for large files)
 
 
         This multi-stage approach minimizes expensive full-hash computations. 
