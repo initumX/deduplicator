@@ -5,15 +5,21 @@
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
-## How to install and run
-### First Way - use venv (virtual environment)
-- Create python virtual environment `python3 venv ~/onlyone && cd ~/onlyone`
-- Activate it `source ~/onlyone/bin/activate`
-- Install onlyone into it `pip install onlyone[gui]` 
-- Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
-- Don't use binary from github release (they are obsolete).
+### How to install and run
+    ### First Way - use venv (virtual environment)
+    1. Create python virtual environment and go there: 
+    python3 venv ~/onlyone && cd ~/onlyone
+    -----
+    2. Activate it:
+    source ~/onlyone/bin/activate
+    -----
+    3.Install onlyone into it: 
+    pip install onlyone[gui]
+    -----
+    Done.
+    Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
 
-### Second Way - wait for build release :)
+    ### Second Way - wait for build release :)
 
 ### Features
       Filters files by file size and extension
