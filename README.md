@@ -1,5 +1,5 @@
 
-# [Highlander](https://initumx.github.io/highlander/)
+# [OnlyOne](https://initumx.github.io/onlyone/)
 
 ![screenshot](/deduplicator224.png "Main Window")
 
@@ -55,13 +55,13 @@ Which file is "first" depends on sorting:
 
 ## How to use cli-version
    ### Examples
-`highlander -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort shortest-filename --keep-one`
+`onlyone -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort shortest-filename --keep-one`
 
     Shows all duplicates from ~/Downloads with size from 130KB to 5MB and extension .jpg and .png. 
     Duplicates in each group are sorted by filename length (from shortest to longest filename). 
     Asks confirmation before deleting
 
-`highlander -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
+`onlyone -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
 
     The same command as previous, but with no extension filter (doesn't filter 
     files by extension), and with --sort shortest-path (default in case you haven't 
@@ -86,9 +86,9 @@ Which file is "first" depends on sorting:
 - xxhash
 
 ## How to install and run
-- `pip install highlander[gui]`
-- `highlander-gui` (to use GUI-version) 
-- `highlander` (to use cli)
+- `pip install onlyone[gui]`
+- `onlyone-gui` (to use GUI-version) 
+- `onlyone` (to use cli)
 - You can also get binary from releases
 
 ## TESTS
@@ -102,9 +102,9 @@ Which file is "first" depends on sorting:
 ## How to build with Pyinstaller
 `pyinstaller --noconfirm --clean --noconsole --onefile --exclude-module=PySide6.QtNetwork main_window.py`
 
-Or just download binary from [realeases](https://github.com/initumX/highlander/releases)   
+Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
 
-Check out [website](https://initumx.github.io/highlander/)
+Check out [website](https://initumx.github.io/onlyone/)
 
 © 2026 initumX (initum.x@gmail.com)
 

@@ -4,10 +4,10 @@ from PySide6.QtWidgets import (
     QListWidget, QGroupBox, QSizePolicy, QSplitter, QAbstractItemView, QMainWindow
 )
 from PySide6.QtCore import Qt
-from highlander.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
-from highlander.gui.custom_widgets.image_preview_label import ImagePreviewLabel
-from highlander.core.models import DeduplicationMode
-from highlander.core.models import SortOrder
+from onlyone.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
+from onlyone.gui.custom_widgets.image_preview_label import ImagePreviewLabel
+from onlyone.core.models import DeduplicationMode
+from onlyone.core.models import SortOrder
 
 class Ui_MainWindow:
     """Pure UI class following Qt's official pattern (composition, not inheritance)."""
@@ -177,7 +177,7 @@ class Ui_MainWindow:
 
     def retranslateUi(self, MainWindow: QMainWindow):
         """Apply all UI texts - single source of truth for strings."""
-        MainWindow.setWindowTitle("Highlander")
+        MainWindow.setWindowTitle("OnlyOne")
 
         # Buttons and input fields
         self.select_dir_button.setText("Select Folder")

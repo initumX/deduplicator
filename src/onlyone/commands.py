@@ -4,9 +4,9 @@ This is the SINGLE source of truth for business logic — used by both GUI and C
 No Qt/PySide6 dependencies — pure Python.
 """
 from typing import List, Optional, Callable, Tuple
-from highlander.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
-from highlander.core.scanner import FileScannerImpl
-from highlander.core.deduplicator import DeduplicatorImpl
+from onlyone.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
+from onlyone.core.scanner import FileScannerImpl
+from onlyone.core.deduplicator import DeduplicatorImpl
 
 class DeduplicationCommand:
     """
@@ -77,7 +77,7 @@ class DeduplicationCommand:
         if not self._files:
             raise RuntimeError("No files found matching filters")
 
-        # Step 2: Find duplicates using core highlander directly
+        # Step 2: Find duplicates using core onlyone directly
         groups, stats = self._deduplicator.find_duplicates(
             self._files,
             params,  # ← Unified params object with sort_order, mode, etc.

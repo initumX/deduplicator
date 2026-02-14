@@ -7,9 +7,9 @@ import os
 from pathlib import Path
 from unittest import mock
 import pytest
-from highlander.cli import CLIApplication
-from highlander.core.models import File, DuplicateGroup
-from highlander.services.file_service import FileService
+from onlyone.cli import CLIApplication
+from onlyone.core.models import File, DuplicateGroup
+from onlyone.services.file_service import FileService
 
 
 class TestFileSortingAndSelection:
@@ -38,7 +38,7 @@ class TestFileSortingAndSelection:
 
         # Run deduplication with favourite dir
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(tmp_path), '--priority-dirs', str(fav_dir), '--keep-one', '--force'
+            'onlyone', '--input', str(tmp_path), '--priority-dirs', str(fav_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -66,7 +66,7 @@ class TestFileSortingAndSelection:
 
         # Run with default sort order (shortest-path)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one', '--force'
+            'onlyone', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -91,7 +91,7 @@ class TestFileSortingAndSelection:
 
         # Run with explicit shortest-filename sort order
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one', '--sort', 'shortest-filename', '--force'
+            'onlyone', '--input', str(test_dir), '--keep-one', '--sort', 'shortest-filename', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -123,7 +123,7 @@ class TestDeletionSafety:
 
         # Run deletion
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one', '--force'
+            'onlyone', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
@@ -150,7 +150,7 @@ class TestDeletionSafety:
         (test_dir / "b.txt").write_bytes(content)
 
         # Run WITHOUT --keep-one
-        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '--input', str(test_dir)]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()
                 app.run()
@@ -163,7 +163,7 @@ class TestDeletionSafety:
         CRITICAL: --force must be rejected without --keep-one to prevent accidental mass deletion.
         """
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(tmp_path), '--force'  # Missing --keep-one!
+            'onlyone', '--input', str(tmp_path), '--force'  # Missing --keep-one!
         ]):
             app = CLIApplication()
             args = app.parse_args()
@@ -201,7 +201,7 @@ class TestPartialErrorHandling:
 
         # Run deletion with mocked failure
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one', '--force'
+            'onlyone', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash', side_effect=mock_move_to_trash):
                 with mock.patch('builtins.print'):
@@ -284,7 +284,7 @@ class TestFullCycleIntegration:
 
         # Run with preview (user confirms deletion)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one'
+            'onlyone', '--input', str(test_dir), '--keep-one'
         ]):
             with mock.patch('builtins.input', return_value='y'):  # User confirms
                 with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
@@ -313,7 +313,7 @@ class TestFullCycleIntegration:
 
         # Run with --force (should NOT show confirmation)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(test_dir), '--keep-one', '--force'
+            'onlyone', '--input', str(test_dir), '--keep-one', '--force'
         ]):
             with mock.patch('builtins.input', side_effect=mock_input) as mock_input_patch:
                 with mock.patch.object(FileService, 'move_to_trash'):
@@ -336,7 +336,7 @@ class TestFullCycleIntegration:
         (test_dir / "c.txt").write_bytes(b"unique content 3")
 
         # Capture output
-        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()
@@ -366,7 +366,7 @@ class TestEdgeCases:
         (test_dir / "real2.txt").write_bytes(content)
 
         # Run scan
-        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()
@@ -394,7 +394,7 @@ class TestEdgeCases:
         symlink.symlink_to(real_file)
 
         # Run scan
-        with mock.patch.object(sys, 'argv', ['highlander', '--input', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '--input', str(test_dir)]):
             with mock.patch('builtins.print') as mock_print:
                 app = CLIApplication()
                 app.run()

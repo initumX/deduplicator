@@ -3,8 +3,8 @@ Qt worker runnable — follows modern Qt pattern: QRunnable + QThreadPool.
 Accepts DeduplicationParams for unified configuration.
 """
 from PySide6.QtCore import QRunnable, QObject, Signal, QMutex, QMutexLocker
-from highlander.core.models import DeduplicationParams
-from highlander.commands import DeduplicationCommand
+from onlyone.core.models import DeduplicationParams
+from onlyone.commands import DeduplicationCommand
 
 
 class WorkerSignals(QObject):

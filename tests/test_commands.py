@@ -1,15 +1,15 @@
 """
 Integration tests for DeduplicationCommand — the orchestration layer between UI and core.
-Verifies correct wiring of scanner → highlander with progress/cancellation support.
+Verifies correct wiring of scanner → onlyone with progress/cancellation support.
 """
 import pytest
 from pathlib import Path
-from highlander import DeduplicationParams, DeduplicationMode, SortOrder
-from highlander import DeduplicationCommand
+from onlyone import DeduplicationParams, DeduplicationMode, SortOrder
+from onlyone import DeduplicationCommand
 
 
 class TestDeduplicationCommand:
-    """Test command orchestration logic (scanner + highlander integration)."""
+    """Test command orchestration logic (scanner + onlyone integration)."""
 
     def test_execute_returns_groups_and_stats(self, test_files):
         """

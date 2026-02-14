@@ -4,8 +4,8 @@ Tests for CLI argument parsing and validation.
 import sys
 from unittest import mock
 import pytest
-from highlander.cli import CLIApplication
-from highlander.core.models import DeduplicationMode, SortOrder
+from onlyone.cli import CLIApplication
+from onlyone.core.models import DeduplicationMode, SortOrder
 
 
 class TestArgumentParsing:
@@ -16,12 +16,12 @@ class TestArgumentParsing:
         app = CLIApplication()
 
         # Long form
-        with mock.patch.object(sys, 'argv', ['highlander', '--input', '/tmp/test']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '--input', '/tmp/test']):
             args = app.parse_args()
         assert args.input == "/tmp/test"
 
         # Short form
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp/test']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp/test']):
             args = app.parse_args()
         assert args.input == "/tmp/test"
 
@@ -30,12 +30,12 @@ class TestArgumentParsing:
         app = CLIApplication()
 
         # Long form with comma-separated values
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--extensions', '.jpg,.png']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--extensions', '.jpg,.png']):
             args = app.parse_args()
         assert args.extensions == ".jpg,.png"
 
         # Short form
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '-x', '.jpg,.png,.gif']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '-x', '.jpg,.png,.gif']):
             args = app.parse_args()
         assert args.extensions == ".jpg,.png,.gif"
 
@@ -45,14 +45,14 @@ class TestArgumentParsing:
 
         # Using -p (short form)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', '/tmp', '-p', '/tmp/dir1', '/tmp/dir2'
+            'onlyone', '-i', '/tmp', '-p', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
         assert args.priority_dirs == ["/tmp/dir1", "/tmp/dir2"]
 
         # Using --priority-dirs (alternative form)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', '/tmp', '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
+            'onlyone', '-i', '/tmp', '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
         assert args.priority_dirs == ["/tmp/dir1", "/tmp/dir2"]
@@ -62,7 +62,7 @@ class TestArgumentParsing:
         app = CLIApplication()
 
         for mode in ["fast", "normal", "full"]:
-            with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--mode', mode]):
+            with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--mode', mode]):
                 args = app.parse_args()
             assert args.mode == mode
 
@@ -70,7 +70,7 @@ class TestArgumentParsing:
         """Test that invalid mode values are rejected by argparse."""
         app = CLIApplication()
 
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--mode', 'invalid']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--mode', 'invalid']):
             with pytest.raises(SystemExit):
                 app.parse_args()
 
@@ -79,12 +79,12 @@ class TestArgumentParsing:
         app = CLIApplication()
 
         # Test shortest-path (default)
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--sort', 'shortest-path']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--sort', 'shortest-path']):
             args = app.parse_args()
         assert args.sort == "shortest-path"
 
         # Test shortest-filename
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--sort', 'shortest-filename']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--sort', 'shortest-filename']):
             args = app.parse_args()
         assert args.sort == "shortest-filename"
 
@@ -92,7 +92,7 @@ class TestArgumentParsing:
         """Test that invalid sort values are rejected by argparse."""
         app = CLIApplication()
 
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', '/tmp', '--sort', 'invalid']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--sort', 'invalid']):
             with pytest.raises(SystemExit):
                 app.parse_args()
 
@@ -104,7 +104,7 @@ class TestArgumentValidation:
         """Test validation fails for non-existent input directory."""
         app = CLIApplication()
 
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(tmp_path / "nonexistent")]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(tmp_path / "nonexistent")]):
             args = app.parse_args()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -117,7 +117,7 @@ class TestArgumentValidation:
         test_dir.mkdir()
 
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(test_dir)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(test_dir)]):
             args = app.parse_args()
 
         # Should not raise
@@ -129,7 +129,7 @@ class TestArgumentValidation:
         test_file.write_text("test")
 
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(test_file)]):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(test_file)]):
             args = app.parse_args()
 
         with pytest.raises(SystemExit) as exc_info:
@@ -139,7 +139,7 @@ class TestArgumentValidation:
     def test_validate_invalid_size_format(self, tmp_path):
         """Test validation fails for invalid size format."""
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(tmp_path), '-m', 'invalid']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(tmp_path), '-m', 'invalid']):
             args = app.parse_args()
 
         with pytest.raises(SystemExit):
@@ -148,7 +148,7 @@ class TestArgumentValidation:
     def test_validate_size_range(self, tmp_path):
         """Test validation fails when min_size > max_size."""
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(tmp_path), '-m', '100MB', '-M', '50MB']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(tmp_path), '-m', '100MB', '-M', '50MB']):
             args = app.parse_args()
 
         with pytest.raises(SystemExit):
@@ -157,7 +157,7 @@ class TestArgumentValidation:
     def test_validate_force_without_keep_one(self, tmp_path):
         """Test that --force without --keep-one raises error."""
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(tmp_path), '--force']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(tmp_path), '--force']):
             args = app.parse_args()
 
         with pytest.raises(SystemExit):
@@ -166,7 +166,7 @@ class TestArgumentValidation:
     def test_validate_keep_one_requires_tty_without_force(self, tmp_path, monkeypatch):
         """Test that --keep-one without --force requires interactive terminal."""
         app = CLIApplication()
-        with mock.patch.object(sys, 'argv', ['highlander', '-i', str(tmp_path), '--keep-one']):
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', str(tmp_path), '--keep-one']):
             args = app.parse_args()
 
         # Mock non-interactive environment (e.g., piping output to file)
@@ -185,7 +185,7 @@ class TestParamsCreation:
         """Test that extensions are correctly parsed from comma-separated string."""
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '-x', '.jpg,.PNG,.gif'
+            'onlyone', '-i', str(tmp_path), '-x', '.jpg,.PNG,.gif'
         ]):
             args = app.parse_args()
 
@@ -208,7 +208,7 @@ class TestParamsCreation:
 
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '-p', str(dir1), str(dir2)
+            'onlyone', '-i', str(tmp_path), '-p', str(dir1), str(dir2)
         ]):
             args = app.parse_args()
 
@@ -223,7 +223,7 @@ class TestParamsCreation:
         """Test explicit sort order shortest-filename."""
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '--sort', 'shortest-filename'
+            'onlyone', '-i', str(tmp_path), '--sort', 'shortest-filename'
         ]):
             args = app.parse_args()
 
@@ -234,7 +234,7 @@ class TestParamsCreation:
         """Test explicit size parameters."""
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '-m', '100KB', '-M', '10MB'
+            'onlyone', '-i', str(tmp_path), '-m', '100KB', '-M', '10MB'
         ]):
             args = app.parse_args()
 

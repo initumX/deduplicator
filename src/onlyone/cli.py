@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Highlander CLI — Command line interface for duplicate file detection and removal.
+OnlyOne CLI — Command line interface for duplicate file detection and removal.
 Implements the same core engine as GUI but with console-based interaction.
 All operations are safe: deletion moves files to system trash, never permanent erase.
 """
@@ -38,11 +38,11 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
-from highlander.commands import DeduplicationCommand
-from highlander.utils.convert_utils import ConvertUtils
-from highlander.services.file_service import FileService
-from highlander.services.duplicate_service import DuplicateService
+from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
+from onlyone.commands import DeduplicationCommand
+from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.services.file_service import FileService
+from onlyone.services.duplicate_service import DuplicateService
 
 
 class CLIApplication:
@@ -57,7 +57,7 @@ class CLIApplication:
     def parse_args() -> argparse.Namespace:
         """Parse and validate command-line arguments."""
         parser = argparse.ArgumentParser(
-            description="Highlander — Fast duplicate file finder with safe deletion",
+            description="OnlyOne — Fast duplicate file finder with safe deletion",
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:

@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from highlander.core.models import DuplicateGroup, File
+from onlyone.core.models import DuplicateGroup, File
 
 class DuplicateService:
     @staticmethod

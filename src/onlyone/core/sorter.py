@@ -7,7 +7,7 @@ Pure sorting logic for duplicate groups.
 Respects absolute priority of favourite files while providing flexible tie-breaking strategies.
 """
 from typing import List
-from highlander.core.models import DuplicateGroup, SortOrder
+from onlyone.core.models import DuplicateGroup, SortOrder
 
 
 class Sorter:

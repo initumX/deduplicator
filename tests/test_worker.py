@@ -4,11 +4,11 @@ Verifies thread-safe cancellation, signal emission, and error handling.
 """
 
 from unittest.mock import Mock
-from highlander.core import (
+from onlyone.core import (
     DeduplicationParams, DeduplicationMode,
     SortOrder, DuplicateGroup, DeduplicationStats
 )
-from highlander.gui import DeduplicateWorker
+from onlyone.gui import DeduplicateWorker
 
 
 class TestDeduplicateWorker:

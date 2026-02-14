@@ -11,15 +11,15 @@ Supports three modes:
 """
 import time
 from typing import List, Tuple, Optional, Callable
-from highlander.core.models import (
+from onlyone.core.models import (
     File, DuplicateGroup, DeduplicationStats,
     DeduplicationMode, DeduplicationParams,
     SortOrder
     )
-from highlander.core.grouper import FileGrouperImpl
-from highlander.core.interfaces import PartialHashStage, Deduplicator
-from highlander.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
-from highlander.core.sorter import Sorter
+from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.interfaces import PartialHashStage, Deduplicator
+from onlyone.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
+from onlyone.core.sorter import Sorter
 
 # =============================
 # Main Deduplicator Class

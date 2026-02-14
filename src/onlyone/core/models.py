@@ -265,7 +265,7 @@ Interface-agnostic — used by both GUI and CLI.
 """
 from dataclasses import dataclass, field
 from typing import List, Optional
-from highlander.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import ConvertUtils
 
 @dataclass
 class DeduplicationParams:

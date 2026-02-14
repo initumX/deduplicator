@@ -4,8 +4,8 @@ Verifies partial/full hashing returns 8-byte xxHash64 values.
 """
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from highlander.core import HasherImpl, XXHashAlgorithmImpl
-from highlander.core import File
+from onlyone.core import HasherImpl, XXHashAlgorithmImpl
+from onlyone.core import File
 
 
 class TestHasherImpl:

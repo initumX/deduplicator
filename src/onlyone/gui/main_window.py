@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 main_window.py
-Highlander GUI Application
+OnlyOne GUI Application
 A PyQt-based graphical interface for finding and removing duplicate files.
 """
 import os
@@ -14,19 +14,19 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from highlander.core.models import DeduplicationMode, DeduplicationParams
-from highlander.core.sorter import Sorter
-from highlander.services.file_service import FileService
-from highlander.services.duplicate_service import DuplicateService
-from highlander.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
-from highlander.utils.convert_utils import ConvertUtils
-from highlander.gui.worker import DeduplicateWorker
-from highlander.gui.main_window_ui import Ui_MainWindow
-from highlander import __version__
+from onlyone.core.models import DeduplicationMode, DeduplicationParams
+from onlyone.core.sorter import Sorter
+from onlyone.services.file_service import FileService
+from onlyone.services.duplicate_service import DuplicateService
+from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
+from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.gui.worker import DeduplicateWorker
+from onlyone.gui.main_window_ui import Ui_MainWindow
+from onlyone import __version__
 
 class SettingsManager:
     def __init__(self):
-        self.settings = QSettings("InitumSoft", "Highlander")
+        self.settings = QSettings("InitumSoft", "OnlyOne")
 
     def save_settings(self, key: str, value: Any):
         self.settings.setValue(key, value)
@@ -223,10 +223,10 @@ class MainWindow(QMainWindow):
             self,
         "About",
         f"""
-            <b>Highlander v{__version__}</b><br>
+            <b>OnlyOne v{__version__}</b><br>
             A tool to find and remove duplicate files.<br><br>
             
-            Check <a href="https://github.com/initumX/highlander">Highlander github</a> for help<br><br>
+            Check <a href="https://github.com/initumX/onlyone">OnlyOne github</a> for help<br><br>
             
             © Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>
             License: MIT License<br>

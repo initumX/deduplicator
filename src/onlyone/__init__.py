@@ -1,5 +1,5 @@
 """
-Highlander — fast duplicate file finder with optional GUI.
+OnlyOne — fast duplicate file finder with optional GUI.
 
 Core features:
 - Three deduplication modes: FAST (size + front hash), NORMAL (size + 3 partial hashes), FULL (size + full content hash)
@@ -11,7 +11,7 @@ Core features:
 # Get version
 try:
     from importlib.metadata import version as _version
-    __version__ = _version("highlander")
+    __version__ = _version("onlyone")
 except Exception:
     try:
         import tomllib  # Python 3.11+
@@ -22,12 +22,12 @@ except Exception:
         __version__ = tomllib.load(f)["project"]["version"]
 
 # Public API — only what users should import directly
-from highlander.commands import DeduplicationCommand
+from onlyone.commands import DeduplicationCommand
 #from .cli import main as cli_main
-from highlander.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
-from highlander.utils.convert_utils import ConvertUtils
-from highlander.services import DuplicateService
-from highlander.services.file_service import FileService
+from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
+from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.services import DuplicateService
+from onlyone.services.file_service import FileService
 
 __all__ = [
     "DeduplicationCommand",

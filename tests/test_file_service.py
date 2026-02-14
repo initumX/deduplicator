@@ -6,7 +6,7 @@ import os
 import sys
 import pytest
 from pathlib import Path
-from highlander.services.file_service import FileService
+from onlyone.services.file_service import FileService
 
 
 class TestMoveToTrash:

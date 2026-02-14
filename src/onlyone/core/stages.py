@@ -3,7 +3,7 @@ Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
 core/stages.py
-Deduplication pipeline stages implementation for Highlander's multi-stage duplicate detection engine.
+Deduplication pipeline stages implementation for OnlyOne's multi-stage duplicate detection engine.
 
 CLASS HIERARCHY
 ---------------
@@ -42,9 +42,9 @@ OPTIMIZATIONS
 """
 
 from typing import List, Dict, Optional, Callable
-from highlander.core.models import File, DuplicateGroup
-from highlander.core.grouper import FileGrouperImpl
-from highlander.core.interfaces import SizeStage, PartialHashStage
+from onlyone.core.models import File, DuplicateGroup
+from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.interfaces import SizeStage, PartialHashStage
 
 #=============================
 # Base Class and Config

@@ -4,7 +4,7 @@ Verifies correct behavior of size grouping and partial/full hash stages,
 including early duplicate confirmation for small files and adaptive chunk sizing.
 """
 import pytest
-from highlander.core.stages import (
+from onlyone.core.stages import (
     SizeStageImpl,
     FrontHashStage,
     MiddleHashStage,
@@ -13,9 +13,9 @@ from highlander.core.stages import (
     DeduplicationConfig,
     HashStageBase
 )
-from highlander.core.grouper import FileGrouperImpl
-from highlander.core.hasher import HasherImpl, XXHashAlgorithmImpl
-from highlander.core.models import File, DuplicateGroup
+from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
+from onlyone.core.models import File, DuplicateGroup
 
 
 class TestDeduplicationConfig:

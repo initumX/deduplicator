@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "highlander"
+name = "onlyone"
 version = "2.4.1"
 description = "Fast duplicate file finder with optional GUI"
 readme = "README.md"
@@ -41,9 +41,9 @@ dev = [
 ]
 
 [project.scripts]
-highlander = "highlander.cli:main"
-highlander-gui = "highlander.gui.launcher:main"
+onlyone = "onlyone.cli:main"
+onlyone-gui = "onlyone.gui.launcher:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["highlander*"]
+include = ["onlyone*"]

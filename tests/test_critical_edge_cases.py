@@ -8,12 +8,12 @@ import sys
 import time
 from pathlib import Path
 from unittest import mock
-from highlander.core.models import File, DuplicateGroup
-from highlander.core.stages import HashStageBase, FrontHashStage
-from highlander.core.grouper import FileGrouperImpl
-from highlander.core.hasher import HasherImpl, XXHashAlgorithmImpl
-from highlander.services.file_service import FileService
-from highlander.cli import CLIApplication
+from onlyone.core.models import File, DuplicateGroup
+from onlyone.core.stages import HashStageBase, FrontHashStage
+from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
+from onlyone.services.file_service import FileService
+from onlyone.cli import CLIApplication
 
 
 class TestFileDescriptorLeaksOnCancellation:
@@ -173,7 +173,7 @@ class TestSpaceSavingsAccuracyAfterPartialDeletion:
         with mock.patch.object(FileService, 'move_to_trash', side_effect=flaky_move):
             # Run CLI deletion with --keep-one (preserve 1 file, delete 2)
             with mock.patch.object(sys, 'argv', [
-                'highlander', '--input', str(tmp_path), '--keep-one', '--force'
+                'onlyone', '--input', str(tmp_path), '--keep-one', '--force'
             ]):
                 with mock.patch('builtins.print'):
                     app = CLIApplication()
@@ -293,7 +293,7 @@ class TestFilesDeletedDuringOperation:
                 yield root, dirs, files
 
         with mock.patch("os.walk", side_effect=flaky_walk):
-            from highlander.core.scanner import FileScannerImpl
+            from onlyone.core.scanner import FileScannerImpl
             scanner = FileScannerImpl(
                 root_dir=str(tmp_path),
                 min_size=0,
@@ -329,7 +329,7 @@ class TestCancellationResourceCleanup:
         for i in range(50):
             (tmp_path / f"f{i}.txt").write_bytes(b"A" * 1024)
 
-        from highlander.core.scanner import FileScannerImpl
+        from onlyone.core.scanner import FileScannerImpl
 
         # Run 5 cycles of scan + early cancellation
         for cycle in range(5):

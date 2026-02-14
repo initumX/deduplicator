@@ -3,8 +3,8 @@ Integration tests for full deduplication pipeline.
 Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 """
 from pathlib import Path
-from highlander.core import FileScannerImpl, DeduplicatorImpl
-from highlander.core import DeduplicationParams, DeduplicationMode, SortOrder, File, FileHashes
+from onlyone.core import FileScannerImpl, DeduplicatorImpl
+from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, FileHashes
 
 
 class TestDeduplicatorIntegration:
