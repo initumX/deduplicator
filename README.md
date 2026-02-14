@@ -32,7 +32,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
         Each filtering step (size-> front -> middle, etc) eliminates non-matching files early, 
         ensuring that only highly probable duplicates reach the final stage.
                 
-* **Shows** the list of groups **sorted in descending order** - groups with larger files come first). 
+* **Shows** the list of groups **sorted in descending order** - groups with larger files come first. 
 Files **inside a group** are sorted by path dept or filename length (you can regulate this).
             
 ## How to delete files?
