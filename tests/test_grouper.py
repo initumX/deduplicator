@@ -16,9 +16,9 @@ class TestFileGrouperImpl:
         Single files are filtered out (not considered duplicates).
         """
         files = [
-            File(path="/a.txt", size=1024, creation_time=0.0),
-            File(path="/b.txt", size=1024, creation_time=0.0),  # Same size → group
-            File(path="/c.txt", size=2048, creation_time=0.0),  # Single file → filtered
+            File(path="/a.txt", size=1024),
+            File(path="/b.txt", size=1024),  # Same size → group
+            File(path="/c.txt", size=2048),  # Single file → filtered
         ]
 
         grouper = FileGrouperImpl()
@@ -32,9 +32,9 @@ class TestFileGrouperImpl:
     def test_groups_by_hash_filters_small_groups(self):
         """Hash-based grouping should exclude groups with <2 files."""
         files = [
-            File(path="/dup1.txt", size=100, creation_time=0.0),
-            File(path="/dup2.txt", size=100, creation_time=0.0),
-            File(path="/unique.txt", size=100, creation_time=0.0),
+            File(path="/dup1.txt", size=100),
+            File(path="/dup2.txt", size=100),
+            File(path="/unique.txt", size=100),
         ]
 
         # Manually set identical front hashes for dup1/dup2
@@ -57,8 +57,8 @@ class TestFileGrouperImpl:
     def test_preserves_favourite_status_in_groups(self):
         """Grouped files should retain favourite directory status."""
         files = [
-            File(path="/fav/file.txt", size=100, creation_time=0.0),
-            File(path="/nonfav/file.txt", size=100, creation_time=0.0),
+            File(path="/fav/file.txt", size=100),
+            File(path="/nonfav/file.txt", size=100),
         ]
         files[0].is_from_fav_dir = True
         files[1].is_from_fav_dir = False
@@ -88,10 +88,10 @@ class TestFileGrouperImpl:
         """
         # Scenario 1: All files have different sizes
         files_different_sizes = [
-            File(path="/file1.txt", size=100, creation_time=0.0),
-            File(path="/file2.txt", size=200, creation_time=0.0),
-            File(path="/file3.txt", size=300, creation_time=0.0),
-            File(path="/file4.txt", size=400, creation_time=0.0),
+            File(path="/file1.txt", size=100),
+            File(path="/file2.txt", size=200),
+            File(path="/file3.txt", size=300),
+            File(path="/file4.txt", size=400),
         ]
 
         grouper = FileGrouperImpl()
@@ -102,9 +102,9 @@ class TestFileGrouperImpl:
 
         # Scenario 2: Same size but different hashes (all unique content)
         files_same_size_different_hashes = [
-            File(path="/fileA.txt", size=100, creation_time=0.0),
-            File(path="/fileB.txt", size=100, creation_time=0.0),
-            File(path="/fileC.txt", size=100, creation_time=0.0),
+            File(path="/fileA.txt", size=100),
+            File(path="/fileB.txt", size=100),
+            File(path="/fileC.txt", size=100),
         ]
 
         # Set unique hashes for each file

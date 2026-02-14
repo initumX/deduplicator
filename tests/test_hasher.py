@@ -22,8 +22,8 @@ class TestHasherImpl:
                 f2.write(content)
                 f2.flush()
 
-                file1 = File(path=f1.name, size=len(content), creation_time=0.0)
-                file2 = File(path=f2.name, size=len(content), creation_time=0.0)
+                file1 = File(path=f1.name, size=len(content))
+                file2 = File(path=f2.name, size=len(content))
 
                 hasher = HasherImpl(XXHashAlgorithmImpl())
                 hash1 = hasher.compute_full_hash(file1)
@@ -45,8 +45,8 @@ class TestHasherImpl:
                 f2.write(b"B" * 1024)
                 f2.flush()
 
-                file1 = File(path=f1.name, size=1024, creation_time=0.0)
-                file2 = File(path=f2.name, size=1024, creation_time=0.0)
+                file1 = File(path=f1.name, size=1024)
+                file2 = File(path=f2.name, size=1024)
 
                 hasher = HasherImpl(XXHashAlgorithmImpl())
                 hash1 = hasher.compute_full_hash(file1)
@@ -75,7 +75,7 @@ class TestHasherImpl:
                 f.write(large_content)
                 f.flush()
 
-                file = File(path=f.name, size=len(large_content), creation_time=0.0)
+                file = File(path=f.name, size=len(large_content))
                 file.chunk_size = 64 * 1024  # Required for partial hashes
 
                 hasher = HasherImpl(XXHashAlgorithmImpl())
@@ -106,7 +106,7 @@ class TestHasherImpl:
                 f.write(content)
                 f.flush()
 
-                file = File(path=f.name, size=len(content), creation_time=0.0)
+                file = File(path=f.name, size=len(content))
                 file.chunk_size = len(content)  # Full content in one chunk
 
                 hasher = HasherImpl(XXHashAlgorithmImpl())
@@ -131,7 +131,7 @@ class TestHasherImpl:
         # Create and immediately delete a file
         temp_file = tmp_path / "deleted.txt"
         temp_file.write_bytes(b"content")
-        file = File(path=str(temp_file), size=7, creation_time=0.0)
+        file = File(path=str(temp_file), size=7)
         file.chunk_size = 1024
         temp_file.unlink()  # Delete BEFORE hashing
 

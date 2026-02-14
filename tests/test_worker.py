@@ -23,7 +23,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)
@@ -44,7 +44,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)
@@ -69,7 +69,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)
@@ -98,7 +98,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         # Create worker first, then mock its command instance
@@ -136,7 +136,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)
@@ -167,7 +167,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)
@@ -204,7 +204,7 @@ class TestDeduplicateWorker:
             extensions=[".txt"],
             favourite_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.OLDEST_FIRST
+            sort_order=SortOrder.SHORTEST_PATH
         )
 
         worker = DeduplicateWorker(params)

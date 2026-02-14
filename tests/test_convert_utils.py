@@ -107,25 +107,3 @@ class TestConvertUtils:
         """Invalid size formats should return False."""
         assert not ConvertUtils.is_valid_size_format("abc")
         assert not ConvertUtils.is_valid_size_format("-100")
-
-    # === timestamp_to_human ===
-
-    def test_timestamp_to_human_valid(self):
-        """Valid timestamps should convert to readable format."""
-        result = ConvertUtils.timestamp_to_human(1700000000.0)
-        assert "2023" in result or "2024" in result  # year should be present
-
-    # === is_valid_timestamp ===
-
-    def test_is_valid_timestamp_accepts_valid(self):
-        """Valid timestamps should return True."""
-        assert ConvertUtils.is_valid_timestamp(0.0)
-        assert ConvertUtils.is_valid_timestamp(1700000000.0)
-        assert ConvertUtils.is_valid_timestamp(32536771199.0)  # year 3000
-
-    def test_is_valid_timestamp_rejects_invalid(self):
-        """Invalid timestamps should return False."""
-        assert not ConvertUtils.is_valid_timestamp(-1.0)
-        assert not ConvertUtils.is_valid_timestamp(32536771200.0)  # after year 3000
-        assert not ConvertUtils.is_valid_timestamp("not a number")  # type: ignore[arg-type]
-        assert not ConvertUtils.is_valid_timestamp(None)  # type: ignore[arg-type]
