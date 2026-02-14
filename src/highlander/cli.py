@@ -4,6 +4,7 @@ Highlander CLI — Command line interface for duplicate file detection and remov
 Implements the same core engine as GUI but with console-based interaction.
 All operations are safe: deletion moves files to system trash, never permanent erase.
 """
+from __future__ import annotations  # Enable postponed evaluation of annotations (PEP 563)
 import argparse
 import sys
 import os
@@ -37,7 +38,7 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, File
+from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
 from highlander.commands import DeduplicationCommand
 from highlander.utils.convert_utils import ConvertUtils
 from highlander.services.file_service import FileService
@@ -171,6 +172,14 @@ Examples:
         """Validate command-line arguments before execution."""
         if args.force and not args.keep_one:
             self.error_exit("--force can only be used with --keep-one")
+
+        # Prevent interactive confirmation in non-TTY environments
+        if args.keep_one and not args.force:
+            if not sys.stdin.isatty() or not sys.stdout.isatty():
+                self.error_exit(
+                    "Cannot request interactive confirmation in non-interactive session.\n"
+                    "Use --force flag to proceed without confirmation when piping output or running in scripts."
+                )
 
         root_path = Path(args.input).resolve()
         if not root_path.exists():
@@ -369,6 +378,13 @@ Examples:
         if force:
             print("⚠️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
         else:
+            # Safety check: confirm we're still in interactive mode
+            if not sys.stdin.isatty() or not sys.stdout.isatty():
+                self.error_exit(
+                    "Lost interactive terminal during operation. "
+                    "Use --force to proceed in non-interactive environments."
+                )
+
             # Ask for confirmation before actual deletion
             response = input(f"Are you sure you want to move {len(files_to_delete)} files to trash? [y/N]: ")
             if response.strip().lower() not in ("y", "yes"):
