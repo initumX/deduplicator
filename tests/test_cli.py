@@ -38,7 +38,7 @@ class TestFileSortingAndSelection:
 
         # Run deduplication with favourite dir
         with mock.patch.object(sys, 'argv', [
-            'highlander', '--input', str(tmp_path), '--favs', str(fav_dir), '--keep-one', '--force'
+            'highlander', '--input', str(tmp_path), '--priority-dirs', str(fav_dir), '--keep-one', '--force'
         ]):
             with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
                 app = CLIApplication()

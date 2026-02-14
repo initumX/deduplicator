@@ -40,32 +40,22 @@ class TestArgumentParsing:
         assert args.extensions == ".jpg,.png,.gif"
 
     def test_favourite_dirs_flag_variants(self):
-        """Test both long (--favs) and alternative (--favourite-dirs) forms."""
+        """Test both short (-p) and alternative (--priority-dirs) forms."""
         app = CLIApplication()
 
         # Using --favs (primary form)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', '/tmp', '--favs', '/tmp/dir1', '/tmp/dir2'
+            'highlander', '-i', '/tmp', '-p', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
         assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]
 
         # Using --favourite-dirs (alternative form)
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', '/tmp', '--favourite-dirs', '/tmp/dir1', '/tmp/dir2'
+            'highlander', '-i', '/tmp', '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
         ]):
             args = app.parse_args()
         assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]
-
-    def test_priority_dirs_flag_variants(self, tmp_path):
-        """Test new --priority-dirs flag (primary form) with backward compatibility."""
-        app = CLIApplication()
-        # New primary form
-        with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
-        ]):
-            args = app.parse_args()
-            assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]  # ← Внутреннее имя не меняется!
 
     def test_mode_flag(self):
         """Test --mode flag with valid values."""
@@ -218,7 +208,7 @@ class TestParamsCreation:
 
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'highlander', '-i', str(tmp_path), '--favs', str(dir1), str(dir2)
+            'highlander', '-i', str(tmp_path), '-p', str(dir1), str(dir2)
         ]):
             args = app.parse_args()
 

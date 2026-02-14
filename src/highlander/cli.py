@@ -112,7 +112,7 @@ Examples:
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
         )
         parser.add_argument(
-            "--priority-dirs", "--favs", "--favourite-dirs",
+            "--priority-dirs", '-p',
             nargs="+",
             default=[],
             type=str,
