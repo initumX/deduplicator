@@ -5,6 +5,16 @@
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
+## How to install and run
+### First Way - use venv (virtual environment)
+- Create python virtual environment `python3 venv ~/onlyone && cd ~/onlyone`
+- Activate it `source ~/onlyone/bin/activate`
+- Install onlyone into it `pip install onlyone[gui]` 
+- Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
+- Don't use binary from release (they are obsolete).
+
+### Second Way - wait for build release :)
+
 ## Features
 
 - **Filters** files by file size and extension
@@ -23,7 +33,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 * **Apply the cheapest check first** (compare by size)
 * **Further checking** depends on mode: 
   
-  * "fast" mode: checks hash-sum of first 64+ KB of the file (false positives very possible)<br>
+  * "fast" mode: checks hash-sum of first 64+ KB of the file (false positives very possible)
   * "normal" mode: checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
   * "full" mode: checks hash-sum of front -> middle -> entire file (very slow for large files)
 
@@ -54,18 +64,19 @@ Which file is "first" depends on sorting:
       REMEMBER: In the end, there can be only one file/per group :)
 
 ## How to use cli-version
-   ### Examples
-`onlyone -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort shortest-filename --keep-one`
+    Examples:
+    ----------
+    Basic usage - find duplicates in Downloads folder
+    `onlyone -i ~/Downloads`
 
-    Shows all duplicates from ~/Downloads with size from 130KB to 5MB and extension .jpg and .png. 
-    Duplicates in each group are sorted by filename length (from shortest to longest filename). 
-    Asks confirmation before deleting
+    Filter files by size and extensions and find duplicates
+    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png`
 
-`onlyone -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
+    Same as above + move duplicates to trash (with confirmation prompt)
+    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one`
 
-    The same command as previous, but with no extension filter (doesn't filter 
-    files by extension), and with --sort shortest-path (default in case you haven't 
-    set sort option). Deletes duplicates to trash without confirmation (--force option)
+    Same as above but without confirmation and with output to a file (for scripts)
+    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt`
 
    - `-i, --input`  input folder
    - `-m, --min-size`,  min size filter
@@ -85,12 +96,6 @@ Which file is "first" depends on sorting:
 - send2trash
 - PIL/Pillow (for image handling)
 - xxhash
-
-## How to install and run
-- `pip install onlyone[gui]`
-- `onlyone-gui` (to use GUI-version) 
-- `onlyone` (to use cli)
-- You can also get binary from releases
 
 ## TESTS
 ` pytest tests/ -v`
