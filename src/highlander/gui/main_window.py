@@ -226,36 +226,7 @@ class MainWindow(QMainWindow):
             <b>Highlander v{__version__}</b><br>
             A tool to find and remove duplicate files.<br><br>
             
-            <b>How does it work?</b> <br>
-            <b>1.</b> Recursively scans root folder using filters (min/max size, extension)<br>
-            <b>2.</b> Apply the cheapest check first (compare by size)<br>
-            <b>3.</b> Further checking depends on mode:<br>
-            ----------------<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <b>a)</b>"fast" mode: checks hash-sum from first 64+ KB  
-                of the file (false positives very possible)<br>
-            
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <b>b)</b>"normal" mode: checks hash-sum from 3 parts of the file(generally reliable)<br>
-                
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <b>c)</b>"full" mode: checks hash-sum from 2 parts of the file and then from entire file (very slow for large files)
-                <br>
-            ----------------<br>
-            <b>4.</b> Shows you the list of groups. Files inside a group are equal to each other (duplicates).<br><br>
-            
-            <b>How to delete files?</b> <br>
-            There are 2 ways to delete files:<br>
-
-            <b>1.Delete individual files</b> (using the context menu)<br>
-            <b>2.Delete all duplicates at once</b> (using "Keep One File Per Group" button)<br>
-            This button moves ALL files to trash EXCEPT the first file in each group.<br>
-            Which file is "first" depends on sorting:<br>
-            &nbsp;&nbsp;• Favourite files always come first<br>
-            &nbsp;&nbsp;• Among favourites: shortest path (or shortest filename, depending on sorting Order)<br>
-            &nbsp;&nbsp;• Among non-favourites: same rule<br><br>
-            <b>Important:</b> If a group has multiple favourite files, ONLY ONE (THE FIRST ONE) will be kept.
-            The other favourite files will be deleted (moved to trash) like any other duplicates. <br><br>
+            Check <a href="https://github.com/initumX/highlander">Highlander github</a> for help<br><br>
             
             © Copyright (c) 2025 initumX (initum.x@gmail.com)<br><br>
             License: MIT License<br>
