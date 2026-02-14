@@ -1,5 +1,5 @@
 """
-build.py — Build script for compiling the PySide6-based File Deduplicator GUI application into a single executable.
+build_.py — Build script for compiling the PySide6-based File Deduplicator GUI application into a single executable.
 """
 
 import subprocess
