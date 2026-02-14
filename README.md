@@ -7,7 +7,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 ## Features
 
-- **Filter** by file size and extension
+- **Filters** files by file size and extension
 - **Sorts** files inside duplicate groups by path dept and filename length
 - Supports **deduplication modes**: fast, normal, full
 - **Preview** images directly in the interface
