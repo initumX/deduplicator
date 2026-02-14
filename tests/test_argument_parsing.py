@@ -57,6 +57,16 @@ class TestArgumentParsing:
             args = app.parse_args()
         assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]
 
+    def test_priority_dirs_flag_variants(self, tmp_path):
+        """Test new --priority-dirs flag (primary form) with backward compatibility."""
+        app = CLIApplication()
+        # New primary form
+        with mock.patch.object(sys, 'argv', [
+            'highlander', '-i', str(tmp_path), '--priority-dirs', '/tmp/dir1', '/tmp/dir2'
+        ]):
+            args = app.parse_args()
+            assert args.favourite_dirs == ["/tmp/dir1", "/tmp/dir2"]  # ← Внутреннее имя не меняется!
+
     def test_mode_flag(self):
         """Test --mode flag with valid values."""
         app = CLIApplication()
