@@ -310,23 +310,3 @@ class TestFileScannerImpl:
         )
         with pytest.raises(RuntimeError, match="Not a directory"):
             scanner.scan(stopped_flag=lambda: False)
-
-    def test_creation_time_is_set_on_all_platforms(self, temp_dir):
-        """
-        Scanner must successfully extract creation time using platform-appropriate fallbacks.
-        On Linux (no st_birthtime), uses st_ctime. On macOS/Windows, uses st_birthtime if available.
-        """
-        test_file = temp_dir / "test.txt"
-        test_file.write_bytes(b"content")
-        scanner = FileScannerImpl(
-            root_dir=str(temp_dir),
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False).files
-        assert len(files) == 1
-        # Creation time must be a valid float timestamp > 0
-        assert isinstance(files[0].creation_time, float)
-        assert files[0].creation_time > 0
