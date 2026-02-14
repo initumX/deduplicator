@@ -15,7 +15,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - **Statistics** Dialog Box
 - **Context menu** (open, reveal in explorer and delete file(s) options)
 - **One click deletion** ( using 'Keep One File Per Group' button)
-- Manage **favourite directories** for prioritization
+- Manage **priority directories**
 
 ## How does it work?
 
@@ -43,13 +43,13 @@ Files **inside a group** are sorted by path dept or filename length (you can reg
 This button moves **ALL files to trash EXCEPT the first file in each group**.
           
 Which file is "first" depends on sorting:
-* Favourite files always come first
-* Among favourites: shortest path (or shortest filename, depending on sorting Order) comes first
-* Among non-favourites: same rule
+* Priority files always come first
+* Among priorities: shortest path (or shortest filename, depending on sorting Order) comes first
+* Among non-priorities: same rule
 
-      IMPORTANT: If a group has multiple favourite files, 
+      IMPORTANT: If a group has multiple priority files, 
           ONLY ONE (THE FIRST ONE) will be kept.
-          The other favourite files will be deleted (moved to trash) 
+          The other priority files will be deleted (moved to trash) 
           like any other duplicates.
       REMEMBER: In the end, there can be only one file/per group :)
 
@@ -71,7 +71,7 @@ Which file is "first" depends on sorting:
    - `-m, --min-size`,  min size filter
    - `-M, --max-size`, max size filter
    - `-x, --extensions` extension filter(comma separated)
-   - `--favs` favourite folder(s) [don't use it on cli yet, it needs more testing]
+   - `-p, --priority-dirs` priority dirs(comma or space separated)
    - `--mode [fast, normal, full]` searching mode (normal by default)
    - `--sort [shortest-path, shortest-filename]` sorting inside a group (shortest-path by default)
    - `--keep-one` Keep one file/per group and move the rest to trash (one confirmation)
