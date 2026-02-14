@@ -38,9 +38,9 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
     1. Recursively scans** folder using filters (min/max size, extension)
     2. Apply the cheapest check first (compare by size)
     3. Further checking depends on mode: 
-      a) "fast" mode: checks hash-sum of first 64+ KB of files (false positives very possible)
-      b) "normal" mode: checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
-      c) "full" mode: checks hash-sum of front -> middle -> entire file (very slow for large files)
+      a) "fast": checks hash-sum of first 64+ KB of files (false positives very possible)
+      b) "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
+      c) "full": checks hash-sum of front -> middle -> entire file (very slow for large files)
     4. Shows the list of groups sorted in descending order (groups with larger files come first). 
     --------
     Files inside a group are sorted by path/filename length (you can regulate this).
@@ -53,7 +53,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
       Priority files(files from **"Priority Folders"**, if set) always come first
       Among priorities: file with shortest path (by default) comes first
       Among non-priorities: same rule (shortest path is used by default for in-group sorting)
-      If both files have the same path depth, then the file with shortest filename wins the first place.
+      If both files have the same path depth, the file with shortest filename wins the first place.
 
       REMEMBER: In the end, there can be only one file/per group :)
 ---
