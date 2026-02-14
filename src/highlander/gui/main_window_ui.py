@@ -177,7 +177,7 @@ class Ui_MainWindow:
 
     def retranslateUi(self, MainWindow: QMainWindow):
         """Apply all UI texts - single source of truth for strings."""
-        MainWindow.setWindowTitle("File Deduplicator")
+        MainWindow.setWindowTitle("Highlander")
 
         # Buttons and input fields
         self.select_dir_button.setText("Select Folder")

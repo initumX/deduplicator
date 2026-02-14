@@ -1,5 +1,5 @@
 """
-File Deduplicator — fast duplicate file finder with optional GUI.
+Highlander — fast duplicate file finder with optional GUI.
 
 Core features:
 - Three deduplication modes: FAST (size + front hash), NORMAL (size + 3 partial hashes), FULL (size + full content hash)

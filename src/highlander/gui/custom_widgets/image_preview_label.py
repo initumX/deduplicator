@@ -4,7 +4,7 @@ Licensed under the MIT License
 
 image_preview_label.py
 
-Image preview widget for the File Deduplicator application.
+Image preview widget for the Highlander application.
 
 Implements a QLabel-based image viewer that:
 - Displays a preview of selected image files

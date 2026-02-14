@@ -11,7 +11,7 @@ The dialog allows users to:
 - Remove selected folders from the list
 - Save or discard changes via OK/Cancel buttons
 
-Created as part of the File Deduplicator application.
+Created as part of the Highlander application.
 """
 
 from PySide6.QtWidgets import (

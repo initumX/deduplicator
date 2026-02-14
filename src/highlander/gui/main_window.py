@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 main_window.py
-File Deduplicator GUI Application
+Highlander GUI Application
 A PyQt-based graphical interface for finding and removing duplicate files.
 """
 import os
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
             self,
         "About",
         f"""
-            <b>File Deduplicator v{__version__}</b><br>
+            <b>Highlander v{__version__}</b><br>
             A tool to find and remove duplicate files.<br><br>
             
             <b>How does it work?</b> <br>
