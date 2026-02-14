@@ -4,7 +4,6 @@ Licensed under the MIT License
 
 utils/convert_utils.py
 """
-import time
 
 class ConvertUtils:
     @staticmethod
