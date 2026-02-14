@@ -73,7 +73,7 @@ Which file is "first" depends on sorting:
    - `-x, --extensions` extension filter(comma separated)
    - `--favs` favourite folder(s) [don't use it on cli yet, it needs more testing]
    - `--mode [fast, normal, full]` searching mode (normal by default)
-   - `--sort [shortest-path, shortest-filename]` sorting inside a group (path_dept by default)
+   - `--sort [shortest-path, shortest-filename]` sorting inside a group (shortest-path by default)
    - `--keep-one` Keep one file/per group and move the rest to trash (one confirmation)
    - `--keep-one --force` Keep one file/per group and move the rest to trash (no confirmation)
 
