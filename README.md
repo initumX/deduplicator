@@ -55,7 +55,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
     The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.
     ---
     Which file is "first" depends on sorting:
-      Priority files(files from **"Priority Folders"**, if set) always come first
+      Priority files(files from "Priority Folders", if set) always come first
       Among priorities: file with shortest path (by default) comes first
       Among non-priorities: same rule (shortest path is used by default for in-group sorting)
       If both files have the same path depth, the file with shortest filename wins the first place.
