@@ -26,7 +26,7 @@ from highlander import __version__
 
 class SettingsManager:
     def __init__(self):
-        self.settings = QSettings("InitumSoft", "FileDeduplicator")
+        self.settings = QSettings("InitumSoft", "Highlander")
 
     def save_settings(self, key: str, value: Any):
         self.settings.setValue(key, value)
@@ -110,7 +110,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "Success",
-                f"Favourite Folders Updated: {len(self.favourite_dirs)}"
+                f"Priority Folders Updated: {len(self.favourite_dirs)}"
             )
 
     def keep_one_file_per_group(self):

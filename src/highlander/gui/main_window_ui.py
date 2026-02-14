@@ -73,7 +73,7 @@ class Ui_MainWindow:
         self.favourite_group = QGroupBox(central_widget)
         self.favourite_dirs_button = QPushButton(central_widget)
         self.favourite_dirs_button.setToolTip(
-            "Files from favourite folders are prioritized (goes first, as 'original') in each group.\n"
+            "Files from these folders are prioritized (goes first, as 'original') in each group.\n"
         )
         self.favourite_list_widget = QListWidget(central_widget)
         self.favourite_list_widget.setContentsMargins(0, 0, 0, 0)
@@ -125,7 +125,7 @@ class Ui_MainWindow:
 
         self.find_duplicates_button = QPushButton(central_widget)
         self.find_duplicates_button.setToolTip(
-            "Start searching for duplicate files.\nFiles from favourite folders are marked with ✅"
+            "Start searching for duplicate files.\nFiles from Priority Folders are marked with ✅"
         )
 
         self.keep_one_button = QPushButton(central_widget)
@@ -185,11 +185,11 @@ class Ui_MainWindow:
         self.find_duplicates_button.setText("Find Duplicates")
         self.keep_one_button.setText("Keep One (The first one) File Per Group")
         self.about_button.setText("Help/About")
-        self.favourite_dirs_button.setText("Manage Favourite Folders List")
+        self.favourite_dirs_button.setText("Manage Priority Folders List")
 
         # Group box titles
         self.filters_group.setTitle("Filters")
-        self.favourite_group.setTitle("Favourite Folders")
+        self.favourite_group.setTitle("Priority Folders")
 
         # Labels
         self.label_root_folder.setText("Root Folder")

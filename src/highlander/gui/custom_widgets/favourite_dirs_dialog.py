@@ -31,7 +31,7 @@ class FavouriteDirsDialog(QDialog):
     def __init__(self, parent=None, initial_dirs: list[str] = None):
         super().__init__(parent)
 
-        self.setWindowTitle("Favourite Folders")
+        self.setWindowTitle("Priority Folders")
         self.setMinimumWidth(500)
 
         self.favourite_dirs = initial_dirs or []
@@ -73,7 +73,7 @@ class FavouriteDirsDialog(QDialog):
 
     def on_add(self):
         """Handler for adding a new folder."""
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Favourite Folder to add")
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Priority Folder to add")
         if dir_path:
             if dir_path not in self.favourite_dirs:
                 self.favourite_dirs.append(dir_path)
