@@ -59,7 +59,7 @@ Which file is "first" depends on sorting:
 
     Shows all duplicates from ~/Downloads with size from 130KB to 5MB and extension .jpg and .png. 
     Duplicates in each group are sorted by filename length (from shortest to longest filename). 
-    Ask confirmation before deleting
+    Asks confirmation before deleting
 
 `highlander -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
 
