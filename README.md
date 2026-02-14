@@ -5,6 +5,10 @@
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
+*Note: GUI-version is "extra"(not mandatory part), so to install app with gui, use:
+
+`pip install onlyone[gui]`
+
 ### How to install and run
     ### First Way - use venv (virtual environment)
     1. Create python virtual environment and go there: 
