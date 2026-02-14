@@ -129,7 +129,7 @@ class Ui_MainWindow:
         )
 
         self.keep_one_button = QPushButton(central_widget)
-        self.keep_one_button.setToolTip("Keep one file (the first) in the group and delete the rest")
+        self.keep_one_button.setToolTip("Keep one file (the first) per group and delete the rest")
 
         self.about_button = QPushButton(central_widget)
         self.about_button.setToolTip("Show Help")
