@@ -94,23 +94,27 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
     --keep-one --force    Keep one file/per group and move the rest to trash (no confirmation)
     --verbose, -v         Show detailed statistics and progress
     --help, -h            Show help file
+---
 
-## Built With
-- Python 3.x
-- PySide6 (Qt)
-- send2trash
-- PIL/Pillow (for image handling)
-- xxhash
+### Boring stuff
 
-## TESTS
-` pytest tests/ -v`
+    ## Built With
+        - Python 3.x
+        - PySide6 (Qt)
+        - send2trash
+        - PIL/Pillow (for image handling)
+        - xxhash
 
-## How to build with Pyinstaller
-`pyinstaller --noconfirm --clean --noconsole --onefile --exclude-module=PySide6.QtNetwork main_window.py`
+    ## TESTS
+        pytest tests/ -v
 
-Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
+    ## How to build with Pyinstaller
+    `pyinstaller --noconfirm --clean --noconsole \
+                --onefile --exclude-module=PySide6.QtNetwork main_window.py`
 
-Check out [website](https://initumx.github.io/onlyone/)
+    Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
+
+    Check out [website](https://initumx.github.io/onlyone/)
 
 © 2026 initumX (initum.x@gmail.com)
 
