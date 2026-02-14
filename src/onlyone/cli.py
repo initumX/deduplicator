@@ -61,26 +61,19 @@ class CLIApplication:
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
-  # Basic usage - find duplicates in photos folder
-  %(prog)s --input ./photos
+  # Basic usage - find duplicates in Downloads folder
+  %(prog)s -i ~/Downloads
 
-  # Filter by size and extensions
-  %(prog)s -i ./photos -m 500KB -M 10MB -x .jpg,.png
+  # Filter files by size and extensions and find duplicates
+  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png
 
-  # Preview and delete duplicates (with confirmation)
-  %(prog)s -i ./photos --keep-one
+  # Same as above + move duplicates to trash (with confirmation prompt)
+  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
 
-  # Delete duplicates without confirmation (for scripts)
-  %(prog)s -i ./photos --keep-one --force
-
-  # Prioritize files in 'keep' folder when deleting
-  %(prog)s -i ./photos --favs ./photos/keep --keep-one
-
-  # Full content comparison (slowest but most accurate)
-  %(prog)s -i ./photos --mode full
-
-  # Sort by filename length instead of path depth
-  %(prog)s -i ./photos --sort shortest-filename
+  # Same as above but without confirmation and with output to a file (for scripts)
+  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
+  
+  # For more information check official OnlyOne github page
             """
         )
 
@@ -97,18 +90,21 @@ Examples:
             "--min-size", "-m",
             default="0",
             type=str,
+            metavar='',
             help="Minimum file size (e.g., 500KB, 1MB). Default: 0"
         )
         parser.add_argument(
             "--max-size", "-M",
             default="100GB",
             type=str,
+            metavar='',
             help="Maximum file size (e.g., 10MB, 1GB). Default: 100GB"
         )
         parser.add_argument(
             "--extensions", "-x",
             default="",
             type=str,
+            metavar='',
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
         )
         parser.add_argument(
@@ -116,6 +112,7 @@ Examples:
             nargs="+",
             default=[],
             type=str,
+            metavar='',
             dest="priority_dirs",
             help="Directories with files to prioritize when deleting duplicates"
         )
