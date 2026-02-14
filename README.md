@@ -55,7 +55,7 @@ Which file is "first" depends on sorting:
 
 ## How to use cli-version
    ### Examples
-`highlander -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort filename-length --keep-one`
+`highlander -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort shortest-filename --keep-one`
 
     Shows all duplicates from ~/Downloads with size from 130KB to 5MB and extension .jpg and .png. 
     Duplicates in each group are sorted by filename length (from shortest to longest filename). 
@@ -64,7 +64,7 @@ Which file is "first" depends on sorting:
 `highlander -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
 
     The same command as previous, but with no extension filter (doesn't filter 
-    files by extension), and with --sort path-dept (default in case you haven't set sort option).
+    files by extension), and with --sort shortest-path (default in case you haven't set sort option).
     Deletes duplicates to trash without confirmation (--force option)
 
    - `-i, --input`  input folder
@@ -73,7 +73,7 @@ Which file is "first" depends on sorting:
    - `-x, --extensions` extension filter(comma separated)
    - `--favs` favourite folder(s) [don't use it on cli yet, it needs more testing]
    - `--mode [fast, normal, full]` searching mode (normal by default)
-   - `--sort [path-dept, filename-length]` sorting inside a group (path_dept by default)
+   - `--sort [shortest-path, shortest-filename]` sorting inside a group (path_dept by default)
    - `--keep-one` Keep one file/per group and move the rest to trash (one confirmation)
    - `--keep-one --force` Keep one file/per group and move the rest to trash (no confirmation)
 
