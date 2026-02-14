@@ -77,16 +77,19 @@ Which file is "first" depends on sorting:
     Same as above but without confirmation and with output to a file (for scripts)
     `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt`
 
-   - `-i, --input`  input folder
-   - `-m, --min-size`,  min size filter
-   - `-M, --max-size`, max size filter
-   - `-x, --extensions` extension filter(comma separated)
-   - `-p, --priority-dirs` priority dirs(comma or space separated)
-   - `--mode [fast, normal, full]` searching mode (normal by default)
-   - `--sort [shortest-path, shortest-filename]` sorting inside a group (shortest-path by default)
-   - `--keep-one` Keep one file/per group and move the rest to trash (one confirmation)
-   - `--keep-one --force` Keep one file/per group and move the rest to trash (no confirmation)
-   - `--verbose, -v` Show detailed statistics and progress
+    -i, --input          input folder
+    -m, --min-size       min size filter
+    -M, --max-size       max size filter
+    -x, --extensions,    extension filter(comma separated)
+    -p, --priority-dirs  priority dirs(comma or space separated)
+
+    --mode [fast, normal, full]                   searching mode (normal by default)
+    --sort [shortest-path, shortest-filename]     sorting inside a group (shortest-path by default)
+
+    --keep-one            Keep one file/per group and move the rest to trash (one confirmation)
+    --keep-one --force    Keep one file/per group and move the rest to trash (no confirmation)
+    --verbose, -v         Show detailed statistics and progress
+    --help, -h            Show help file
 
 ## Built With
 - Python 3.x
