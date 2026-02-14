@@ -41,7 +41,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
       Manage priority directories
 
 ### How does it work?
-    1. Recursively scans** folder using filters (min/max size, extension)
+    1. Recursively scans folder using filters (min/max size, extension)
     2. Apply the cheapest check first (compare by size)
     3. Further checking depends on mode: 
       a) "fast": checks hash-sum of first 64+ KB of files (false positives very possible)
