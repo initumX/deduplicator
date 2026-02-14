@@ -77,29 +77,3 @@ class ConvertUtils:
             return True
         except ValueError:
             return False
-
-    @staticmethod
-    def timestamp_to_human(timestamp: float, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
-        """
-        Convert a Unix timestamp to a human-readable string.
-        Uses local time by default.
-        """
-        try:
-            return time.strftime(fmt, time.localtime(timestamp))
-        except Exception:
-            return "Invalid timestamp"
-
-    @staticmethod
-    def is_valid_timestamp(timestamp: float) -> bool:
-        """
-        Check if the given timestamp is valid.
-        """
-        try:
-            if not isinstance(timestamp, (int, float)):
-                return False
-            if timestamp < 0 or timestamp > 32536771199:  # Year 3000
-                return False
-            time.localtime(timestamp)
-            return True
-        except Exception:
-            return False
