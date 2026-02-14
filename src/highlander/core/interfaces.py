@@ -29,11 +29,6 @@ from highlander.core.models import (
 
 
 # ===== Interfaces =====
-
-class TranslatorProtocol(Protocol):
-    def tr(self, key: str) -> str:
-        ...
-
 class Hasher(Protocol):
     """Interface for hashing different parts of a file."""
     def compute_front_hash(self, file: File) -> bytes: ...
