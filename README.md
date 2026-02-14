@@ -64,7 +64,8 @@ Which file is "first" depends on sorting:
 `highlander -i ~/Downloads -m 130KB -M 5MB --keep-one --force`
 
     The same command as previous, but with no extension filter (doesn't filter 
-    files by extension), and with --sort path-dept (default in case you haven't set sort option)
+    files by extension), and with --sort path-dept (default in case you haven't set sort option).
+    Deletes duplicates to trash without confirmation (--force option)
 
    - `-i, --input`  input folder
    - `-m, --min-size`,  min size filter
