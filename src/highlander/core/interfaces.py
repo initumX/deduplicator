@@ -19,7 +19,7 @@ Key Components:
 """
 
 from typing import Protocol, List, Dict, Tuple, Optional, Callable
-from deduplicator.core.models import (
+from highlander.core.models import (
     File,
     DeduplicationParams,
     DuplicateGroup,

@@ -9,9 +9,9 @@ from pathlib import Path
 from unittest import mock
 import pytest
 
-from deduplicator.cli import CLIApplication
-from deduplicator.core.models import File, DuplicateGroup
-from deduplicator.services.file_service import FileService
+from highlander.cli import CLIApplication
+from highlander.core.models import File, DuplicateGroup
+from highlander.services.file_service import FileService
 
 
 class TestFileSortingAndSelection:

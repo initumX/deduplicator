@@ -11,7 +11,7 @@ Core features:
 # Get version
 try:
     from importlib.metadata import version as _version
-    __version__ = _version("deduplicator")
+    __version__ = _version("highlander")
 except Exception:
     try:
         import tomllib  # Python 3.11+
@@ -22,12 +22,12 @@ except Exception:
         __version__ = tomllib.load(f)["project"]["version"]
 
 # Public API — only what users should import directly
-from deduplicator.commands import DeduplicationCommand
+from highlander.commands import DeduplicationCommand
 #from .cli import main as cli_main
-from deduplicator.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
-from deduplicator.utils.convert_utils import ConvertUtils
-from deduplicator.services import DuplicateService
-from deduplicator.services.file_service import FileService
+from highlander.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
+from highlander.utils.convert_utils import ConvertUtils
+from highlander.services import DuplicateService
+from highlander.services.file_service import FileService
 
 __all__ = [
     "DeduplicationCommand",

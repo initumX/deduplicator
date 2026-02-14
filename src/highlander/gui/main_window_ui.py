@@ -4,10 +4,10 @@ from PySide6.QtWidgets import (
     QListWidget, QGroupBox, QSizePolicy, QSplitter, QAbstractItemView, QMainWindow
 )
 from PySide6.QtCore import Qt
-from deduplicator.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
-from deduplicator.gui.custom_widgets.image_preview_label import ImagePreviewLabel
-from deduplicator.core.models import DeduplicationMode
-from deduplicator.core.models import SortOrder
+from highlander.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
+from highlander.gui.custom_widgets.image_preview_label import ImagePreviewLabel
+from highlander.core.models import DeduplicationMode
+from highlander.core.models import SortOrder
 
 class Ui_MainWindow:
     """Pure UI class following Qt's official pattern (composition, not inheritance)."""

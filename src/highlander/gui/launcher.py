@@ -4,7 +4,7 @@ GUI launcher — entry point for dedup-gui command.
 """
 import sys
 from PySide6.QtWidgets import QApplication
-from deduplicator.gui.main_window import MainWindow
+from highlander.gui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)

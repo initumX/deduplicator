@@ -2,7 +2,7 @@
 Unit tests for ConvertUtils - size/timestamp conversion helpers.
 """
 import pytest
-from deduplicator.utils.convert_utils import ConvertUtils
+from highlander.utils.convert_utils import ConvertUtils
 
 
 class TestConvertUtils:

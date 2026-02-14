@@ -2,9 +2,9 @@
 Unit tests for FileGrouperImpl.
 Verifies grouping logic for size and hash-based grouping with proper filtering.
 """
-from deduplicator.core import FileGrouperImpl
-from deduplicator.core import HasherImpl, XXHashAlgorithmImpl
-from deduplicator.core import File, FileHashes
+from highlander.core import FileGrouperImpl
+from highlander.core import HasherImpl, XXHashAlgorithmImpl
+from highlander.core import File, FileHashes
 
 
 class TestFileGrouperImpl:

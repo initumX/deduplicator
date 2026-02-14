@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "deduplicator"
+name = "highlander"
 version = "2.4.1"
 description = "Fast duplicate file finder with optional GUI"
 readme = "README.md"
@@ -41,9 +41,9 @@ dev = [
 ]
 
 [project.scripts]
-dedup = "deduplicator.cli:main"
-dedup-gui = "deduplicator.gui.launcher:main"
+dedup = "highlander.cli:main"
+dedup-gui = "highlander.gui.launcher:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["deduplicator*"]
+include = ["highlander*"]

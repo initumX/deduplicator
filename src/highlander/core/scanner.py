@@ -21,8 +21,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Local imports
-from deduplicator.core.models import File, FileCollection
-from deduplicator.core.interfaces import FileScanner
+from highlander.core.models import File, FileCollection
+from highlander.core.interfaces import FileScanner
 
 class FileScannerImpl(FileScanner):
     """

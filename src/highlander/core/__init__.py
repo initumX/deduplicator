@@ -1,7 +1,7 @@
 """
 Core deduplication engine — scanner, hasher, grouper, and pipeline orchestrator.
 
-This package contains the performance-critical foundation of the deduplicator:
+This package contains the performance-critical foundation of the highlander:
 - FileScannerImpl: recursive directory traversal with size/extension filters
 - HasherImpl + XXHashAlgorithmImpl: xxHash64-based partial/full content hashing
 - FileGrouperImpl: size and hash-based grouping with duplicate filtering

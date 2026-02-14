@@ -5,8 +5,8 @@ import sys
 from unittest import mock
 import pytest
 from pathlib import Path
-from deduplicator.cli import CLIApplication
-from deduplicator.core.models import DeduplicationMode, SortOrder
+from highlander.cli import CLIApplication
+from highlander.core.models import DeduplicationMode, SortOrder
 
 
 class TestArgumentParsing:

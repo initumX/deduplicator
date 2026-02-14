@@ -2,7 +2,7 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-deduplicator.py
+highlander.py
 Implements a pipeline-based deduplication system using File objects.
 Supports three modes:
     - fast: size → front
@@ -11,15 +11,15 @@ Supports three modes:
 """
 import time
 from typing import List, Tuple, Optional, Callable
-from deduplicator.core.models import (
+from highlander.core.models import (
     File, DuplicateGroup, DeduplicationStats,
     DeduplicationMode, DeduplicationParams,
     SortOrder
     )
-from deduplicator.core.grouper import FileGrouperImpl
-from deduplicator.core.interfaces import PartialHashStage, Deduplicator
-from deduplicator.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
-from deduplicator.core.sorter import Sorter
+from highlander.core.grouper import FileGrouperImpl
+from highlander.core.interfaces import PartialHashStage, Deduplicator
+from highlander.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
+from highlander.core.sorter import Sorter
 
 # =============================
 # Main Deduplicator Class

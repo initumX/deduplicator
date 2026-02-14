@@ -5,8 +5,8 @@ Verifies file discovery with size/extension filters, error handling, and edge ca
 from pathlib import Path
 import sys
 import pytest
-from deduplicator.core import FileScannerImpl
-from deduplicator.core.models import File
+from highlander.core import FileScannerImpl
+from highlander.core.models import File
 
 
 class TestFileScannerImpl:

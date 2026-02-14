@@ -34,11 +34,11 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from deduplicator.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
-from deduplicator.commands import DeduplicationCommand
-from deduplicator.utils.convert_utils import ConvertUtils
-from deduplicator.services.file_service import FileService
-from deduplicator.services.duplicate_service import DuplicateService
+from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
+from highlander.commands import DeduplicationCommand
+from highlander.utils.convert_utils import ConvertUtils
+from highlander.services.file_service import FileService
+from highlander.services.duplicate_service import DuplicateService
 
 
 class CLIApplication:

@@ -4,8 +4,8 @@ These tests verify that DuplicateService correctly identifies files to delete,
 preserving ONLY the first file in pre-sorted groups (sorting is handled upstream).
 """
 import pytest
-from deduplicator.core.models import File, DuplicateGroup
-from deduplicator.services.duplicate_service import DuplicateService
+from highlander.core.models import File, DuplicateGroup
+from highlander.services.duplicate_service import DuplicateService
 
 
 class TestKeepOnlyOneFilePerGroup:

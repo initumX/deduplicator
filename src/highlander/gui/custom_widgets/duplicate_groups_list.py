@@ -14,9 +14,9 @@ and decoupled from business logic.
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView, QWidget
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
-from deduplicator.core.models import File, DuplicateGroup
-from deduplicator.services.file_service import FileService
-from deduplicator.utils.convert_utils import ConvertUtils
+from highlander.core.models import File, DuplicateGroup
+from highlander.services.file_service import FileService
+from highlander.utils.convert_utils import ConvertUtils
 
 
 class DuplicateGroupsList(QListWidget):

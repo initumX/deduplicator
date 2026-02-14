@@ -14,15 +14,15 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from deduplicator.core.models import DeduplicationMode, DeduplicationParams
-from deduplicator.core.sorter import Sorter
-from deduplicator.services.file_service import FileService
-from deduplicator.services.duplicate_service import DuplicateService
-from deduplicator.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
-from deduplicator.utils.convert_utils import ConvertUtils
-from deduplicator.gui.worker import DeduplicateWorker
-from deduplicator.gui.main_window_ui import Ui_MainWindow
-from deduplicator import __version__
+from highlander.core.models import DeduplicationMode, DeduplicationParams
+from highlander.core.sorter import Sorter
+from highlander.services.file_service import FileService
+from highlander.services.duplicate_service import DuplicateService
+from highlander.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
+from highlander.utils.convert_utils import ConvertUtils
+from highlander.gui.worker import DeduplicateWorker
+from highlander.gui.main_window_ui import Ui_MainWindow
+from highlander import __version__
 
 class SettingsManager:
     def __init__(self):
