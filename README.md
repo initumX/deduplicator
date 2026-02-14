@@ -11,7 +11,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - Activate it `source ~/onlyone/bin/activate`
 - Install onlyone into it `pip install onlyone[gui]` 
 - Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
-- Don't use binary from release (they are obsolete).
+- Don't use binary from github release (they are obsolete).
 
 ### Second Way - wait for build release :)
 
@@ -20,16 +20,16 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 - **Filters** files by file size and extension
 - **Sorts** files inside duplicate groups by path dept and filename length
 - Supports **deduplication modes**: fast, normal, full
-- **Preview** images directly in the interface
+- **Preview** images directly in the interface (for gui-version)
 - **Progress tracking** both for searching duplicates and deleting them
-- **Statistics** Dialog Box
+- **Statistics** both for gui and cli-verison
 - **Context menu** (open, reveal in explorer and delete file(s) options)
 - **One click deletion** ( using 'Keep One File Per Group' button)
 - Manage **priority directories**
 
 ## How does it work?
 
-* **Recursively scans** root folder using filters (min/max size, extension)
+* **Recursively scans** folder using filters (min/max size, extension)
 * **Apply the cheapest check first** (compare by size)
 * **Further checking** depends on mode: 
   
@@ -37,13 +37,12 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
   * "normal" mode: checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
   * "full" mode: checks hash-sum of front -> middle -> entire file (very slow for large files)
 
-
-        This multi-stage approach minimizes expensive full-hash computations. 
+  
         Each filtering step (size-> front -> middle, etc) eliminates non-matching files early, 
         ensuring that only highly probable duplicates reach the final stage.
                 
 * **Shows** the list of groups **sorted in descending order** - groups with larger files come first. 
-Files **inside a group** are sorted by path dept or filename length (you can regulate this).
+Files **inside a group** are sorted by path or filename length (you can regulate this).
             
 ## How to delete files?
 * **Delete individual files** (using the context menu)
@@ -53,9 +52,9 @@ Files **inside a group** are sorted by path dept or filename length (you can reg
 This button moves **ALL files to trash EXCEPT the first file in each group**.
           
 Which file is "first" depends on sorting:
-* Priority files always come first
-* Among priorities: shortest path (or shortest filename, depending on sorting Order) comes first
-* Among non-priorities: same rule
+* Priority files(files from **"Priority Folders"**, if set) always come first
+* Among priorities: shortest path (or shortest filename, if set) comes first
+* Among non-priorities: same rule (shortest path is used by default)
 
       IMPORTANT: If a group has multiple priority files, 
           ONLY ONE (THE FIRST ONE) will be kept.
