@@ -53,23 +53,6 @@ Which file is "first" depends on sorting:
           like any other duplicates.
       REMEMBER: In the end, there can be only one file/per group :)
 
-## Built With
-
-- Python 3.x
-- PySide6 (Qt)
-- send2trash
-- PIL/Pillow (for image handling)
-- xxhash
-
-## How to install and run
-- `pip install highlander[gui]`
-- `highlander-gui` (to use GUI-version) 
-- `highlander` (to use cli)
-- You can also get binary from releases
-
-## TESTS
-` pytest tests/ -v`
-
 ## How to use cli-version
    ### Examples
 `highlander -i ~/Downloads -m 130KB -M 5MB -x .jpg,.png --sort filename-length --keep-one`
@@ -93,6 +76,22 @@ Which file is "first" depends on sorting:
    - `--keep-one` Keep one file/per group and move the rest to trash (one confirmation)
    - `--keep-one --force` Keep one file/per group and move the rest to trash (no confirmation)
 
+## Built With
+
+- Python 3.x
+- PySide6 (Qt)
+- send2trash
+- PIL/Pillow (for image handling)
+- xxhash
+
+## How to install and run
+- `pip install highlander[gui]`
+- `highlander-gui` (to use GUI-version) 
+- `highlander` (to use cli)
+- You can also get binary from releases
+
+## TESTS
+` pytest tests/ -v`
 
 ## How to build with Nuitka
 `pip install xxhash pillow send2trash pyside6 nuitka pyinstaller`
