@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-File Deduplicator - Command Line Interface
-A fast, safe tool for finding and removing duplicate files.
+Highlander CLI — Command line interface for duplicate file detection and removal.
+Implements the same core engine as GUI but with console-based interaction.
+All operations are safe: deletion moves files to system trash, never permanent erase.
 """
 import argparse
 import sys
@@ -9,8 +10,8 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional, NoReturn
-
 import logging
+
 logging.basicConfig(
     level=logging.ERROR,
     format="%(levelname)-8s | %(name)-25s | %(message)s"
@@ -22,10 +23,12 @@ try:
     from send2trash import send2trash
 except ImportError:
     _MISSING_DEPS.append("send2trash")
+
 try:
     import xxhash
 except ImportError:
     _MISSING_DEPS.append("xxhash")
+
 if _MISSING_DEPS:
     print("❌ Missing required dependencies:", file=sys.stderr)
     print(f"   pip install {' '.join(_MISSING_DEPS)}", file=sys.stderr)
@@ -34,7 +37,7 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
+from highlander.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, File
 from highlander.commands import DeduplicationCommand
 from highlander.utils.convert_utils import ConvertUtils
 from highlander.services.file_service import FileService
@@ -53,7 +56,7 @@ class CLIApplication:
     def parse_args() -> argparse.Namespace:
         """Parse and validate command-line arguments."""
         parser = argparse.ArgumentParser(
-            description="File Deduplicator - Find and remove duplicate files",
+            description="Highlander — Fast duplicate file finder with safe deletion",
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
@@ -70,12 +73,16 @@ Examples:
   %(prog)s -i ./photos --keep-one --force
 
   # Prioritize files in 'keep' folder when deleting
-  %(prog)s -i ./photos -f ./photos/keep --keep-one
+  %(prog)s -i ./photos --favs ./photos/keep --keep-one
 
   # Full content comparison (slowest but most accurate)
   %(prog)s -i ./photos --mode full
-"""
+
+  # Sort by filename length instead of path depth
+  %(prog)s -i ./photos --sort filename-length
+            """
         )
+
         # Required arguments
         parser.add_argument(
             "--input", "-i",
@@ -83,6 +90,7 @@ Examples:
             type=str,
             help="Input directory to scan for duplicates"
         )
+
         # Filtering options
         parser.add_argument(
             "--min-size", "-m",
@@ -103,12 +111,14 @@ Examples:
             help="Comma-separated file extensions to include (e.g., .jpg,.png)"
         )
         parser.add_argument(
-            "--favourite-dirs", "-f",
+            "--favs", "--favourite-dirs",  # Support both short and long form
             nargs="+",
             default=[],
             type=str,
+            dest="favourite_dirs",
             help="Directories with files to prioritize when deleting duplicates"
         )
+
         # Deduplication options
         parser.add_argument(
             "--mode",
@@ -118,23 +128,26 @@ Examples:
             help="Deduplication mode: "
                  "fast (size + front hash), "
                  "normal (size + front/middle/end hashes), "
-                 "full (full content hash). Default: normal"
+                 "full (size + full content hash). Default: normal"
         )
+        parser.add_argument(
+            "--sort",
+            choices=["path-depth", "filename-length"],
+            default="path-depth",
+            type=str,
+            help="Sorting inside duplicate groups: "
+                 "'path-depth' (files closer to root first), "
+                 "'filename-length' (shorter filenames first). Default: path-depth"
+        )
+
+        # Actions
         parser.add_argument(
             "--keep-one",
             action="store_true",
-            help="Preview and delete all but one file per duplicate group "
-                 "(first file from favourite dirs if available). Always shows preview before deletion."
+            help="Keep one file per duplicate group and move the rest to trash. "
+                 "Always shows preview before deletion for safety."
         )
-        parser.add_argument(
-            "--sort-order",
-            choices=["newest", "oldest", "shallow-newest", "shallow-oldest"],
-            default="newest",
-            help="Which file to keep when deleting duplicates: "
-                 "'newest' (newest first), 'oldest' (oldest first), "
-                 "'shallow-newest' (shallow path then newest), "
-                 "'shallow-oldest' (shallow path then oldest). Default: newest"
-        )
+
         # Output options
         parser.add_argument(
             "--force",
@@ -151,6 +164,7 @@ Examples:
             action="store_true",
             help="Show detailed statistics and progress"
         )
+
         return parser.parse_args()
 
     def validate_args(self, args: argparse.Namespace) -> None:
@@ -163,6 +177,7 @@ Examples:
             self.error_exit(f"Directory not found: {args.input}")
         if not root_path.is_dir():
             self.error_exit(f"Path is not a directory: {args.input}")
+
         # Validate size formats
         try:
             min_size = ConvertUtils.human_to_bytes(args.min_size)
@@ -173,6 +188,7 @@ Examples:
                 self.error_exit("Maximum size cannot be less than minimum size")
         except ValueError as e:
             self.error_exit(f"Invalid size format: {e}")
+
         # Validate favourite directories
         for fav_dir in args.favourite_dirs:
             fav_path = Path(fav_dir).resolve()
@@ -186,6 +202,7 @@ Examples:
         try:
             min_size_bytes = ConvertUtils.human_to_bytes(args.min_size)
             max_size_bytes = ConvertUtils.human_to_bytes(args.max_size)
+
             # Parse extensions
             extensions = []
             if args.extensions:
@@ -203,12 +220,17 @@ Examples:
             favourite_dirs = []
             for item in args.favourite_dirs:
                 favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
-
-            # Resolve to absolute paths
             favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
 
+            # Map CLI sort option to core SortOrder enum
+            sort_map = {
+                "path-depth": SortOrder.SHORTEST_PATH,
+                "filename-length": SortOrder.SHORTEST_FILENAME
+            }
+            sort_order = sort_map[args.sort]
+
             mode = DeduplicationMode[args.mode.upper()]
-            sort_order = SortOrder(args.sort_order)
+
             return DeduplicationParams(
                 root_dir=str(Path(args.input).resolve()),
                 min_size_bytes=min_size_bytes,
@@ -225,6 +247,7 @@ Examples:
         """CLI progress callback - shows progress in console."""
         if not self.verbose:
             return
+
         if total and total > 0:
             percent = (current / total) * 100
             sys.stderr.write(
@@ -257,16 +280,19 @@ Examples:
         if self.verbose:
             mode_display = params.mode.value.capitalize()
             print(f"Finding duplicates (mode: {mode_display})...")
+
         try:
             groups, stats = command.execute(
                 params,
                 progress_callback=self.progress_callback if self.verbose else None,
                 stopped_flag=self.stopped_flag
             )
+
             if self.verbose:
                 sys.stderr.write("\n")
                 print("\nDeduplication Statistics:")
                 print(stats.print_summary())
+
             return groups
         except Exception as e:
             self.error_exit(f"Deduplication failed: {e}")
@@ -275,19 +301,22 @@ Examples:
         """Output duplicate groups as plain text without additional sorting."""
         if self.quiet:
             return
+
         if not groups:
             print("No duplicate groups found.")
             return
+
         total_files = sum(len(g.files) for g in groups)
-        print(f"Found {len(groups)} duplicate groups ({total_files} files)")
+        print(f"\nFound {len(groups)} duplicate groups ({total_files} files)")
+
         for idx, group in enumerate(groups, 1):
             size_str = ConvertUtils.bytes_to_human(group.size)
             print(f"\n📁 Group {idx} | Size: {size_str} | Files: {len(group.files)}")
+
             # Use order from core (already sorted by favourite dirs + sort_order)
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
-                time_str = ConvertUtils.timestamp_to_human(file.creation_time) if file.creation_time else "N/A"
-                print(f"   {file.path} [{ConvertUtils.bytes_to_human(file.size)}] ({time_str}){fav_marker}")
+                print(f"   {file.path} [{ConvertUtils.bytes_to_human(file.size)}]{fav_marker}")
 
     def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, force: bool = False) -> None:
         """Keep one file per group, delete the rest. Always shows preview before deletion."""
@@ -295,11 +324,14 @@ Examples:
             if not self.quiet:
                 print("No duplicate groups found.")
             return
+
         files_to_delete, _ = DuplicateService.keep_only_one_file_per_group(groups)
+
         if not files_to_delete:
             if not self.quiet:
                 print("No files to delete (all groups already have only one file).")
             return
+
         # Calculate space savings
         space_saved = self.calculate_space_savings(groups, files_to_delete)
         space_saved_str = ConvertUtils.bytes_to_human(space_saved)
@@ -311,21 +343,27 @@ Examples:
             size_str = ConvertUtils.bytes_to_human(group.size)
             print(f"📁 Group {idx} | Total size: {size_str} | Files: {len(group.files)}")
             print("-" * 60)
+
             # File that will be preserved (first file after core sorting)
             preserved_file = group.files[0]
             fav_marker = " ⭐" if preserved_file.is_from_fav_dir else ""
             print(f"   [KEEP] {preserved_file.path}")
             print(f"          Size: {ConvertUtils.bytes_to_human(preserved_file.size)}{fav_marker}")
+
             if preserved_file.is_from_fav_dir:
                 print(f"          Reason: from favourite directory")
             else:
-                print(f"          Reason: based on sort order ({params.sort_order.value})")
+                # Show human-readable sort reason
+                sort_reason = "shortest path" if params.sort_order == SortOrder.SHORTEST_PATH else "shortest filename"
+                print(f"          Reason: {sort_reason}")
+
             # Files that would be deleted
             for file in group.files[1:]:
                 fav_marker = " ⭐" if file.is_from_fav_dir else ""
                 print(f"   [DEL]  {file.path}")
                 print(f"          Size: {ConvertUtils.bytes_to_human(file.size)}{fav_marker}")
             print()
+
         print("=" * 60)
         print(f"Summary: Keep 1 file per group ({preserved} files preserved, {len(files_to_delete)} files deleted)")
         print(f"Total space saved: {space_saved_str}")
@@ -341,17 +379,41 @@ Examples:
                 print("Deletion cancelled by user.")
                 return
 
-        # Execute deletion
-        print(f"Moving {len(files_to_delete)} files to trash...")
+        # Execute deletion with error resilience (continue on individual file errors)
+        print(f"\nMoving {len(files_to_delete)} files to trash...")
+        deleted_count = 0
+        failed_files = []
+
         try:
             for i, path in enumerate(files_to_delete, 1):
                 if self.verbose:
                     print(f"  [{i}/{len(files_to_delete)}] {os.path.basename(path)}")
-                FileService.move_to_trash(path)
-            print(f"✅ Successfully moved {len(files_to_delete)} files to trash.")
-            print(f"Total space saved: {space_saved_str}")
+
+                try:
+                    FileService.move_to_trash(path)
+                    deleted_count += 1
+                except Exception as e:
+                    failed_files.append((path, str(e)))
+                    self.warning(f"Failed to delete {path}: {e}")
+                    continue  # Continue with next file
+
+            # Report results
+            if failed_files:
+                print(f"\n⚠️  Partial success: {deleted_count}/{len(files_to_delete)} files moved to trash.")
+                print(f"Failed to delete {len(failed_files)} file(s):")
+                for path, error in failed_files[:5]:  # Show first 5 errors
+                    print(f"  • {os.path.basename(path)}: {error.split(':')[-1].strip()}")
+                if len(failed_files) > 5:
+                    print(f"  ...and {len(failed_files) - 5} more files")
+            else:
+                print(f"✅ Successfully moved {deleted_count} files to trash.")
+                print(f"Total space saved: {space_saved_str}")
+
+        except KeyboardInterrupt:
+            print("\n⚠️  Operation cancelled by user (Ctrl+C)")
+            sys.exit(130)
         except Exception as e:
-            self.error_exit(f"Failed to delete files: {e}")
+            self.error_exit(f"Failed during deletion process: {e}")
 
     def warning(self, message: str) -> None:
         """Print a warning message to stderr."""
@@ -359,7 +421,7 @@ Examples:
             print(f"⚠️  {message}", file=sys.stderr)
 
     @staticmethod
-    def error_exit(message: str, code: int = 1)-> NoReturn:
+    def error_exit(message: str, code: int = 1) -> NoReturn:
         """Print error and exit."""
         print(f"❌ Error: {message}", file=sys.stderr)
         sys.exit(code)
@@ -369,12 +431,15 @@ Examples:
         args = self.parse_args()
         self.verbose = args.verbose
         self.quiet = args.quiet
+
         self.validate_args(args)
         params = self.create_params(args)
 
         if not self.quiet:
-            print("Scanning files...")
+            print(f"Scanning directory: {params.root_dir}")
+
         groups = self.run_deduplication(params)
+
         # Conditional output based on flags
         if args.keep_one:
             # Always show preview before deletion (safety first)
@@ -382,6 +447,7 @@ Examples:
         else:
             # Show standard duplicate groups list
             self.output_results(groups)
+
         # Show completion time
         elapsed = time.time() - self.start_time
         if self.verbose:
