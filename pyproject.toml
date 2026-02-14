@@ -41,8 +41,8 @@ dev = [
 ]
 
 [project.scripts]
-dedup = "highlander.cli:main"
-dedup-gui = "highlander.gui.launcher:main"
+highlander = "highlander.cli:main"
+highlander-gui = "highlander.gui.launcher:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
