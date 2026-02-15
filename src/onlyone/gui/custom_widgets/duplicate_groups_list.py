@@ -50,7 +50,7 @@ class DuplicateGroupsList(QListWidget):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = ConvertUtils.bytes_to_human(group.size)
 
-            folder_title = f"📁 {"Group"} {idx+1} | {"Size"}: {size_str}"
+            folder_title = f"📁 Group {idx+1} | Size: {size_str}"
             folder_title_item = QListWidgetItem(folder_title)
             folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(folder_title_item)
