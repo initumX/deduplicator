@@ -10,6 +10,7 @@ Allows users to preview files, open them, reveal in explorer, or move to trash.
 Emits signals instead of handling deletion directly, which keeps this widget reusable
 and decoupled from business logic.
 """
+from __future__ import annotations
 
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView, QWidget
 from PySide6.QtGui import QAction

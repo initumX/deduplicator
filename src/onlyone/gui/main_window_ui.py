@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QLineEdit, QComboBox, QSpinBox,
@@ -106,7 +108,7 @@ class Ui_MainWindow:
             FAST: Size + checksum from the first few KB (fastest, but may produce false positives)
             NORMAL: Size + checksums from 3 parts of the file (generally reliable)
             FULL: Size + checksums from 2 parts of the file + checksum of entire file (very slow for large files)
-            
+
             ** This staged approach minimizes expensive full-hash computations: each filtering step 
             eliminates non-matching files early, ensuring that only highly probable duplicates 
             reach the final FULL comparison stage.
