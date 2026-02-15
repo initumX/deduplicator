@@ -212,7 +212,7 @@ class MainWindow(QMainWindow):
                 "\n\n".join(messages)
             )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"{"Error occurred"}:\n{e}")
+            QMessageBox.critical(self, "Error", f"{'Error occurred'}:\n{e}")
         finally:
             if self.progress_dialog:
                 self.progress_dialog.close()
@@ -354,7 +354,7 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(
             self,
             "Error",
-            f"{"Error occurred"}:\n{error_message}"
+            f"{'Error occurred'}:\n{error_message}"
         )
 
     def closeEvent(self, event):
