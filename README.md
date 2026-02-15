@@ -72,16 +72,16 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
     Examples:
     ----------
     Basic usage - find duplicates in Downloads folder
-    `onlyone -i ~/Downloads`
+    onlyone -i ~/Downloads
 
     Filter files by size and extensions and find duplicates
-    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png`
+    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png
 
     Same as above + move duplicates to trash (with confirmation prompt)
-    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one`
+    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
 
     Same as above but without confirmation and with output to a file (for scripts)
-    `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt`
+    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
     
     Options:
     ---------
@@ -102,19 +102,19 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 ### Boring stuff
 
-    ## Built With
+    Built With
         - Python 3.x
         - PySide6 (Qt)
         - send2trash
         - PIL/Pillow (for image handling)
         - xxhash
 
-    ## TESTS
+    TESTS
         pytest tests/ -v
 
-    ## How to build with Pyinstaller
-    `pyinstaller --noconfirm --clean --noconsole \
-                --onefile --exclude-module=PySide6.QtNetwork main_window.py`
+    How to build with Pyinstaller
+            pyinstaller --noconfirm --clean --noconsole \
+                --onefile --exclude-module=PySide6.QtNetwork main_window.py
 
     Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
 
