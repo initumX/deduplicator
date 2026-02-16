@@ -66,6 +66,9 @@ class FileScannerImpl(FileScanner):
         root_path = Path(self.root_dir)
         processed_files = 0
 
+        last_progress_time = 0.0
+        progress_interval = 0.25
+
         if stopped_flag and stopped_flag():
             logger.debug("Scan cancelled before start")
             return FileCollection([])
@@ -100,7 +103,13 @@ class FileScannerImpl(FileScanner):
                     processed_files += 1
 
                     if progress_callback:
-                        progress_callback('scanning', processed_files, None)
+                        current_time = time.time()
+                        if current_time - last_progress_time >= progress_interval:
+                            progress_callback('scanning', processed_files, None)
+                            last_progress_time = current_time
+
+                if progress_callback:
+                    progress_callback('scanning', processed_files, None)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
