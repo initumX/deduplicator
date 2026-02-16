@@ -116,8 +116,10 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
              pyinstaller --noconfirm --clean --noconsole --copy-metadata onlyone --onefile \
                             --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py 
 
-    Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
+    Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)
 
-    Check out [website](https://initumx.github.io/onlyone/)
+### Contacts
+ * [GitHub Page](https://github.com/initumX/onlyone)
+ * email (initum.x@gmail.com)
 
-© 2026 initumX (initum.x@gmail.com)
+© 2026 initumX
