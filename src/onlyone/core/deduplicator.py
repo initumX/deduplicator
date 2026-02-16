@@ -14,7 +14,6 @@ from typing import List, Tuple, Optional, Callable
 from onlyone.core.models import (
     File, DuplicateGroup, DeduplicationStats,
     DeduplicationMode, DeduplicationParams,
-    SortOrder
     )
 from onlyone.core.grouper import FileGrouperImpl
 from onlyone.core.interfaces import PartialHashStage, Deduplicator
