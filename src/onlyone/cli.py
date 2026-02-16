@@ -65,13 +65,13 @@ Examples:
   %(prog)s -i ~/Downloads
 
   # Filter files by size and extensions and find duplicates
-  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png
 
   # Same as above + move duplicates to trash (with confirmation prompt)
-  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
 
   # Same as above but without confirmation and with output to a file (for scripts)
-  %(prog)s -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
   
   # For more information check official OnlyOne github page
             """
@@ -195,13 +195,13 @@ Examples:
         except ValueError as e:
             self.error_exit(f"Invalid size format: {e}")
 
-        # Validate favourite directories
+        # Validate Priority directories
         for fav_dir in args.priority_dirs:
             fav_path = Path(fav_dir).resolve()
             if not fav_path.exists():
-                self.warning(f"Favourite directory not found: {fav_dir}")
+                self.warning(f"Priority directory not found: {fav_dir}")
             elif not fav_path.is_dir():
-                self.warning(f"Favourite path is not a directory: {fav_dir}")
+                self.warning(f"Priority path is not a directory: {fav_dir}")
 
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
