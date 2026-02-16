@@ -53,6 +53,10 @@ class CLIApplication:
         self.verbose: bool = False
         self.quiet: bool = False
 
+        # Fix encoding for Windows consoles to prevent UnicodeEncodeError
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+
     @staticmethod
     def parse_args() -> argparse.Namespace:
         """Parse and validate command-line arguments."""
