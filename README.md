@@ -113,18 +113,11 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
         pytest tests/ -v
 
     How to build with Pyinstaller
-            pyinstaller --noconfirm --clean --noconsole \
-                --onefile --exclude-module=PySide6.QtNetwork main_window.py
+             pyinstaller --noconfirm --clean --noconsole --copy-metadata onlyone --onefile \
+                            --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py 
 
     Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)   
 
     Check out [website](https://initumx.github.io/onlyone/)
 
 © 2026 initumX (initum.x@gmail.com)
-
-
-
-
-
-
-
