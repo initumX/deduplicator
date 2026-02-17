@@ -66,13 +66,12 @@ class FileScannerImpl(FileScanner):
         root_path = Path(self.root_dir)
         processed_files = 0
 
-        last_progress_time = 0.0
-        progress_interval = 0.25
-
+        # Check for cancellation before starting
         if stopped_flag and stopped_flag():
             logger.debug("Scan cancelled before start")
             return FileCollection([])
 
+        # Validate root directory exists and is accessible
         if not root_path.exists():
             error_msg = f"Directory does not exist: {self.root_dir}"
             logger.error(error_msg)
@@ -82,12 +81,17 @@ class FileScannerImpl(FileScanner):
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
+        # Progress throttling: update every N files to reduce UI overhead
+        progress_interval = 5000  # Update every 5,000 files
+        progress_counter = 0
+
         try:
             logger.debug(f"Scanning directory: {self.root_dir}")
             start_time = time.time()
 
             # Use os.walk instead of Path.rglob for faster traversal
             for root, dirs, files in os.walk(str(root_path)):
+                # Check for cancellation at each directory level
                 if stopped_flag and stopped_flag():
                     logger.debug("Scan interrupted by user")
                     return FileCollection([])
@@ -101,15 +105,16 @@ class FileScannerImpl(FileScanner):
                     if file_info:
                         found_files.append(file_info)
                     processed_files += 1
+                    progress_counter += 1
 
-                    if progress_callback:
-                        current_time = time.time()
-                        if current_time - last_progress_time >= progress_interval:
-                            progress_callback('scanning', processed_files, None)
-                            last_progress_time = current_time
+                    # Update progress only when threshold reached (no time.time() calls!)
+                    if progress_callback and progress_counter >= progress_interval:
+                        progress_callback('scanning', processed_files, None)
+                        progress_counter = 0
 
-                if progress_callback:
-                    progress_callback('scanning', processed_files, None)
+            # Final update for small datasets
+            if progress_callback and progress_counter > 0:
+                progress_callback('scanning', processed_files, None)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
