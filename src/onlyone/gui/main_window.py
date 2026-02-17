@@ -52,7 +52,6 @@ class MainWindow(QMainWindow):
         self.original_image_preview_size = None
 
         self._ordering_connected = False
-        self.stats_window = None
         self.restore_settings()
         self.setup_connections()
 
@@ -233,6 +232,39 @@ class MainWindow(QMainWindow):
             """
         )
 
+    def _cleanup_progress_dialog(self):
+        """
+        Safely closes, disconnects, and schedules deletion of the progress dialog.
+        Prevents race conditions and visual artifacts.
+        """
+        if not hasattr(self, 'progress_dialog') or self.progress_dialog is None:
+            return
+
+        dialog = self.progress_dialog
+        self.progress_dialog = None  # Reset immediately to prevent re-entrancy
+
+        # Safely disconnect dialog signals
+        try:
+            dialog.canceled.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+
+        # Safely disconnect worker signals
+        if hasattr(self, 'worker') and self.worker:
+            try:
+                self.worker.signals.progress.disconnect()
+                self.worker.signals.finished.disconnect()
+                self.worker.signals.error.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+
+        # Safely close and delete dialog
+        try:
+            dialog.close()
+            dialog.deleteLater()
+        except (RuntimeError, AttributeError):
+            pass
+
     def start_deduplication(self):
         root_dir = self.ui.root_dir_input.text().strip()
         if not root_dir:
@@ -243,6 +275,9 @@ class MainWindow(QMainWindow):
         if self.worker:
             self.worker.stop()
             self.worker = None
+
+        # Ensure previous dialog is cleaned up
+        self._cleanup_progress_dialog()
 
         # Parse size filters
         min_size_value = self.ui.min_size_spin.value()
@@ -278,18 +313,12 @@ class MainWindow(QMainWindow):
             0, 100, self
         )
         self.progress_dialog.setMinimumDuration(1000)
-        self.progress_dialog.setModal(True)
         self.progress_dialog.setWindowTitle("Processing")
         self.progress_dialog.setAutoReset(False)
         self.progress_dialog.show()
 
-        # Connect cancel action to worker.stop()
-        def cancel_action():
-            if self.worker:
-                self.worker.stop()
-                self.worker = None  # Release reference immediately
-
-        self.progress_dialog.canceled.connect(cancel_action)  #
+        # Connect cancel action
+        self.progress_dialog.canceled.connect(self._cancel_worker)
 
         # Create unified parameters object
         params = DeduplicationParams(
@@ -309,8 +338,17 @@ class MainWindow(QMainWindow):
         self.worker.signals.error.connect(self.on_deduplicate_error)
         QThreadPool.globalInstance().start(self.worker)
 
+    def _cancel_worker(self):
+        """Handles user cancellation request."""
+        if self.worker:
+            self.worker.stop()
+
+        # Close dialog immediately for responsive UI
+        self._cleanup_progress_dialog()
+
     def update_progress(self, stage, current, total):
-        if not self.progress_dialog or not self.worker:
+        """Updates progress dialog safely."""
+        if not hasattr(self, 'progress_dialog') or self.progress_dialog is None:
             return
 
         try:
@@ -323,33 +361,35 @@ class MainWindow(QMainWindow):
                 self.progress_dialog.setValue(fake_percent)
                 self.progress_dialog.setLabelText(f"{stage}: {current} files processed...")
         except (TypeError, RuntimeError, AttributeError):
-            if self.progress_dialog:
-                self.progress_dialog.deleteLater()
-                self.progress_dialog = None
+            self._cleanup_progress_dialog()
 
     def on_deduplicate_finished(self, duplicate_groups, stats):
-        self.worker = None  # Release reference - worker auto-deleted by pool
+        """Handles successful completion of the worker."""
+        # Cleanup UI first
+        self._cleanup_progress_dialog()
 
-        if self.progress_dialog:
-            self.progress_dialog.deleteLater()
-            self.progress_dialog = None
+        # Reset worker reference (worker auto-deletes itself)
+        self.worker = None
 
+        # Process results
         self.duplicate_groups = duplicate_groups
         self.on_ordering_changed()
 
+        # Show statistics
         stats_text = stats.print_summary()
-        self.stats_window = QMessageBox(self)
-        self.stats_window.setWindowTitle("Deduplication Statistics")
-        self.stats_window.setText(stats_text)
-        self.stats_window.setIcon(QMessageBox.Icon.Information)
-        self.stats_window.exec()
+        stats_box = QMessageBox(self)
+        stats_box.setWindowTitle("Deduplication Statistics")
+        stats_box.setText(stats_text)
+        stats_box.setIcon(QMessageBox.Icon.Information)
+        stats_box.exec()
 
     def on_deduplicate_error(self, error_message):
-        self.worker = None  # Release reference
+        """Handles error completion of the worker."""
+        # Cleanup UI first
+        self._cleanup_progress_dialog()
 
-        if self.progress_dialog:
-            self.progress_dialog.deleteLater()
-            self.progress_dialog = None
+        # Reset worker reference
+        self.worker = None
 
         QMessageBox.critical(
             self,
@@ -358,13 +398,14 @@ class MainWindow(QMainWindow):
         )
 
     def closeEvent(self, event):
+        """Handles application close event."""
         # Request cancellation of running worker
-        if self.worker:
+        if hasattr(self, 'worker') and self.worker:
             self.worker.stop()
             self.worker = None
 
-        if self.progress_dialog:
-            self.progress_dialog.deleteLater()
+        # Safely cleanup progress dialog (handles already-None case)
+        self._cleanup_progress_dialog()
 
         self.save_settings()
         super().closeEvent(event)

@@ -26,7 +26,6 @@ class DeduplicateWorker(QRunnable):
         self.signals = WorkerSignals()
         self._stopped = False
         self._mutex = QMutex()
-        self._progress_mutex = QMutex()
         self.setAutoDelete(True)  # Critical: auto-delete after run() completes
 
     def stop(self):
@@ -40,23 +39,16 @@ class DeduplicateWorker(QRunnable):
             return self._stopped
 
     def safe_progress_emit(self, stage: str, current: int, total=None):
-        """
-        Emits progress signal safely with mutex protection.
-        Matches original method name and signature.
-        """
-        with QMutexLocker(self._progress_mutex):
-            if not self.is_stopped():
+        """Emits progress signal safely with mutex protection."""
+        with QMutexLocker(self._mutex):
+            if not self._stopped:
                 try:
                     self.signals.progress.emit(stage, current, total)
                 except RuntimeError:
-                    # Receiver may have been destroyed - safe to ignore
                     pass
 
     def run(self):
-        """
-        Main execution method. Runs in thread pool thread.
-        Automatically deleted after completion due to setAutoDelete(True).
-        """
+        """Main execution method. Runs in thread pool thread."""
         try:
             if self.is_stopped():
                 return
