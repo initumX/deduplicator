@@ -357,7 +357,7 @@ class MainWindow(QMainWindow):
                 self.progress_dialog.setValue(percent)
                 self.progress_dialog.setLabelText(f"{stage}: {current}/{total}")
             else:
-                fake_percent = min(int(current / 500), 100)
+                fake_percent = min(int(current / 5000), 100)
                 self.progress_dialog.setValue(fake_percent)
                 self.progress_dialog.setLabelText(f"{stage}: {current} files processed...")
         except (TypeError, RuntimeError, AttributeError):
