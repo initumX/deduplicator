@@ -5,3 +5,7 @@
 ### [2.4.5] - 16 Feb 2026
 - GUI perf: Scan time reduced up to ~4x by minimizing progress callback overhead
 - Fix encoding for Windows consoles to prevent UnicodeEncodeError
+
+### [2.4.6] 18 Feb 2026
+- Refactor progress dialog management with safe cleanup
+- Use count-based progress throttling in scanner
