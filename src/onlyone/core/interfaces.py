@@ -85,6 +85,13 @@ class FileGrouper(Protocol):
     def group_by_size(self, files: List[File]) -> Dict[int, List[File]]:
         """Group files by their size in bytes."""
         ...
+    def group_by_size_and_extension(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
+        """Groups files by both size and extension."""
+        ...
+
+    def group_by_size_and_name(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
+        """Groups files by both size and name (including extension)."""
+        ...
 
     def group_by_front_hash(self, files: List[File]) -> Dict[bytes, List[File]]:
         """Group files by their front hash."""
@@ -176,7 +183,6 @@ class PartialHashStage(Protocol):
 class Deduplicator(Protocol):
     """
     Interface for the main deduplication engine.
-
     Coordinates multiple stages (size → partial hashes → full hash) depending on mode.
     Collects detailed statistics about the deduplication process.
     """
@@ -189,17 +195,16 @@ class Deduplicator(Protocol):
     ) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """
         Run the full deduplication pipeline based on the selected mode.
-
         Args:
             files: List of scanned files to analyze for duplicates.
             params: Unified configuration parameters including root directory, size filters,
-                    file extensions, favourite directories, deduplication mode, and sort order
+                file extensions, favourite directories, deduplication mode, sort order,
+                and boost mode for initial grouping strategy.
             stopped_flag: Optional function to check for cancellation.
             progress_callback: Optional callback for progress updates (stage, current, total).
-
         Returns:
             A tuple containing:
-                - List of confirmed and potential duplicate groups
-                - Statistics collected during processing
+            - List of confirmed and potential duplicate groups
+            - Statistics collected during processing
         """
         ...

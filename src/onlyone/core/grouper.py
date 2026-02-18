@@ -7,7 +7,7 @@ Implements file grouping strategies using File objects and Hasher.
 Replaces multiple standalone groupers with a single class implementing FileGrouper.
 """
 
-from typing import List, Dict, Any, Callable
+from typing import List, Dict, Tuple, Any, Callable
 from collections import defaultdict
 from onlyone.core.interfaces import FileGrouper
 from onlyone.core.models import File
@@ -26,6 +26,14 @@ class FileGrouperImpl(FileGrouper):
     def group_by_size(self, files: List[File]) -> Dict[int, List[File]]:
         """Groups files by their size."""
         return self._group_by(files, lambda f: f.size)
+
+    def group_by_size_and_extension(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
+        """Groups files by both size and extension (fast pre-filter before hashing)."""
+        return self._group_by(files, lambda f: (f.size, f.extension))
+
+    def group_by_size_and_name(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
+        """Groups files by both size and name(including extension)."""
+        return self._group_by(files, lambda f: (f.size, f.name))
 
     def group_by_front_hash(self, files: List[File]) -> Dict[bytes, List[File]]:
         """Groups files by front hash."""
