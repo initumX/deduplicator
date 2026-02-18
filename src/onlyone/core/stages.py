@@ -42,7 +42,7 @@ OPTIMIZATIONS
 """
 
 from typing import List, Dict, Optional, Callable
-from onlyone.core.models import File, DuplicateGroup
+from onlyone.core.models import File, DuplicateGroup, BoostMode
 from onlyone.core.grouper import FileGrouperImpl
 from onlyone.core.interfaces import SizeStage, PartialHashStage
 
@@ -180,8 +180,9 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
 # Individual Stages
 # =============================
 class SizeStageImpl(SizeStage):
-    def __init__(self, grouper: FileGrouperImpl):
+    def __init__(self, grouper: FileGrouperImpl, boost: BoostMode = BoostMode.SAME_SIZE):
         self.grouper = grouper
+        self.boost = boost
 
     def process(
             self,
@@ -195,13 +196,39 @@ class SizeStageImpl(SizeStage):
         """
         if stopped_flag and stopped_flag():
             return []
-        size_groups = self.grouper.group_by_size(files)
+
+        groups = []
+
+        # Use size+extension grouping if enabled, otherwise size only
+        if self.boost == BoostMode.SAME_SIZE:
+            # Only size grouping
+            size_groups = self.grouper.group_by_size(files)
+            groups = [
+                DuplicateGroup(size=size, files=files_list)
+                for size, files_list in size_groups.items()
+            ]
+
+        elif self.boost == BoostMode.SAME_SIZE_PLUS_EXT:
+            # Size + extension grouping
+            size_ext_groups = self.grouper.group_by_size_and_extension(files)
+            groups = [
+                DuplicateGroup(size=size, files=files_list)
+                for (size, ext), files_list in size_ext_groups.items()
+            ]
+
+        elif self.boost == BoostMode.SAME_SIZE_PLUS_FILENAME:
+            size_name_groups = self.grouper.group_by_size_and_name(files)
+            groups = [
+                DuplicateGroup(size=size, files=files_list)
+                for (size, name), files_list in size_name_groups.items()
+            ]
+
 
         if progress_callback:
             total_files = len(files)
             progress_callback("Size grouping", total_files, total_files)  # Fake instant progress
 
-        return [DuplicateGroup(size=size, files=files_list) for size, files_list in size_groups.items()]
+        return groups
 
 
 class FrontHashStage(PartialHashStageBase):
