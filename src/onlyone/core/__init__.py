@@ -18,7 +18,7 @@ from .deduplicator import Deduplicator, DeduplicatorImpl
 from .sorter import Sorter
 from .models import (
     File, DuplicateGroup, DeduplicationMode, DeduplicationParams, DeduplicationStats,
-    SortOrder, FileHashes)
+    SortOrder, FileHashes, BoostMode)
 
 __all__ = [
     "FileScannerImpl",
@@ -29,6 +29,7 @@ __all__ = [
     "DeduplicatorImpl",
     "File",
     "DuplicateGroup",
+    'BoostMode',
     "DeduplicationMode",
     "DeduplicationParams",
     "DeduplicationStats",

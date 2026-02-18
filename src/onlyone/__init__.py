@@ -23,7 +23,11 @@ except Exception:
 
 # Public API — only what users should import directly
 from onlyone.commands import DeduplicationCommand
-#from .cli import main as cli_main
+from onlyone.aliases import (
+    BOOST_ALIASES, BOOST_CHOICES, BOOST_HELP_TEXT,
+    DEDUP_MODE_ALIASES, DEDUP_MODE_CHOICES, DEDUP_MODE_HELP_TEXT,
+    EPILOG_TEXT
+)
 from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
 from onlyone.utils.convert_utils import ConvertUtils
 from onlyone.services import DuplicateService
@@ -40,4 +44,11 @@ __all__ = [
     "DuplicateService",
     "FileService",
     "__version__",
+    "BOOST_ALIASES",
+    "BOOST_CHOICES",
+    "BOOST_HELP_TEXT",
+    "DEDUP_MODE_ALIASES",
+    "DEDUP_MODE_CHOICES",
+    "DEDUP_MODE_HELP_TEXT",
+    "EPILOG_TEXT",
 ]

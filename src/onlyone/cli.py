@@ -38,11 +38,16 @@ if _MISSING_DEPS:
     sys.exit(1)
 
 # === NORMAL IMPORTS (after validation) ===
-from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder
+from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, BoostMode
 from onlyone.commands import DeduplicationCommand
 from onlyone.utils.convert_utils import ConvertUtils
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
+from onlyone.aliases import (
+    BOOST_ALIASES, BOOST_CHOICES, BOOST_HELP_TEXT,
+    DEDUP_MODE_ALIASES, DEDUP_MODE_CHOICES, DEDUP_MODE_HELP_TEXT,
+    EPILOG_TEXT
+)
 
 
 class CLIApplication:
@@ -62,23 +67,8 @@ class CLIApplication:
         """Parse and validate command-line arguments."""
         parser = argparse.ArgumentParser(
             description="OnlyOne — Fast duplicate file finder with safe deletion",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-            epilog="""
-Examples:
-  # Basic usage - find duplicates in Downloads folder
-  %(prog)s -i ~/Downloads
-
-  # Filter files by size and extensions and find duplicates
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png
-
-  # Same as above + move duplicates to trash (with confirmation prompt)
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
-
-  # Same as above but without confirmation and with output to a file (for scripts)
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
-  
-  # For more information check official OnlyOne github page
-            """
+            formatter_class=argparse.RawTextHelpFormatter,
+            epilog=EPILOG_TEXT
         )
 
         # Required arguments
@@ -124,22 +114,28 @@ Examples:
         # Deduplication options
         parser.add_argument(
             "--mode",
-            choices=["fast", "normal", "full"],
+            choices=DEDUP_MODE_CHOICES,
             default="normal",
             type=str,
-            help="Deduplication mode: "
-                 "fast (size + front hash), "
-                 "normal (size + front/middle/end hashes), "
-                 "full (size + full content hash). Default: normal"
+            help=DEDUP_MODE_HELP_TEXT
         )
+
+        parser.add_argument(
+            "--boost",
+            choices=BOOST_CHOICES,
+            default="same-size",
+            type=str,
+            help=BOOST_HELP_TEXT
+        )
+
         parser.add_argument(
             "--sort",
             choices=["shortest-path", "shortest-filename"],
             default="shortest-path",
             type=str,
-            help="Sorting inside duplicate groups: "
-                 "'shortest-path' (files closer to root first), "
-                 "'shortest-filename' (shorter filenames first). Default: shortest-path"
+            help="Sorting inside duplicate groups: \n"
+                 "  'shortest-path' (files closer to root first), \n"
+                 "  'shortest-filename' (shorter filenames first). Default: shortest-path\n"
         )
 
         # Actions
@@ -207,6 +203,13 @@ Examples:
             elif not fav_path.is_dir():
                 self.warning(f"Priority path is not a directory: {fav_dir}")
 
+        # Validate deduplication mode
+        if args.mode not in DEDUP_MODE_ALIASES:
+            self.error_exit(
+                f"Invalid deduplication mode: '{args.mode}'.\n"
+                f"Valid options: {', '.join({'fast', 'normal', 'full'})}"
+            )
+
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
         try:
@@ -236,7 +239,8 @@ Examples:
             # Map CLI sort option directly to core SortOrder enum values
             sort_order = SortOrder(args.sort)
 
-            mode = DeduplicationMode[args.mode.upper()]
+            mode = DEDUP_MODE_ALIASES.get(args.mode, DeduplicationMode.NORMAL)
+            boost_mode = BOOST_ALIASES.get(args.boost, BoostMode.SAME_SIZE)
 
             return DeduplicationParams(
                 root_dir=str(Path(args.input).resolve()),
@@ -245,6 +249,7 @@ Examples:
                 extensions=extensions,
                 favourite_dirs=favourite_dirs,
                 sort_order=sort_order,
+                boost=boost_mode,
                 mode=mode
             )
         except ValueError as e:
