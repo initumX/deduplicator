@@ -46,7 +46,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 ### How does it work?
     1. Recursively scans folder using filters (min/max size, extension)
-    2. Apply the cheapest check first (compare by size)
+    2. Apply the cheapest check first (compare by size): more initial grouping ways added in v 2.4.6 ("boosting")
     3. Further checking depends on mode: 
       a) "fast": checks hash-sum of first 64+ KB of files (false positives very possible)
       b) "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
@@ -54,6 +54,13 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
     4. Shows the list of groups sorted in descending order (groups with larger files come first). 
     --------
     Files inside a group are sorted by path/filename length (you can regulate this).
+
+### NEW FEATURE [v.2.4.6]: Boosting implemented
+    In older versions (before 2.4.6) initial grouping was based only on file size. 
+    Now you can use various strategies using Boost combobox (or --boost key on cli, see --help):
+    * by size: Compare only files of the same size (was the only method before)
+    * by size and extension: Compare only files of the same size and extension.
+    * by size and filename: Compare only files of the same size and filename
 
 ### Deleting all duplicates at once
     The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.

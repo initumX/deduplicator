@@ -9,3 +9,4 @@
 ### [2.4.6] 18 Feb 2026
 - Refactor progress dialog management with safe cleanup
 - Use count-based progress throttling in scanner
+- Implemented "Boost" logic for initial grouping
