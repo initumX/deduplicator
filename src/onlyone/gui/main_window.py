@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from onlyone.core.models import DeduplicationMode, DeduplicationParams
+from onlyone.core.models import DeduplicationMode, BoostMode, DeduplicationParams
 from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
@@ -302,6 +302,8 @@ class MainWindow(QMainWindow):
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
 
         # Get mode and sort order from UI controls
+        boost_value = self.ui.boost_combo.currentData()
+        boost_mode = BoostMode(boost_value)
         mode_key = self.ui.dedupe_mode_combo.currentData()
         dedupe_mode = DeduplicationMode[mode_key]
         sort_order = self.ui.ordering_combo.currentData()
@@ -328,7 +330,8 @@ class MainWindow(QMainWindow):
             extensions=extensions,
             favourite_dirs=self.favourite_dirs,
             mode=dedupe_mode,
-            sort_order=sort_order
+            sort_order=sort_order,
+            boost=boost_mode
         )
 
         # Launch worker via thread pool
@@ -416,6 +419,7 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("max_size", self.ui.max_size_spin.value())
         self.settings_manager.save_settings("min_unit_index", self.ui.min_unit_combo.currentIndex())
         self.settings_manager.save_settings("max_unit_index", self.ui.max_unit_combo.currentIndex())
+        self.settings_manager.save_settings("boost_mode", self.ui.boost_combo.currentIndex())
         self.settings_manager.save_settings("dedupe_mode", self.ui.dedupe_mode_combo.currentIndex())
         self.settings_manager.save_settings("extensions", self.ui.extension_filter_input.text())
         self.settings_manager.save_settings("splitter_sizes", list(self.ui.splitter.sizes()))
@@ -428,6 +432,7 @@ class MainWindow(QMainWindow):
         self.ui.max_size_spin.setValue(int(self.settings_manager.load_settings("max_size", "100")))
         self.ui.min_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("min_unit_index", "0")))
         self.ui.max_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("max_unit_index", "1")))
+        self.ui.boost_combo.setCurrentIndex(int(self.settings_manager.load_settings("boost_mode", "0")))
         self.ui.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", "1")))
         self.ui.extension_filter_input.setText(self.settings_manager.load_settings("extensions", ""))
 

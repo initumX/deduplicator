@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 from onlyone.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
 from onlyone.gui.custom_widgets.image_preview_label import ImagePreviewLabel
 from onlyone.core.models import DeduplicationMode
-from onlyone.core.models import SortOrder
+from onlyone.core.models import SortOrder, BoostMode
 
 class Ui_MainWindow:
     """Pure UI class following Qt's official pattern (composition, not inheritance)."""
@@ -99,6 +99,10 @@ class Ui_MainWindow:
         level_layout.addWidget(self.favourite_group)
         level_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
+        # Boost Mode Controls
+        self.boost_label = QLabel(central_widget)
+        self.boost_combo = QComboBox(central_widget)
+
         # Control buttons and mode selection
         self.mode_label = QLabel(central_widget)
         self.dedupe_mode_combo = QComboBox(central_widget)
@@ -138,6 +142,8 @@ class Ui_MainWindow:
 
         control_layout = QHBoxLayout()
         control_layout.addWidget(self.find_duplicates_button)
+        control_layout.addWidget(self.boost_label)
+        control_layout.addWidget(self.boost_combo)
         control_layout.addWidget(self.mode_label)
         control_layout.addWidget(self.dedupe_mode_combo)
         control_layout.addWidget(self.ordering_label)
@@ -198,8 +204,23 @@ class Ui_MainWindow:
         self.label_min_size.setText("Min size:")
         self.label_max_size.setText("Max size:")
         self.label_extensions.setText("Extensions:")
+        self.boost_label.setText("Boost:")
         self.mode_label.setText("Mode:")
         self.ordering_label.setText("Order:")
+
+        current_boost_index = self.boost_combo.currentIndex()
+        self.boost_combo.clear()
+
+        boost_items = [
+            ("Same Size", BoostMode.SAME_SIZE),
+            ("Same Size + Ext", BoostMode.SAME_SIZE_PLUS_EXT),
+            ("Same Size + Name", BoostMode.SAME_SIZE_PLUS_FILENAME),
+        ]
+        for text, mode_enum in boost_items:
+            self.boost_combo.addItem(text, userData=mode_enum.value)
+
+        if 0 <= current_boost_index < self.boost_combo.count():
+            self.boost_combo.setCurrentIndex(current_boost_index)
 
         # Deduplication mode combo box
         dedupe_mode_items = [
