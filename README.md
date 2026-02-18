@@ -25,7 +25,7 @@ Binary for linux and windows are available in [github release](https://github.co
     Done.
     Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
 
-    ### Second Way - wait for build release :)
+    ### Second Way - use binary from github release
 
 ### Features
       Filters files by file size and extension
