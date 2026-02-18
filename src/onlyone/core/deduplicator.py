@@ -43,7 +43,7 @@ class DeduplicatorImpl(Deduplicator):
         total_start_time = time.time()
 
         # Initial stage: group by size
-        size_stage = SizeStageImpl(self.grouper)
+        size_stage = SizeStageImpl(self.grouper, boost=params.boost)
         start_time = time.time()
         groups = size_stage.process(
             files,
