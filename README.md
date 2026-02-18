@@ -1,7 +1,7 @@
 
 # [OnlyOne](https://initumx.github.io/onlyone/)
 
-![screenshot](/onlyone246.jpg "Main Window")
+![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone246.jpg)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
@@ -125,7 +125,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
     Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)
 
-### Contacts
+### LINKS
  * [GitHub Page](https://github.com/initumX/onlyone)
  * email (initum.x@gmail.com)
 
