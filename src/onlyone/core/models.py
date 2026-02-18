@@ -17,15 +17,37 @@ from enum import Enum
 # =============================
 
 class DeduplicationMode(Enum):
+    """
+    Deduplication mode controlling the depth of duplicate detection.
+    """
     FAST = "fast"
     NORMAL = "normal"
     FULL = "full"
 
     @property
-    def display_name(self):
-        return self.value.capitalize()
+    def display_name(self) -> str:
+        """Human-readable name for UI display."""
+        mapping = {
+            DeduplicationMode.FAST: "Fast",
+            DeduplicationMode.NORMAL: "Normal",
+            DeduplicationMode.FULL: "Full",
+        }
+        return mapping.get(self, self.value)
 
-    def __repr__(self):
+    @property
+    def description(self) -> str:
+        """Detailed description for help text."""
+        mapping = {
+            DeduplicationMode.FAST:
+                "Size → Front Hash (fastest, may miss some duplicates)",
+            DeduplicationMode.NORMAL:
+                "Size → Front → Middle → End Hash (balanced speed/accuracy)",
+            DeduplicationMode.FULL:
+                "Size → Front → Middle → Full Hash (slowest)",
+        }
+        return mapping.get(self, self.value)
+
+    def __repr__(self) -> str:
         return self.value
 
 class Stage(str, Enum):
@@ -42,6 +64,29 @@ class Stage(str, Enum):
 class SortOrder(Enum):
     SHORTEST_PATH = "shortest-path"
     SHORTEST_FILENAME = "shortest-filename"
+
+class BoostMode(Enum):
+    """
+    Boost mode for file grouping strategy.
+    Controls how files are grouped during the initial size-based stage.
+    """
+    SAME_SIZE = "same-size"
+    SAME_SIZE_PLUS_EXT = "same-size-plus-ext"
+    SAME_SIZE_PLUS_FILENAME = "same-size-plus-filename"
+
+    @property
+    def display_name(self) -> str:
+        """Human-readable name for UI display."""
+        mapping = {
+            BoostMode.SAME_SIZE: "Same Size",
+            BoostMode.SAME_SIZE_PLUS_EXT: "Same Size + Extension",
+            BoostMode.SAME_SIZE_PLUS_FILENAME: "Same Size + Filename",
+        }
+        return mapping.get(self, self.value)
+
+    def __repr__(self) -> str:
+        return self.value
+
 
 # ======================
 #  Core Data Models
@@ -277,6 +322,7 @@ class DeduplicationParams:
     favourite_dirs: List[str] = field(default_factory=list)
     mode: DeduplicationMode = DeduplicationMode.NORMAL
     sort_order: SortOrder = SortOrder.SHORTEST_PATH
+    boost: BoostMode = field(default=BoostMode.SAME_SIZE)
 
     def __post_init__(self):
         """Validate parameters immediately after creation."""
@@ -306,7 +352,8 @@ class DeduplicationParams:
             max_size_str: str,
             extensions_str: str = "",
             favourite_dirs: Optional[List[str]] = None,
-            mode: DeduplicationMode = DeduplicationMode.NORMAL
+            mode: DeduplicationMode = DeduplicationMode.NORMAL,
+            boost: BoostMode = BoostMode.SAME_SIZE,
     ) -> 'DeduplicationParams':
         """
         Factory method to create params from human-readable inputs.
@@ -325,5 +372,6 @@ class DeduplicationParams:
             max_size_bytes=max_size,
             extensions=ext_list,
             favourite_dirs=favourite_dirs or [],
-            mode=mode
+            mode=mode,
+            boost=boost,
         )
