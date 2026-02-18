@@ -10,3 +10,4 @@
 - Refactor progress dialog management with safe cleanup
 - Use count-based progress throttling in scanner
 - Implemented "Boost" logic for initial grouping
+- improved code consistency
