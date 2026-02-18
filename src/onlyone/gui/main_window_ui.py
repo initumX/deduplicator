@@ -102,20 +102,23 @@ class Ui_MainWindow:
         # Boost Mode Controls
         self.boost_label = QLabel(central_widget)
         self.boost_combo = QComboBox(central_widget)
+        self.boost_combo.setToolTip(
+                """
+            Boost for initial file grouping
+        Same Size               = Compare only files of the same size
+        Same Size + Extension   = Compare only files of the same size and extension
+        Same Size + Filename    = Compare only files of the same size and filename
+                """
+        )
 
         # Control buttons and mode selection
         self.mode_label = QLabel(central_widget)
         self.dedupe_mode_combo = QComboBox(central_widget)
-        self.dedupe_mode_combo.addItems([mode.value.upper() for mode in DeduplicationMode])
         self.dedupe_mode_combo.setToolTip(
             """
-            FAST: Size + checksum from the first few KB (fastest, but may produce false positives)
-            NORMAL: Size + checksums from 3 parts of the file (generally reliable)
-            FULL: Size + checksums from 2 parts of the file + checksum of entire file (very slow for large files)
-
-            ** This staged approach minimizes expensive full-hash computations: each filtering step 
-            eliminates non-matching files early, ensuring that only highly probable duplicates 
-            reach the final FULL comparison stage.
+            FAST    = Boost + checksum from the first few KB (may produce false positives)
+            NORMAL  = Boost + checksums from 3 parts of the file (generally reliable)
+            FULL    = Boost + checksums from 2 parts + entire file (very slow for large files)
             """
         )
 
@@ -208,41 +211,37 @@ class Ui_MainWindow:
         self.mode_label.setText("Mode:")
         self.ordering_label.setText("Order:")
 
+        # Boost Mode Combo
+        #-----------------
         current_boost_index = self.boost_combo.currentIndex()
         self.boost_combo.clear()
 
-        boost_items = [
-            ("Same Size", BoostMode.SAME_SIZE),
-            ("Same Size + Ext", BoostMode.SAME_SIZE_PLUS_EXT),
-            ("Same Size + Name", BoostMode.SAME_SIZE_PLUS_FILENAME),
-        ]
-        for text, mode_enum in boost_items:
-            self.boost_combo.addItem(text, userData=mode_enum.value)
+        # Use Enum properties for consistent text and data
+        for mode in BoostMode:
+            self.boost_combo.addItem(mode.display_name, userData=mode.value)
 
+        # Restore selection if valid
         if 0 <= current_boost_index < self.boost_combo.count():
             self.boost_combo.setCurrentIndex(current_boost_index)
 
-        # Deduplication mode combo box
-        dedupe_mode_items = [
-            "Fast",
-            "Normal",
-            "Full"
-        ]
-        current_index = self.dedupe_mode_combo.currentIndex()
+        # Deduplication Mode Combo
+        #-----------------------------
+        current_mode_index = self.dedupe_mode_combo.currentIndex()
         self.dedupe_mode_combo.clear()
-        for i, text in enumerate(dedupe_mode_items):
-            mode_key = ["FAST", "NORMAL", "FULL"][i]
-            self.dedupe_mode_combo.addItem(text, userData=mode_key)
-        self.dedupe_mode_combo.setCurrentIndex(current_index)
 
-        # Ordering combo box
-        ordering_items = [
-            ("Shortest Path First", SortOrder.SHORTEST_PATH),
-            ("Shortest Filename First", SortOrder.SHORTEST_FILENAME)
-        ]
-        current_index = self.ordering_combo.currentIndex()
+        for mode in DeduplicationMode:
+            self.dedupe_mode_combo.addItem(mode.display_name, userData=mode.value)
+
+        if 0 <= current_mode_index < self.dedupe_mode_combo.count():
+            self.dedupe_mode_combo.setCurrentIndex(current_mode_index)
+
+        # Ordering Combo
+        #----------------
+        current_order_index = self.ordering_combo.currentIndex()
         self.ordering_combo.clear()
-        for text, sort_order in ordering_items:
-            self.ordering_combo.addItem(text, userData=sort_order)
-        if 0 <= current_index < self.ordering_combo.count():
-            self.ordering_combo.setCurrentIndex(current_index)
+
+        for sort_order in SortOrder:
+            self.ordering_combo.addItem(sort_order.display_name,userData=sort_order.value)
+
+        if 0 <= current_order_index < self.ordering_combo.count():
+            self.ordering_combo.setCurrentIndex(current_order_index)

@@ -301,11 +301,11 @@ class MainWindow(QMainWindow):
         ]
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
 
-        # Get mode and sort order from UI controls
+        # Get boost, mode and sort order from UI controls
         boost_value = self.ui.boost_combo.currentData()
         boost_mode = BoostMode(boost_value)
-        mode_key = self.ui.dedupe_mode_combo.currentData()
-        dedupe_mode = DeduplicationMode[mode_key]
+        mode_value = self.ui.dedupe_mode_combo.currentData()
+        dedupe_mode = DeduplicationMode(mode_value)
         sort_order = self.ui.ordering_combo.currentData()
 
         # Setup progress dialog

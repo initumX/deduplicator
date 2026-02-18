@@ -65,6 +65,15 @@ class SortOrder(Enum):
     SHORTEST_PATH = "shortest-path"
     SHORTEST_FILENAME = "shortest-filename"
 
+    @property
+    def display_name(self) -> str:
+        """Human-readable name for UI display."""
+        mapping = {
+            SortOrder.SHORTEST_PATH: "Shortest Path First",
+            SortOrder.SHORTEST_FILENAME: "Shortest Filename First",
+        }
+        return mapping.get(self, self.value)
+
 class BoostMode(Enum):
     """
     Boost mode for file grouping strategy.
