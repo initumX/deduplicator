@@ -9,6 +9,8 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 `pip install onlyone[gui]`
 
+Binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
+
 ### How to install and run
     ### First Way - use venv (virtual environment)
     1. Create python virtual environment and go there: 
@@ -120,8 +122,8 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
         pytest tests/ -v
 
     How to build with Pyinstaller
-             pyinstaller --noconfirm --clean --noconsole --copy-metadata onlyone --onefile \
-                            --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py 
+             pyinstaller --noconfirm --clean --noconsole --copy-metadata=onlyone --onefile \
+            --paths ./src --name=OnlyOne --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py 
 
     Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)
 
