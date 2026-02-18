@@ -69,8 +69,8 @@ class SortOrder(Enum):
     def display_name(self) -> str:
         """Human-readable name for UI display."""
         mapping = {
-            SortOrder.SHORTEST_PATH: "Shortest Path First",
-            SortOrder.SHORTEST_FILENAME: "Shortest Filename First",
+            SortOrder.SHORTEST_PATH: "Shortest Path",
+            SortOrder.SHORTEST_FILENAME: "Shortest Filename",
         }
         return mapping.get(self, self.value)
 
@@ -87,9 +87,9 @@ class BoostMode(Enum):
     def display_name(self) -> str:
         """Human-readable name for UI display."""
         mapping = {
-            BoostMode.SAME_SIZE: "Same Size",
-            BoostMode.SAME_SIZE_PLUS_EXT: "Same Size + Extension",
-            BoostMode.SAME_SIZE_PLUS_FILENAME: "Same Size + Filename",
+            BoostMode.SAME_SIZE: "Size",
+            BoostMode.SAME_SIZE_PLUS_EXT: "Size + Extension",
+            BoostMode.SAME_SIZE_PLUS_FILENAME: "Size + Filename",
         }
         return mapping.get(self, self.value)
 

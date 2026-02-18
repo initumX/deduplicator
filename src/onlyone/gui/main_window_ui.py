@@ -105,9 +105,9 @@ class Ui_MainWindow:
         self.boost_combo.setToolTip(
                 """
             Boost for initial file grouping
-        Same Size               = Compare only files of the same size
-        Same Size + Extension   = Compare only files of the same size and extension
-        Same Size + Filename    = Compare only files of the same size and filename
+        Size               = Compare only files of the same size
+        Size + Extension   = Compare only files of the same size and extension
+        Size + Filename    = Compare only files of the same size and filename
                 """
         )
 
@@ -138,7 +138,7 @@ class Ui_MainWindow:
         )
 
         self.keep_one_button = QPushButton(central_widget)
-        self.keep_one_button.setToolTip("Keep one file (the first) per group and delete the rest")
+        self.keep_one_button.setToolTip("Keep one file (the first) per group \nand move the rest to trash")
 
         self.about_button = QPushButton(central_widget)
         self.about_button.setToolTip("Show Help")
@@ -194,7 +194,7 @@ class Ui_MainWindow:
         self.select_dir_button.setText("Select Folder")
         self.root_dir_input.setPlaceholderText("Select Folder to scan")
         self.find_duplicates_button.setText("Find Duplicates")
-        self.keep_one_button.setText("Keep One (The first one) File Per Group")
+        self.keep_one_button.setText("Keep OnlyOne File Per Group")
         self.about_button.setText("Help/About")
         self.favourite_dirs_button.setText("Manage Priority Folders List")
 
