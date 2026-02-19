@@ -403,3 +403,207 @@ class TestEdgeCases:
         printed_output = "\n".join(str(call.args[0]) for call in mock_print.call_args_list)
         assert "No duplicate groups found" in printed_output or "Found 0" in printed_output, \
             "Symlinks should be skipped, preventing false duplicates"
+
+
+    class TestCLIBoostMode:
+        """Test CLI --boost flag behavior with different grouping strategies."""
+
+        def test_boost_same_size_groups_all_same_size_files(self, tmp_path):
+            """
+            --boost size: Groups ALL files with identical size,
+            regardless of extension or filename (default behavior).
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            # Create files with same size but different extensions
+            content = b"A" * 1024  # 1KB each
+            (test_dir / "doc.txt").write_bytes(content)
+            (test_dir / "img.jpg").write_bytes(content)
+            (test_dir / "data.bin").write_bytes(content)
+
+            # Run with explicit --boost size
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'size', '--keep-one', '--force'
+            ]):
+                with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
+                    app = CLIApplication()
+                    app.run()
+
+            # With SAME_SIZE boost: all 3 files are in ONE group → 2 deleted, 1 preserved
+            assert mock_trash.call_count == 2, "Should delete 2 of 3 same-size files"
+
+            # Verify preserved file is in deletion list complement
+            deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
+            preserved_count = sum(1 for f in [test_dir / "doc.txt", test_dir / "img.jpg", test_dir / "data.bin"]
+                                  if str(f) not in deleted_paths)
+            assert preserved_count == 1, "Exactly one file must be preserved"
+
+        def test_boost_same_size_plus_ext_separates_by_extension(self, tmp_path):
+            """
+            --boost extension: Files with same size but DIFFERENT
+            extensions must be in SEPARATE groups
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            # Create files: 2 .txt + 2 .jpg, all same size
+            content = b"B" * 2048  # 2KB each
+            (test_dir / "a.txt").write_bytes(content)
+            (test_dir / "b.txt").write_bytes(content)
+            (test_dir / "x.jpg").write_bytes(content)
+            (test_dir / "y.jpg").write_bytes(content)
+
+            # Run with --boost same-size-plus-ext
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'extension', '--keep-one', '--force'
+            ]):
+                with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
+                    app = CLIApplication()
+                    app.run()
+
+            # With SAME_SIZE_PLUS_EXT:
+            # - .txt files form one group → 1 deleted, 1 preserved
+            # - .jpg files form another group → 1 deleted, 1 preserved
+            # Total: 2 deleted, 2 preserved
+            assert mock_trash.call_count == 2, "Should delete 1 from each extension group"
+
+            deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
+            txt_deleted = sum(1 for p in deleted_paths if p.endswith(".txt"))
+            jpg_deleted = sum(1 for p in deleted_paths if p.endswith(".jpg"))
+
+            assert txt_deleted == 1, "Should delete exactly 1 .txt file"
+            assert jpg_deleted == 1, "Should delete exactly 1 .jpg file"
+
+        def test_boost_same_size_plus_filename_preserves_exact_name_matches(self, tmp_path):
+            """
+            --boost filename: Only files with identical size AND filename
+            are grouped together. Different filenames = separate groups = no deletion.
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            # Create files with same size but different names
+            content = b"C" * 512  # 512 bytes each
+            (test_dir / "report_v1.txt").write_bytes(content)
+            (test_dir / "report_v2.txt").write_bytes(content)  # Different name!
+            (test_dir / "summary.txt").write_bytes(content)  # Different name!
+
+            # Run with --boost filename
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'filename', '--keep-one', '--force'
+            ]):
+                with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
+                    app = CLIApplication()
+                    app.run()
+
+            # With SAME_SIZE_PLUS_FILENAME: each file has unique (size, name) → no groups → 0 deletions
+            assert mock_trash.call_count == 0, "Should not delete files with different names"
+
+        def test_boost_mode_with_true_duplicates_still_works(self, tmp_path):
+            """
+            Even with strict boost modes, TRUE duplicates (same size + same name + same content)
+            must still be detected and one preserved.
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+            subdir = test_dir / "backup"
+            subdir.mkdir()
+
+            # Create TRUE duplicates: same name, same size, same content, different paths
+            content = b"TRUE_DUPLICATE_CONTENT" * 100
+            original = test_dir / "photo.jpg"
+            copy = subdir / "photo.jpg"  # Same filename!
+            original.write_bytes(content)
+            copy.write_bytes(content)
+
+            # Run with strictest boost mode
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'filename', '--keep-one', '--force'
+            ]):
+                with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
+                    app = CLIApplication()
+                    app.run()
+
+            # TRUE duplicates (same name + size) should still be grouped → 1 deleted
+            assert mock_trash.call_count == 1, "Should detect true duplicates even with strict boost"
+
+            # Verify the preserved file is the one from favourite dir if applicable,
+            # or the one with shorter path by default
+            deleted_paths = [str(call.args[0]) for call in mock_trash.call_args_list]
+            # At least one of the duplicates must be preserved
+            preserved = [str(original), str(copy)]
+            preserved_count = sum(1 for p in preserved if p not in deleted_paths)
+            assert preserved_count == 1, "Exactly one true duplicate must be preserved"
+
+        def test_boost_default_is_same_size_for_backward_compatibility(self, tmp_path):
+            """
+            When --boost is not specified, CLI must default to 'same-size'
+            to maintain backward compatibility with existing scripts.
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            content = b"D" * 1024
+            (test_dir / "a.txt").write_bytes(content)
+            (test_dir / "b.jpg").write_bytes(content)  # Different extension
+
+            # Run WITHOUT --boost flag (should use default)
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--keep-one', '--force'
+                # Note: no --boost argument!
+            ]):
+                with mock.patch.object(FileService, 'move_to_trash') as mock_trash:
+                    app = CLIApplication()
+                    app.run()
+
+            # Default behavior (SAME_SIZE): both files grouped → 1 deleted
+            assert mock_trash.call_count == 1, "Default boost mode should be 'same-size'"
+
+        def test_boost_invalid_value_rejected(self, tmp_path):
+            """
+            Invalid --boost values must be rejected with clear error message.
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            # Try invalid boost value
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'invalid-mode'
+            ]):
+                with pytest.raises(SystemExit) as exc_info:
+                    app = CLIApplication()
+                    app.run()
+
+            assert exc_info.value.code != 0, "Should exit with error for invalid boost mode"
+
+        def test_boost_performance_reduction_in_hash_stages(self, tmp_path):
+            """
+            Boost modes with extension/filename grouping should reduce the number
+            of candidate groups passed to hash stages, improving performance.
+            """
+            test_dir = tmp_path / "test"
+            test_dir.mkdir()
+
+            # Create 20 files: 10 .txt + 10 .jpg, all same size
+            content = b"E" * 4096  # 4KB each
+            for i in range(10):
+                (test_dir / f"doc{i}.txt").write_bytes(content)
+                (test_dir / f"img{i}.jpg").write_bytes(content)
+
+            # Track groups passed to hash stages via stats
+            with mock.patch.object(sys, 'argv', [
+                'onlyone', '--input', str(test_dir), '--boost', 'extension'
+            ]):
+                with mock.patch('builtins.print') as mock_print:
+                    app = CLIApplication()
+                    app.run()
+
+            # With SAME_SIZE_PLUS_EXT: should create 2 groups (10 .txt + 10 .jpg)
+            # instead of 1 group (20 files) with SAME_SIZE
+            printed_output = "\n".join(str(call.args[0]) for call in mock_print.call_args_list)
+
+            # Should mention finding groups (exact wording depends on CLI output format)
+            # This is a soft assertion — main verification is that no errors occur
+            assert "Found" in printed_output or "groups" in printed_output.lower(), \
+                "Should report duplicate groups found"

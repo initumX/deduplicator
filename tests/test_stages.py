@@ -11,7 +11,8 @@ from onlyone.core.stages import (
     EndHashStage,
     FullHashStage,
     DeduplicationConfig,
-    HashStageBase
+    HashStageBase,
+    BoostMode
 )
 from onlyone.core.grouper import FileGrouperImpl
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
@@ -45,20 +46,148 @@ class TestDeduplicationConfig:
 class TestSizeStageImpl:
     """Test initial size-based grouping stage."""
 
-    def test_groups_files_by_size_filters_single_files(self):
-        """Size stage must return only groups with 2+ files of identical size."""
+    def test_boost_same_size_groups_all_same_size_files(self):
+        """
+        BoostMode.SAME_SIZE: Groups ALL files with identical size,
+        regardless of extension or filename.
+        """
         files = [
             File(path="/a.txt", size=1024),
-            File(path="/b.txt", size=1024),  # Same size → group
-            File(path="/c.txt", size=2048),  # Single file → filtered out
+            File(path="/b.jpg", size=1024),  # Different extension, same size
+            File(path="/c.png", size=1024),  # Different extension, same size
+            File(path="/d.txt", size=2048),  # Different size → excluded
         ]
         grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper)
+        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE)
         groups = stage.process(files)
+
+        # All three 1024-byte files should be in ONE group
         assert len(groups) == 1
         assert groups[0].size == 1024
+        assert len(groups[0].files) == 3
+        assert {f.path for f in groups[0].files} == {"/a.txt", "/b.jpg", "/c.png"}
+
+    def test_boost_same_size_plus_ext_separates_by_extension(self):
+        """
+        BoostMode.SAME_SIZE_PLUS_EXT: Files with same size but DIFFERENT
+        extensions must be in SEPARATE groups.
+        """
+        files = [
+            File(path="/a.txt", size=1024),
+            File(path="/b.txt", size=1024),  # Same size + same ext → same group
+            File(path="/c.jpg", size=1024),  # Same size + DIFFERENT ext → different group
+            File(path="/d.jpg", size=1024),  # Same size + same ext → same group as c.jpg
+        ]
+        grouper = FileGrouperImpl()
+        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        groups = stage.process(files)
+
+        # Should create TWO groups: one for .txt, one for .jpg
+        assert len(groups) == 2
+
+        # Find groups by extension
+        txt_group = next(g for g in groups if g.files[0].extension == ".txt")
+        jpg_group = next(g for g in groups if g.files[0].extension == ".jpg")
+
+        assert len(txt_group.files) == 2
+        assert {f.path for f in txt_group.files} == {"/a.txt", "/b.txt"}
+        assert len(jpg_group.files) == 2
+        assert {f.path for f in jpg_group.files} == {"/c.jpg", "/d.jpg"}
+
+    def test_boost_same_size_plus_filename_separates_by_name(self):
+        """
+        BoostMode.SAME_SIZE_PLUS_FILENAME: Files with same size but DIFFERENT
+        filenames must be in SEPARATE groups (even if extensions match).
+        """
+        files = [
+            File(path="/report.txt", size=1024),
+            File(path="/report.txt", size=1024),  # Exact duplicate name+size → same group
+            File(path="/summary.txt", size=1024),  # Same size+ext, DIFFERENT name → different group
+            File(path="/summary.txt", size=1024),  # Exact duplicate name+size → same group as above
+        ]
+        grouper = FileGrouperImpl()
+        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_FILENAME)
+        groups = stage.process(files)
+
+        # Should create TWO groups: one for "report.txt", one for "summary.txt"
+        assert len(groups) == 2
+
+        # Find groups by filename
+        report_group = next(g for g in groups if g.files[0].name == "report.txt")
+        summary_group = next(g for g in groups if g.files[0].name == "summary.txt")
+
+        assert len(report_group.files) == 2
+        assert len(summary_group.files) == 2
+
+    def test_boost_mode_handles_empty_extension_gracefully(self):
+        """
+        BoostMode.SAME_SIZE_PLUS_EXT must handle files without extensions correctly.
+        Files with empty extension should be grouped together.
+
+        Note: Single-file groups are filtered out by design (not duplicate candidates).
+        """
+        files = [
+            File(path="/README", size=512),  # No extension
+            File(path="/Makefile", size=512),  # No extension → same group as README
+            File(path="/config.txt", size=512),  # Has extension (alone → filtered out)
+        ]
+        grouper = FileGrouperImpl()
+        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        groups = stage.process(files)
+
+        # README and Makefile (no ext, same size) → ONE group
+        # config.txt has unique (size, ext) → filtered out (not a duplicate candidate)
+        assert len(groups) == 1
+        assert groups[0].size == 512
         assert len(groups[0].files) == 2
-        assert {f.path for f in groups[0].files} == {"/a.txt", "/b.txt"}
+        assert {f.name for f in groups[0].files} == {"README", "Makefile"}
+        assert all(f.extension == "" for f in groups[0].files)
+
+    def test_boost_mode_default_is_same_size(self):
+        """
+        If boost parameter is not specified, SizeStageImpl must default
+        to BoostMode.SAME_SIZE for backward compatibility.
+        """
+        files = [
+            File(path="/a.txt", size=1024),
+            File(path="/b.jpg", size=1024),  # Different extension
+        ]
+        grouper = FileGrouperImpl()
+        # Don't specify boost — should use default
+        stage = SizeStageImpl(grouper)
+        groups = stage.process(files)
+
+        # With default SAME_SIZE, both files should be in one group
+        assert len(groups) == 1
+        assert len(groups[0].files) == 2
+
+    def test_boost_mode_reduces_false_positives_for_performance(self):
+        """
+        Boost modes with extension/filename grouping should produce FEWER
+        candidate groups than size-only, reducing work for later hash stages.
+        """
+        # Create 10 files: 5 .txt and 5 .jpg, all same size
+        files = []
+        for i in range(5):
+            files.append(File(path=f"/doc{i}.txt", size=2048))
+            files.append(File(path=f"/img{i}.jpg", size=2048))
+
+        grouper = FileGrouperImpl()
+
+        # Size-only mode: all 10 files in ONE group → more hash work later
+        stage_size_only = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE)
+        groups_size_only = stage_size_only.process(files)
+        assert len(groups_size_only) == 1
+        assert len(groups_size_only[0].files) == 10
+
+        # Size+ext mode: 2 groups (5 .txt + 5 .jpg) → less hash work
+        stage_boost = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        groups_boost = stage_boost.process(files)
+        assert len(groups_boost) == 2
+        assert all(len(g.files) == 5 for g in groups_boost)
+
+
+
 
     def test_empty_input_returns_empty_list(self):
         """Size stage must handle empty file list gracefully."""
