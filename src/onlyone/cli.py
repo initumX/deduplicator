@@ -96,10 +96,11 @@ class CLIApplication:
         )
         parser.add_argument(
             "--extensions", "-x",
-            default="",
+            nargs="+",
+            default=[],
             type=str,
             metavar='',
-            help="Comma-separated file extensions to include (e.g., .jpg,.png)"
+            help="File extensions (space separated) to include (e.g., .jpg .png)"
         )
         parser.add_argument(
             "--priority-dirs", '-p',
@@ -108,7 +109,7 @@ class CLIApplication:
             type=str,
             metavar='',
             dest="priority_dirs",
-            help="Directories with files to prioritize when deleting duplicates"
+            help="Directories (space separated) with files to prioritize when deleting duplicates"
         )
 
         parser.add_argument(
@@ -118,7 +119,7 @@ class CLIApplication:
             type=str,
             metavar='',
             dest="excluded_dirs",
-            help="Excluded/ignored directories"
+            help="Excluded/ignored directories (space separated)"
         )
 
         # Deduplication options
@@ -237,28 +238,21 @@ class CLIApplication:
             # Parse extensions
             extensions = []
             if args.extensions:
-                extensions = [
-                    ext.strip().lower()
-                    for ext in args.extensions.split(",")
-                    if ext.strip()
-                ]
-                extensions = [
-                    ext if ext.startswith(".") else f".{ext}"
-                    for ext in extensions
-                ]
+                for ext in args.extensions:
+                    ext = ext.strip().lower()
+                    if ext:
+                        extensions.append(ext if ext.startswith(".") else f".{ext}")
 
-            # Parse priority directories from CLI: support space-separated AND comma-separated
+            # Parse priority directories from CLI: comma-separated
             # convert it to internal favourite_dirs format for core engine
             favourite_dirs = []
             for item in args.priority_dirs:
-                favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
-            favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
+                favourite_dirs.append(str(Path(item.strip()).resolve()))
 
             # Parse excluded directories: normalize paths for consistency with core engine
             excluded_dirs = []
             for item in args.excluded_dirs:
-                excluded_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
-            excluded_dirs = [str(Path(d).resolve()) for d in excluded_dirs]
+                excluded_dirs.append(str(Path(item.strip()).resolve()))
 
             # Map CLI sort option directly to core SortOrder enum values
             sort_order = SortOrder(args.sort)
