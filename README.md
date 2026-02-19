@@ -1,5 +1,5 @@
 
-# [OnlyOne](https://initumx.github.io/onlyone/)
+# [OnlyOne](https://github.com/initumX/onlyone)
 
 ![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone246.jpg)
 
@@ -100,8 +100,24 @@ Binary for linux and windows are available in [github release](https://github.co
     -x, --extensions,    extension filter(comma separated)
     -p, --priority-dirs  priority dirs(comma or space separated)
 
-    --mode [fast, normal, full]                   searching mode (normal by default)
-    --sort [shortest-path, shortest-filename]     sorting inside a group (shortest-path by default)
+     
+     --boost {size,extension,filename}      Boost (rule for initial file grouping: this is how duplicates look):
+                                            size       : Group files of the same size only (default)
+                                            extension  : Group files of the same size and extension
+                                            filename   : Group files of the same size and filename
+                                            -------------
+                                            * Groups formed here will be checked (hash-checking) in further stages
+
+    --mode {fast, normal, full}             checking mode (normal by default)
+                                            fast    : checks only by hashsum from the front part of file
+                                            normal  : checks by hashsum from 3 parts of file
+                                            full    : checks by hashsum from 2 part + whole file hashsum
+                                            -----------
+                                            * Normal/full modes work step by step: first check all groups
+                                            by frontal hash, filter dead groups(< 2 files), then check all
+                                            groups by middle hash, filter dead groups, etc.
+
+    --sort {shortest-path, shortest-filename}     sorting inside a group (shortest-path by default)
 
     --keep-one            Keep one file/per group and move the rest to trash (one confirmation)
     --keep-one --force    Keep one file/per group and move the rest to trash (no confirmation)
