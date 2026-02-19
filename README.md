@@ -1,7 +1,7 @@
 
 # [OnlyOne](https://github.com/initumX/onlyone)
 
-![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone246.jpg)
+![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
