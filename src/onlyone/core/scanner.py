@@ -8,7 +8,7 @@ Features:
 - Uses pathlib.Path for robust, cross-platform path handling
 - Recursively scans directories
 - Applies size and extension filters
-- Returns a FileCollection containing scanned files
+- Returns a List containing scanned files
 """
 
 import os
@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Local imports
-from onlyone.core.models import File, FileCollection
+from onlyone.core.models import File
 from onlyone.core.interfaces import FileScanner
 
 class FileScannerImpl(FileScanner):
@@ -53,10 +53,10 @@ class FileScannerImpl(FileScanner):
 
     def scan(self,
             stopped_flag: Optional[Callable[[], bool]] = None,
-            progress_callback: Optional[Callable[[str, int, object], None]] = None) -> FileCollection:
+            progress_callback: Optional[Callable[[str, int, object], None]] = None) -> List[File]:
         """
         Single-pass scanner with real-time progress updates and debug logging.
-        Returns a filtered collection of files found in the directory tree.
+        Returns a filtered list of files found in the directory tree.
         """
         logger.debug("Starting scan operation")
         logger.debug(f"Root directory: {self.root_dir}")
@@ -69,7 +69,7 @@ class FileScannerImpl(FileScanner):
         # Check for cancellation before starting
         if stopped_flag and stopped_flag():
             logger.debug("Scan cancelled before start")
-            return FileCollection([])
+            return []
 
         # Validate root directory exists and is accessible
         if not root_path.exists():
@@ -94,7 +94,7 @@ class FileScannerImpl(FileScanner):
                 # Check for cancellation at each directory level
                 if stopped_flag and stopped_flag():
                     logger.debug("Scan interrupted by user")
-                    return FileCollection([])
+                    return []
 
                 # Pre-filter subdirectories BEFORE os.walk enters them
                 dirs[:] = [d for d in dirs if self._prefilter_dirs(Path(root) / d)]
@@ -129,7 +129,7 @@ class FileScannerImpl(FileScanner):
             logger.exception("Unexpected error during scanning")
             raise
 
-        return FileCollection(found_files)
+        return found_files
 
     @staticmethod
     def _is_system_trash(path: Path) -> bool:

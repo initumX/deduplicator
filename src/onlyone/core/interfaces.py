@@ -24,7 +24,6 @@ from onlyone.core.models import (
     DeduplicationParams,
     DuplicateGroup,
     DeduplicationStats,
-    FileCollection,
 )
 
 
@@ -56,13 +55,13 @@ class FileScanner(Protocol):
     Interface for scanning file systems and collecting file metadata.
 
     Methods:
-        scan: Scans and returns a structured collection of files.
+        scan: Scans and returns list of files.
     """
     def scan(
         self,
         stopped_flag: Optional[Callable[[], bool]] = None,
         progress_callback: Optional[Callable[[str, int, object], None]] = None
-    ) -> FileCollection:
+    ) -> List[File]:
         """
         Scan files from the configured directory.
 
@@ -71,7 +70,7 @@ class FileScanner(Protocol):
             progress_callback: Optional callback for reporting progress (current, total).
 
         Returns:
-            FileCollection containing all scanned files matching filters.
+            List containing all scanned files matching filters.
         """
         ...
 

@@ -20,7 +20,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -57,7 +57,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -88,7 +88,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -130,7 +130,7 @@ class TestDeduplicatorIntegration:
             extensions=[".bin"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
 
         params = DeduplicationParams(
             root_dir=str(temp_dir),
@@ -168,7 +168,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -205,7 +205,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -236,7 +236,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
@@ -264,7 +264,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=str(temp_dir),
             min_size_bytes=0,
@@ -367,7 +367,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=str(temp_dir),
             min_size_bytes=0,
@@ -399,7 +399,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,

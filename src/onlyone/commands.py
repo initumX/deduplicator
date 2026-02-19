@@ -67,12 +67,10 @@ class DeduplicationCommand:
             favourite_dirs=params.favourite_dirs
         )
 
-        file_collection = scanner.scan(
+        self._files = scanner.scan(
             stopped_flag=stopped_flag,
             progress_callback=progress_callback
         )
-
-        self._files = file_collection.files
 
         if not self._files:
             raise RuntimeError("No files found matching filters")

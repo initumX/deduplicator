@@ -305,11 +305,11 @@ class TestFilesDeletedDuringOperation:
             collection = scanner.scan(stopped_flag=lambda: False)
 
         # Should find 9 files (10 created - 1 deleted during scan)
-        assert len(collection.files) == 9, (
-            f"Expected 9 files after mid-scan deletion, found {len(collection.files)}. "
+        assert len(collection) == 9, (
+            f"Expected 9 files after mid-scan deletion, found {len(collection)}. "
             "Scanner failed to handle disappearing files gracefully."
         )
-        found_names = {Path(f.path).name for f in collection.files}
+        found_names = {Path(f.path).name for f in collection}
         assert "file5.txt" not in found_names, "Deleted file should not appear in results"
         assert len(deleted_during_scan) == 1, "Expected exactly one file deleted during scan"
 
@@ -350,8 +350,8 @@ class TestCancellationResourceCleanup:
             collection = scanner.scan(stopped_flag=stopped_flag)
 
             # Should have partial results (not all 50 files)
-            assert 0 < len(collection.files) < 50, (
-                f"Cycle {cycle}: unexpected file count {len(collection.files)}"
+            assert 0 < len(collection) < 50, (
+                f"Cycle {cycle}: unexpected file count {len(collection)}"
             )
 
         # No assertion on memory usage (hard to measure portably),

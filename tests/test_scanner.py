@@ -6,7 +6,6 @@ from pathlib import Path
 import sys
 import pytest
 from onlyone.core import FileScannerImpl
-from onlyone.core.models import File
 
 
 class TestFileScannerImpl:
@@ -21,8 +20,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        collection = scanner.scan(stopped_flag=lambda: False)
-        files = collection.files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 7
         assert all(f.path.endswith(".txt") for f in files)
         assert all(f.size > 0 for f in files)
@@ -36,7 +34,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 4
         assert all(f.size >= 1025 for f in files)
 
@@ -49,7 +47,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 4
         assert all(f.size <= 2000 for f in files)
 
@@ -62,7 +60,7 @@ class TestFileScannerImpl:
             extensions=[".tmp"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert files[0].path.endswith("ignore.tmp")
 
@@ -75,7 +73,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         subdir_files = [f for f in files if "subdir" in f.path]
         assert len(subdir_files) == 1
         assert "dup_in_subdir.txt" in subdir_files[0].path
@@ -89,7 +87,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert not any("empty.txt" in f.path for f in files)
 
     def test_scanner_skips_symlinks(self, temp_dir):
@@ -109,7 +107,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         if symlink_created:
             assert len(files) == 1
             assert files[0].path == str(real_file)
@@ -124,10 +122,10 @@ class TestFileScannerImpl:
         denied_file = temp_dir / "denied.txt"
         denied_file.write_bytes(b"secret")
         original_stat = Path.stat
-        def mocked_stat(self, *args, **kwargs):
-            if str(self) == str(denied_file):
-                raise PermissionError(f"Permission denied: {self}")
-            return original_stat(self, *args, **kwargs)
+        def mocked_stat(_, *args, **kwargs):
+            if str(_) == str(denied_file):
+                raise PermissionError(f"Permission denied: {_}")
+            return original_stat(_, *args, **kwargs)
         monkeypatch.setattr(Path, 'stat', mocked_stat)
         scanner = FileScannerImpl(
             root_dir=str(temp_dir),
@@ -136,7 +134,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "accessible.txt" in files[0].path
 
@@ -155,7 +153,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 4
         sizes = sorted([f.size for f in files])
         assert sizes == [1024, 1025, 2047, 2048]
@@ -174,7 +172,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.txt" in files[0].path
         assert "$Recycle.Bin" not in files[0].path
@@ -193,7 +191,7 @@ class TestFileScannerImpl:
             extensions=[".jpg"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.jpg" in files[0].path
         assert ".Trash" not in files[0].path
@@ -212,7 +210,7 @@ class TestFileScannerImpl:
             extensions=[".pdf"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.pdf" in files[0].path
         assert "Trash" not in files[0].path
@@ -236,7 +234,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         files_by_name = {Path(f.path).name: f for f in files}
         assert files_by_name["root.txt"].path_depth >= 0
         assert files_by_name["level1.txt"].path_depth == files_by_name["root.txt"].path_depth + 1
@@ -257,7 +255,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[str(fav_dir)]
         )
-        files = scanner.scan(stopped_flag=lambda: False).files
+        files = scanner.scan(stopped_flag=lambda: False)
         files_by_name = {Path(f.path).name: f for f in files}
         assert files_by_name["fav.txt"].is_from_fav_dir is True
         assert files_by_name["normal.txt"].is_from_fav_dir is False
@@ -280,7 +278,7 @@ class TestFileScannerImpl:
             extensions=[".txt"],
             favourite_dirs=[]
         )
-        files = scanner.scan(stopped_flag=stopped_flag).files
+        files = scanner.scan(stopped_flag=stopped_flag)
         assert call_count <= 5
         assert len(files) < 10
 

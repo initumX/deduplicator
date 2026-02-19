@@ -257,62 +257,6 @@ class DeduplicationStats:
 
         return "\n".join(lines)
 
-
-# =============================
-# Utility Classes
-# =============================
-
-class FileCollection:
-    """
-    A utility class for working with collections of files.
-    Provides filtering, sorting, and transformation operations.
-    """
-
-    def __init__(self, files: List[File]):
-        self.files = files
-
-    def filter_by_size(self, min_size: Optional[int] = None, max_size: Optional[int] = None) -> 'FileCollection':
-        filtered = [
-            f for f in self.files
-            if (min_size is None or f.size >= min_size) and
-               (max_size is None or f.size <= max_size)
-        ]
-        return FileCollection(filtered)
-
-    def filter_by_extension(self, extensions: List[str]) -> 'FileCollection':
-        def matches_extension(path: str) -> bool:
-            base_name = os.path.basename(path)
-            if base_name.startswith("."):
-                return False
-            parts = base_name.split('.')
-            for i in range(1, len(parts)):
-                candidate = "." + ".".join(parts[i:])
-                if any(candidate.lower() == ext.lower() for ext in extensions):
-                    return True
-            return False
-
-        filtered = [f for f in self.files if matches_extension(f.path)]
-        return FileCollection(filtered)
-
-    def sort_by_size_desc(self) -> 'FileCollection':
-        sorted_files = sorted(self.files, key=lambda f: -f.size)
-        return FileCollection(sorted_files)
-
-    def get_paths(self) -> List[str]:
-        return [f.path for f in self.files]
-
-    def __len__(self):
-        return len(self.files)
-
-    def __bool__(self):
-        return bool(self.files)
-
-    def __iter__(self):
-        return iter(self.files)
-
-    def __repr__(self):
-        return f"<FileCollection({len(self.files)} files)>"
-
 """
 DTO for deduplication parameters with built-in validation.
 Interface-agnostic — used by both GUI and CLI.
