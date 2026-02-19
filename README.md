@@ -64,6 +64,9 @@ Binary for linux and windows are available in [github release](https://github.co
     * by size and extension: Compare only files of the same size and extension.
     * by size and filename: Compare only files of the same size and filename
 
+### NEW FEATURE [v.2.4.7]: Excluded dirs implemented
+    Now you can set Excluded/ignored dirs both using GUI or cli (using --excluded-dirs key)
+
 ### Deleting all duplicates at once
     The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.
     ---
@@ -97,8 +100,9 @@ Binary for linux and windows are available in [github release](https://github.co
     -i, --input          input folder
     -m, --min-size       min size filter
     -M, --max-size       max size filter
-    -x, --extensions,    extension filter(comma separated)
-    -p, --priority-dirs  priority dirs(comma or space separated)
+    -x, --extensions     extension filter(space separated)
+    -p, --priority-dirs  priority dirs(space separated)
+    --excluded-dirs      excluded/ignored dirs (space separated)
 
      
      --boost {size,extension,filename}      Boost (rule for initial file grouping: this is how duplicates look):
