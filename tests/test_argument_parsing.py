@@ -26,18 +26,28 @@ class TestArgumentParsing:
         assert args.input == "/tmp/test"
 
     def test_extensions_flag_variants(self):
-        """Test both long (--extensions) and short (-x) forms."""
+        """Test both long (--extensions) and short (-x) forms with space-separated values."""
         app = CLIApplication()
 
-        # Long form with comma-separated values
-        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--extensions', '.jpg,.png']):
+        # Long form with space-separated values
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--extensions', '.jpg', '.png']):
             args = app.parse_args()
-        assert args.extensions == ".jpg,.png"
+        assert args.extensions == [".jpg", ".png"]
 
-        # Short form
-        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '-x', '.jpg,.png,.gif']):
+        # Short form with space-separated values
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '-x', '.jpg', '.png', '.gif']):
             args = app.parse_args()
-        assert args.extensions == ".jpg,.png,.gif"
+        assert args.extensions == [".jpg", ".png", ".gif"]
+
+        # Test with extensions without dots (should be normalized in create_params)
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '-x', 'jpg', 'png']):
+            args = app.parse_args()
+        assert args.extensions == ["jpg", "png"]
+
+        # Test empty extensions (default)
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp']):
+            args = app.parse_args()
+        assert args.extensions == []
 
     def test_priority_dirs_flag_variants(self):
         """Test both short (-p) and alternative (--priority-dirs) forms."""
@@ -182,10 +192,10 @@ class TestParamsCreation:
     """Test creation of DeduplicationParams from CLI arguments."""
 
     def test_create_params_with_extensions(self, tmp_path):
-        """Test that extensions are correctly parsed from comma-separated string."""
+        """Test that extensions are correctly parsed from space-separated values."""
         app = CLIApplication()
         with mock.patch.object(sys, 'argv', [
-            'onlyone', '-i', str(tmp_path), '-x', '.jpg,.PNG,.gif'
+            'onlyone', '-i', str(tmp_path), '-x', '.jpg', '.PNG', '.gif'
         ]):
             args = app.parse_args()
 
