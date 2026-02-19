@@ -63,7 +63,7 @@ class CLIApplication:
         sys.stderr.reconfigure(encoding='utf-8')
 
     @staticmethod
-    def parse_args() -> argparse.Namespace:
+    def parse_args(args=None) -> argparse.Namespace:
         """Parse and validate command-line arguments."""
         parser = argparse.ArgumentParser(
             description="OnlyOne — Fast duplicate file finder with safe deletion",
@@ -109,6 +109,16 @@ class CLIApplication:
             metavar='',
             dest="priority_dirs",
             help="Directories with files to prioritize when deleting duplicates"
+        )
+
+        parser.add_argument(
+            "--excluded-dirs", '-e',
+            nargs="+",
+            default=[],
+            type=str,
+            metavar='',
+            dest="excluded_dirs",
+            help="Excluded/ignored directories"
         )
 
         # Deduplication options
@@ -163,7 +173,7 @@ class CLIApplication:
             help="Show detailed statistics and progress"
         )
 
-        return parser.parse_args()
+        return parser.parse_args(args)
 
     def validate_args(self, args: argparse.Namespace) -> None:
         """Validate command-line arguments before execution."""
@@ -203,6 +213,14 @@ class CLIApplication:
             elif not fav_path.is_dir():
                 self.warning(f"Priority path is not a directory: {fav_dir}")
 
+        # Validate excluded directories
+        for excl_dir in args.excluded_dirs:
+            excl_path = Path(excl_dir).resolve()
+            if not excl_path.exists():
+                self.warning(f"Excluded directory not found: {excl_dir}")
+            elif not excl_path.is_dir():
+                self.warning(f"Excluded path is not a directory: {excl_dir}")
+
         # Validate deduplication mode
         if args.mode not in DEDUP_MODE_ALIASES:
             self.error_exit(
@@ -236,6 +254,12 @@ class CLIApplication:
                 favourite_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
             favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs]
 
+            # Parse excluded directories: normalize paths for consistency with core engine
+            excluded_dirs = []
+            for item in args.excluded_dirs:
+                excluded_dirs.extend([d.strip() for d in item.split(",") if d.strip()])
+            excluded_dirs = [str(Path(d).resolve()) for d in excluded_dirs]
+
             # Map CLI sort option directly to core SortOrder enum values
             sort_order = SortOrder(args.sort)
 
@@ -248,6 +272,7 @@ class CLIApplication:
                 max_size_bytes=max_size_bytes,
                 extensions=extensions,
                 favourite_dirs=favourite_dirs,
+                excluded_dirs=excluded_dirs,
                 sort_order=sort_order,
                 boost=boost_mode,
                 mode=mode

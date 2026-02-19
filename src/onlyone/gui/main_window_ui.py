@@ -89,15 +89,36 @@ class Ui_MainWindow:
         self.favourite_group.setLayout(favourite_layout)
         self.favourite_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        # Sync height with filters group
-        MainWindow.updateGeometry()
-        self.favourite_group.setMaximumHeight(self.filters_group.sizeHint().height() + 20)
 
-        # Top-level layout: filters + favourites side by side
+        # Excluded folders
+        self.excluded_group = QGroupBox(central_widget)
+        self.excluded_dirs_button = QPushButton(central_widget)
+        self.excluded_dirs_button.setToolTip(
+            "Files from these folders will be excluded from scanning."
+        )
+        self.excluded_list_widget = QListWidget(central_widget)
+        self.excluded_list_widget.setContentsMargins(0, 0, 0, 0)
+        self.excluded_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.excluded_list_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.excluded_list_widget.setStyleSheet("padding: 0px; margin: 0px;")
+
+        excluded_layout = QVBoxLayout()
+        excluded_layout.addWidget(self.excluded_dirs_button)
+        excluded_layout.addWidget(self.excluded_list_widget)
+        self.excluded_group.setLayout(excluded_layout)
+        self.excluded_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.excluded_group.setMaximumHeight(self.filters_group.sizeHint().height() + 20)
+
+        # Top-level layout: filters + favourites + excluded side by side
         level_layout = QHBoxLayout()
         level_layout.addWidget(self.filters_group)
         level_layout.addWidget(self.favourite_group)
+        level_layout.addWidget(self.excluded_group)
         level_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        # Sync height with filters group
+        MainWindow.updateGeometry()
+        self.favourite_group.setMaximumHeight(self.filters_group.sizeHint().height() + 20)
 
         # Boost Mode Controls
         self.boost_label = QLabel(central_widget)
@@ -197,10 +218,12 @@ class Ui_MainWindow:
         self.keep_one_button.setText("Keep OnlyOne File Per Group")
         self.about_button.setText("Help/About")
         self.favourite_dirs_button.setText("Manage Priority Folders List")
+        self.excluded_dirs_button.setText("Manage Excluded Folders List")
 
         # Group box titles
         self.filters_group.setTitle("Filters")
         self.favourite_group.setTitle("Priority Folders")
+        self.excluded_group.setTitle("Excluded Folders")
 
         # Labels
         self.label_root_folder.setText("Root Folder")
@@ -218,7 +241,7 @@ class Ui_MainWindow:
 
         # Use Enum properties for consistent text and data
         for mode in BoostMode:
-            self.boost_combo.addItem(mode.display_name, userData=mode.value)
+            self.boost_combo.addItem(mode.display_name, userData=mode)
 
         # Restore selection if valid
         if 0 <= current_boost_index < self.boost_combo.count():
@@ -230,7 +253,7 @@ class Ui_MainWindow:
         self.dedupe_mode_combo.clear()
 
         for mode in DeduplicationMode:
-            self.dedupe_mode_combo.addItem(mode.display_name, userData=mode.value)
+            self.dedupe_mode_combo.addItem(mode.display_name, userData=mode)
 
         if 0 <= current_mode_index < self.dedupe_mode_combo.count():
             self.dedupe_mode_combo.setCurrentIndex(current_mode_index)
@@ -241,7 +264,7 @@ class Ui_MainWindow:
         self.ordering_combo.clear()
 
         for sort_order in SortOrder:
-            self.ordering_combo.addItem(sort_order.display_name,userData=sort_order.value)
+            self.ordering_combo.addItem(sort_order.display_name,userData=sort_order)
 
         if 0 <= current_order_index < self.ordering_combo.count():
             self.ordering_combo.setCurrentIndex(current_order_index)

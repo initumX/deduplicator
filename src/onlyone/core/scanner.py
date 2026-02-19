@@ -43,13 +43,15 @@ class FileScannerImpl(FileScanner):
         min_size: Optional[int] = None,
         max_size: Optional[int] = None,
         extensions: Optional[List[str]] = None,
-        favourite_dirs: Optional[List[str]] = None
+        favourite_dirs: Optional[List[str]] = None,
+        excluded_dirs: Optional[List[str]] = None
     ):
         self.root_dir = root_dir
         self.min_size = min_size
         self.max_size = max_size
         self.extensions = [ext.lower() for ext in extensions] if extensions else []
-        self.favourite_dirs = [os.path.normpath(d) for d in favourite_dirs] if favourite_dirs else []
+        self.favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs] if favourite_dirs else []
+        self.excluded_dirs = [str(Path(d).resolve()) for d in excluded_dirs] if excluded_dirs else []
 
     def scan(self,
             stopped_flag: Optional[Callable[[], bool]] = None,
@@ -160,11 +162,28 @@ class FileScannerImpl(FileScanner):
             return False
 
     @staticmethod
-    def _prefilter_dirs(path: Path) -> bool:
+    def _is_excluded_directory(path: Path, excluded_dirs: List[str]) -> bool:
+        """Check if path is within an excluded directory."""
+        try:
+            path_str = str(path.resolve(strict=False))
+            for excluded_dir in excluded_dirs:
+                normalized_excluded = os.path.normpath(excluded_dir)
+                if path_str.startswith(normalized_excluded + os.sep) or \
+                        path_str == normalized_excluded:
+                    return True
+            return False
+        except (OSError, ValueError):
+            return False
+
+    def _prefilter_dirs(self, path: Path) -> bool:
         """Pre-filter directories: skip system trash and inaccessible locations."""
         # Skip system trash directories to avoid rescanning deleted files
         if FileScannerImpl._is_system_trash(path):
             logger.debug(f"Skipping system trash directory: {path}")
+            return False
+
+        if self.excluded_dirs and self._is_excluded_directory(path, self.excluded_dirs):
+            logger.debug(f"Skipping excluded directory: {path}")
             return False
 
         # Skip inaccessible directories

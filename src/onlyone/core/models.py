@@ -273,6 +273,7 @@ class DeduplicationParams:
     max_size_bytes: int
     extensions: List[str] = field(default_factory=list)
     favourite_dirs: List[str] = field(default_factory=list)
+    excluded_dirs: List[str] = field(default_factory=list)
     mode: DeduplicationMode = DeduplicationMode.NORMAL
     sort_order: SortOrder = SortOrder.SHORTEST_PATH
     boost: BoostMode = field(default=BoostMode.SAME_SIZE)
@@ -305,6 +306,7 @@ class DeduplicationParams:
             max_size_str: str,
             extensions_str: str = "",
             favourite_dirs: Optional[List[str]] = None,
+            excluded_dirs: Optional[List[str]] = None,
             mode: DeduplicationMode = DeduplicationMode.NORMAL,
             boost: BoostMode = BoostMode.SAME_SIZE,
     ) -> 'DeduplicationParams':
@@ -325,6 +327,7 @@ class DeduplicationParams:
             max_size_bytes=max_size,
             extensions=ext_list,
             favourite_dirs=favourite_dirs or [],
+            excluded_dirs=excluded_dirs or [],
             mode=mode,
             boost=boost,
         )

@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool
-from onlyone.core.models import DeduplicationMode, BoostMode, DeduplicationParams
+from onlyone.core.models import DeduplicationParams
 from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.files = []
         self.duplicate_groups = []
         self.favourite_dirs = []
+        self.excluded_dirs = []
         self.settings_manager = SettingsManager()
         self.worker = None  # Holds reference to current worker for cancellation
         self.progress_dialog = None
@@ -62,6 +63,7 @@ class MainWindow(QMainWindow):
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
         self.ui.favourite_dirs_button.clicked.connect(self.select_favourite_dirs)
+        self.ui.excluded_dirs_button.clicked.connect(self.select_excluded_dirs)
         self.ui.find_duplicates_button.clicked.connect(self.start_deduplication)
         self.ui.keep_one_button.clicked.connect(self.keep_one_file_per_group)
         self.ui.groups_list.delete_requested.connect(self.handle_delete_files)
@@ -110,6 +112,20 @@ class MainWindow(QMainWindow):
                 self,
                 "Success",
                 f"Priority Folders Updated: {len(self.favourite_dirs)}"
+            )
+
+    def select_excluded_dirs(self):
+        from onlyone.gui.custom_widgets.excluded_dirs_dialog import ExcludedDirsDialog
+        dialog = ExcludedDirsDialog(self, self.excluded_dirs)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.excluded_dirs = dialog.get_selected_dirs()
+            self.ui.excluded_list_widget.clear()
+            for path in self.excluded_dirs:
+                self.ui.excluded_list_widget.addItem(path)
+            QMessageBox.information(
+                self,
+                "Success",
+                f"Excluded Folders Updated: {len(self.excluded_dirs)}"
             )
 
     def keep_one_file_per_group(self):
@@ -302,10 +318,8 @@ class MainWindow(QMainWindow):
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
 
         # Get boost, mode and sort order from UI controls
-        boost_value = self.ui.boost_combo.currentData()
-        boost_mode = BoostMode(boost_value)
-        mode_value = self.ui.dedupe_mode_combo.currentData()
-        dedupe_mode = DeduplicationMode(mode_value)
+        boost_mode = self.ui.boost_combo.currentData()
+        dedupe_mode = self.ui.dedupe_mode_combo.currentData()
         sort_order = self.ui.ordering_combo.currentData()
 
         # Setup progress dialog
@@ -329,6 +343,7 @@ class MainWindow(QMainWindow):
             max_size_bytes=max_size,
             extensions=extensions,
             favourite_dirs=self.favourite_dirs,
+            excluded_dirs=self.excluded_dirs,
             mode=dedupe_mode,
             sort_order=sort_order,
             boost=boost_mode
@@ -424,6 +439,7 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("extensions", self.ui.extension_filter_input.text())
         self.settings_manager.save_settings("splitter_sizes", list(self.ui.splitter.sizes()))
         self.settings_manager.save_settings("favourite_dirs", self.favourite_dirs)
+        self.settings_manager.save_settings("excluded_dirs", self.excluded_dirs)
         self.settings_manager.save_settings("ordering_mode", self.ui.ordering_combo.currentIndex())
 
     def restore_settings(self):
@@ -451,6 +467,16 @@ class MainWindow(QMainWindow):
         self.ui.favourite_list_widget.clear()
         for path in self.favourite_dirs:
             self.ui.favourite_list_widget.addItem(path)
+
+        saved_excluded = self.settings_manager.load_settings("excluded_dirs", [])
+        if isinstance(saved_excluded, str):
+            saved_excluded = [d.strip() for d in saved_excluded.split(";") if d.strip()]
+        elif not isinstance(saved_excluded, list):
+            saved_excluded = []
+        self.excluded_dirs = saved_excluded
+        self.ui.excluded_list_widget.clear()
+        for path in self.excluded_dirs:
+            self.ui.excluded_list_widget.addItem(path)
 
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
         self.ui.ordering_combo.setCurrentIndex(ordering_index)
