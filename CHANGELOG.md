@@ -11,3 +11,9 @@
 - Use count-based progress throttling in scanner
 - Implemented "Boost" logic for initial grouping
 - improved code consistency
+
+### [2.4.7] - 20 Feb 2026
+- refactor(core): removed FileCollection abstraction
+- Implemented "Excluded dirs" functionality
+- Removed using comma as separator in CLI
+- Fixed some issues
