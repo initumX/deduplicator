@@ -134,7 +134,7 @@ class CLIApplication:
         parser.add_argument(
             "--boost",
             choices=BOOST_CHOICES,
-            default="same-size",
+            default="size",
             type=str,
             help=BOOST_HELP_TEXT
         )
