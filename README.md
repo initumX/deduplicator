@@ -71,7 +71,7 @@ Options:
 `-x, --extensions`     extension filter(space separated)  
 `-p, --priority-dirs`  priority dirs(space separated)  
 `--excluded-dirs`     excluded/ignored dirs (space separated)  
-`--boost {size,extension,filename}`  Rule for initial file grouping:  
+`--boost {size,extension,filename,fuzzy}`  Rule for initial file grouping:  
 * `size` Group files of the same size only (default)  
 * `extension`  Group files of the same size and extension  
 * `filename`   Group files of the same size and filename  
