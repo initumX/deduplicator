@@ -15,7 +15,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
   3. Install onlyone into it: `pip install onlyone[gui]`
   4. Run the app: `onlyone-gui`  or `onlyone`(for cli)
 
-If you don't want install it on venv, binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
+Binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
 
 ### Features
 * Filtering by file size and extension
