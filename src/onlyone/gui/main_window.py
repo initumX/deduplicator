@@ -312,7 +312,7 @@ class MainWindow(QMainWindow):
 
         # Parse extensions
         extensions = [
-            ext.strip() for ext in self.ui.extension_filter_input.text().split(",")
+            ext.strip() for ext in self.ui.extension_filter_input.text().split()
             if ext.strip()
         ]
         extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
