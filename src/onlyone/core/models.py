@@ -70,7 +70,7 @@ class SortOrder(Enum):
         """Human-readable name for UI display."""
         mapping = {
             SortOrder.SHORTEST_PATH: "Shortest Path",
-            SortOrder.SHORTEST_FILENAME: "Shortest Filename",
+            SortOrder.SHORTEST_FILENAME: "Shortest f-name",
         }
         return mapping.get(self, self.value)
 
