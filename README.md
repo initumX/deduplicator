@@ -82,7 +82,7 @@ Options:
 `-x, --extensions`     extension filter(space separated)  
 `-p, --priority-dirs`  priority dirs(space separated)  
 `--excluded-dirs`     excluded/ignored dirs (space separated)  
-`--boost {size,extension,filename}`  Rule for initial file grouping:
+`--boost {size,extension,filename}`  Rule for initial file grouping:  
 * `size` Group files of the same size only (default)  
 * `extension`  Group files of the same size and extension  
 * `filename`   Group files of the same size and filename  
@@ -94,12 +94,11 @@ Options:
 * `normal`  checks by hashsum from 3 parts of file  
 * `full`    checks by hashsum from 2 part + whole file hashsum  
 
-`--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)
+`--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)  
 `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
 `--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
 `--verbose, -v`         Show detailed statistics and progress  
 `--help, -h`            Show help file  
----
 
 ### TESTS
 `pytest tests/ -v` 
