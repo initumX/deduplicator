@@ -15,6 +15,7 @@ BOOST_HELP_TEXT = (
     "  size       : Compare only files of the same size\n"
     "  extension  : Compare files of the same size and extension\n"
     "  filename   : Compare files of the same size and filename\n"
+    "  fuzzy      : Compare files of the same size and similar filename\n"
 
     "Example    : %(prog)s -i ~/Downloads --boost filename -m 500K -M 10M -x .jpg\n"
 )
