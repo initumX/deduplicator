@@ -1,7 +1,8 @@
 
 # [OnlyOne](https://github.com/initumX/onlyone)
 
-![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)
+![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)  
+[CHANGELOG](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
@@ -9,53 +10,34 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 
 `pip install onlyone[gui]`
 
-Binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
+## How to install and run
+  1. Create python virtual environment and go there: `python3 venv ~/onlyone && cd ~/onlyone` 
+  2. Activate it: `source ~/onlyone/bin/activate`
+  3. Install onlyone into it: `pip install onlyone[gui]`
+  4. Run the app: `onlyone-gui`  or `onlyone`(for cli)
 
-### How to install and run
-    ### First Way - use venv (virtual environment)
-    1. Create python virtual environment and go there: 
-    python3 venv ~/onlyone && cd ~/onlyone
-    -----
-    2. Activate it:
-    source ~/onlyone/bin/activate
-    -----
-    3.Install onlyone into it: 
-    pip install onlyone[gui]
-    -----
-    Done.
-    Now you can run `onlyone` or `onlyone-gui` commands from your virtual environment
-
-    ### Second Way - use binary from github release
+If you don't want install it on venv, binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
 
 ### Features
-      Filters files by file size and extension
-      -------
-      Sorts files inside duplicate groups by path depth and filename length
-      ------
-      Supports deduplication modes: fast, normal, full
-      ------
-      Preview images directly in the interface (in gui-version)
-      ------
-      Progress tracking both for searching duplicates and deleting them (in gui-version)
-      -------
-      Statistics/report
-      ------
-      Context menu (open, reveal in explorer and delete file(s) options)
-      ------
-      One click deletion (delete all duplicates at once)
-      ------
-      Manage priority directories
+* Filtering by file size and extension
+* Sorting inside duplicate groups 
+* Supporting various deduplication modes
+* Preview images/pdf directly in the interface
+* Context menu(open/delete/reveal in explorer)
+* Progress tracking (in gui-version)
+* One click deletion (delete all duplicates at once)
+* Priority and excluded directories functionality
+* Statistics/report
 
 ### How does it work?
-    1. Recursively scans folder using filters (min/max size, extension)
-    2. Apply the cheapest check first (compare by size): more initial grouping ways added in v 2.4.6 ("boosting")
-    3. Further checking depends on mode: 
-      a) "fast": checks hash-sum of first 64+ KB of files (false positives very possible)
-      b) "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
-      c) "full": checks hash-sum of front -> middle -> entire file (very slow for large files)
-    4. Shows the list of groups sorted in descending order (groups with larger files come first). 
-    --------
-    Files inside a group are sorted by path/filename length (you can regulate this).
+1. Recursively scans folder using filters (min/max size, extension)
+2. Applies one of the initial grouping ways from "boosting" option (size, size+extension, etc)
+3. Further checking depends on mode:
+   * "fast": checks hash-sum of first 128+ KB (false positives very possible)
+   * "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
+   * "full": checks hash-sum of front -> middle -> entire file (very slow for large files)  
+4. Shows the list of groups sorted in descending order (groups with larger files come first).   
+   **Files inside a group are sorted by path/filename length (you can regulate this).
 
 ### NEW FEATURE [v.2.4.6]: Boosting implemented
     In older versions (before 2.4.6) initial grouping was based only on file size. 
@@ -68,84 +50,74 @@ Binary for linux and windows are available in [github release](https://github.co
     Now you can set Excluded/ignored dirs both using GUI or cli (using --excluded-dirs key)
 
 ### Deleting all duplicates at once
-    The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.
-    ---
-    Which file is "first" depends on sorting:
-      Priority files(files from "Priority Folders", if set) always come first
-      Among priorities: file with shortest path (by default) comes first
-      Among non-priorities: same rule (shortest path is used by default for in-group sorting)
-      If both files have the same path depth, the file with shortest filename wins the first place.
+The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.  
+Which file is "first" depends on sorting:  
+* Priority files(files from "Priority Folders", if set) always come first
+  * Among priorities: file with shortest path (by default) comes first
+* Among non-priorities: same rule (shortest path is used by default for in-group sorting)  
+If both files have the same path depth, the file with shortest filename wins the first place.
 
       REMEMBER: In the end, there can be only one file/per group :)
 ---
 
 
 ### How to use cli-version
-    Examples:
-    ----------
-    Basic usage - find duplicates in Downloads folder
-    onlyone -i ~/Downloads
+Examples:  
+Basic usage - find duplicates in Downloads folder:  
+`onlyone -i ~/Downloads`  
 
-    Filter files by size and extensions and find duplicates
-    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png
+Filter files by size and extensions and find duplicates:  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png`
 
-    Same as above + move duplicates to trash (with confirmation prompt)
-    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
+Same as above + move duplicates to trash (with confirmation prompt):  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one`
 
-    Same as above but without confirmation and with output to a file (for scripts)
-    onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
+Same as above but without confirmation and with output to a file (for scripts):  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt`
     
-    Options:
-    ---------
-    -i, --input          input folder
-    -m, --min-size       min size filter
-    -M, --max-size       max size filter
-    -x, --extensions     extension filter(space separated)
-    -p, --priority-dirs  priority dirs(space separated)
-    --excluded-dirs      excluded/ignored dirs (space separated)
+Options:  
+    `-i, --input`          input folder  
+    `-m, --min-size`       min size filter  
+    `-M, --max-size`       max size filter  
+    `-x, --extensions`     extension filter(space separated)  
+    `-p, --priority-dirs`  priority dirs(space separated)  
+    `--excluded-dirs`     excluded/ignored dirs (space separated)  
+    `--boost {size,extension,filename}`  Rule for initial file grouping:
+* `size` Group files of the same size only (default)  
+*  `extension`  : Group files of the same size and extension  
+* `filename`   : Group files of the same size and filename  
 
-     
-     --boost {size,extension,filename}      Boost (rule for initial file grouping: this is how duplicates look):
-                                            size       : Group files of the same size only (default)
-                                            extension  : Group files of the same size and extension
-                                            filename   : Group files of the same size and filename
-                                            -------------
-                                            * Groups formed here will be checked (hash-checking) in further stages
+`**Groups formed above will be checked (hash-checking) in further stages`  
 
-    --mode {fast, normal, full}             checking mode (normal by default)
-                                            fast    : checks only by hashsum from the front part of file
-                                            normal  : checks by hashsum from 3 parts of file
-                                            full    : checks by hashsum from 2 part + whole file hashsum
-                                            -----------
-                                            * Normal/full modes work step by step: first check all groups
-                                            by frontal hash, filter dead groups(< 2 files), then check all
-                                            groups by middle hash, filter dead groups, etc.
+`--mode {fast, normal, full}` checking mode (normal by default)
+* `fast`    : checks only by hashsum from the front part of file  
+* `normal`  : checks by hashsum from 3 parts of file  
+* `full`    : checks by hashsum from 2 part + whole file hashsum  
 
-    --sort {shortest-path, shortest-filename}     sorting inside a group (shortest-path by default)
+`**Normal/full modes work step by step: first check all groups 
+by frontal hash, filter dead groups(< 2 files), then check all
+groups by middle hash, filter dead groups, etc.`  
 
-    --keep-one            Keep one file/per group and move the rest to trash (one confirmation)
-    --keep-one --force    Keep one file/per group and move the rest to trash (no confirmation)
-    --verbose, -v         Show detailed statistics and progress
-    --help, -h            Show help file
+`--sort {shortest-path, shortest-filename}`     sorting inside a group (shortest-path by default)  
+
+   `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
+   `--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
+   `--verbose, -v`         Show detailed statistics and progress  
+   `--help, -h`            Show help file  
 ---
 
-### Boring stuff
+### TESTS
+`pytest tests/ -v` 
 
-    Built With
-        - Python 3.x
-        - PySide6 (Qt)
-        - send2trash
-        - PIL/Pillow (for image handling)
-        - xxhash
+### Build with Pyinstaller  
+`pyinstaller --noconfirm --clean --noconsole --copy-metadata=onlyone --onefile --paths ./src --name=OnlyOne --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py` 
 
-    TESTS
-        pytest tests/ -v
-
-    How to build with Pyinstaller
-             pyinstaller --noconfirm --clean --noconsole --copy-metadata=onlyone --onefile \
-            --paths ./src --name=OnlyOne --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py 
-
-    Or just download binary from [realeases](https://github.com/initumX/onlyone/releases)
+### Built With  
+- Python 3.x
+- PySide6 (Qt)
+- send2trash
+- PIL/Pillow (for image handling)
+- xxhash
 
 ### LINKS
  * [GitHub Page](https://github.com/initumX/onlyone)
