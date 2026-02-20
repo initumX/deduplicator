@@ -55,7 +55,7 @@ class Ui_MainWindow:
         self.label_extensions = QLabel(central_widget)
         self.extension_layout_inside.addWidget(self.label_extensions)
         self.extension_filter_input = QLineEdit(central_widget)
-        self.extension_filter_input.setPlaceholderText(".jpg,.png")
+        self.extension_filter_input.setPlaceholderText(".jpg .png .pdf")
         self.extension_filter_input.setToolTip(
             """
         Enter file extensions separated by spaces (e.g., .jpg .png .pdf).
