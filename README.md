@@ -1,8 +1,7 @@
 
 # [OnlyOne](https://github.com/initumX/onlyone)
 
-![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)  
-[CHANGELOG](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
+![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
@@ -38,16 +37,6 @@ If you don't want install it on venv, binary for linux and windows are available
    * "full": checks hash-sum of front -> middle -> entire file (very slow for large files)  
 4. Shows the list of groups sorted in descending order (groups with larger files come first).   
    **Files inside a group are sorted by path/filename length (you can regulate this).
-
-### NEW FEATURE [v.2.4.6]: Boosting implemented
-    In older versions (before 2.4.6) initial grouping was based only on file size. 
-    Now you can use various strategies using Boost combobox (or --boost key on cli, see --help):
-    * by size: Compare only files of the same size (was the only method before)
-    * by size and extension: Compare only files of the same size and extension.
-    * by size and filename: Compare only files of the same size and filename
-
-### NEW FEATURE [v.2.4.7]: Excluded dirs implemented
-    Now you can set Excluded/ignored dirs both using GUI or cli (using --excluded-dirs key)
 
 ### Deleting all duplicates at once
 The main principle: ALL files moved to trash EXCEPT the FIRST file in each group.  
@@ -115,6 +104,9 @@ Options:
 
 ### LINKS
  * [GitHub Page](https://github.com/initumX/onlyone)
+ * [Releases](https://github.com/initumX/onlyone/releases)
+ * [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
+ * [PyPI](https://pypi.org/project/onlyone/)
  * email (initum.x@gmail.com)
 
 © 2026 initumX
