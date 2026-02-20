@@ -4,6 +4,8 @@ BOOST_ALIASES = {
     "size": BoostMode.SAME_SIZE,
     "extension": BoostMode.SAME_SIZE_PLUS_EXT,
     "filename": BoostMode.SAME_SIZE_PLUS_FILENAME,
+    "fuzzy-filename": BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME,
+    "fuzzy": BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME,
 }
 
 BOOST_CHOICES = list(BOOST_ALIASES.keys())
