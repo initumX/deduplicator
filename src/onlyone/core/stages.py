@@ -223,6 +223,13 @@ class SizeStageImpl(SizeStage):
                 for (size, name), files_list in size_name_groups.items()
             ]
 
+        elif self.boost == BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME:
+            size_name_groups = self.grouper.group_by_size_and_normalized_name(files)
+            groups = [
+                DuplicateGroup(size=size, files=files_list)
+                for (size, name), files_list in size_name_groups.items()
+            ]
+
 
         if progress_callback:
             total_files = len(files)

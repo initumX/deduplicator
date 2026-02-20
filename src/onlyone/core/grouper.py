@@ -12,6 +12,7 @@ from collections import defaultdict
 from onlyone.core.interfaces import FileGrouper
 from onlyone.core.models import File
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
+import re
 
 
 class FileGrouperImpl(FileGrouper):
@@ -30,6 +31,14 @@ class FileGrouperImpl(FileGrouper):
     def group_by_size_and_extension(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
         """Groups files by both size and extension (fast pre-filter before hashing)."""
         return self._group_by(files, lambda f: (f.size, f.extension))
+
+    def group_by_size_and_normalized_name(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
+        """Groups files by size and a normalized version of the filename.
+        Normalization rules:
+        - Convert to lowercase
+        - Remove underscores, hyphens, spaces, parentheses, and digits
+        """
+        return self._group_by(files, lambda f: (f.size, self._normalize_name_for_comparison(f)))
 
     def group_by_size_and_name(self, files: List[File]) -> Dict[Tuple[int, str], List[File]]:
         """Groups files by both size and name(including extension)."""
@@ -50,6 +59,15 @@ class FileGrouperImpl(FileGrouper):
     def group_by_full_hash(self, files: List[File]) -> Dict[bytes, List[File]]:
         """Groups files by full content hash."""
         return self._group_by(files, self.hasher.compute_full_hash)
+
+    @staticmethod
+    def _normalize_name_for_comparison(file: File) -> str:
+        """Normalize a filename for fuzzy comparison purposes only."""
+        if not file.name:
+            return ""
+            # Lowercase + remove noise characters using regex
+            # Pattern: [_\s\(\)\d.] matches underscore, whitespace, parentheses, digits, dots and hyphens
+        return re.sub(r'[_\s\(\)\d.\-]', '', file.name.lower())
 
     @staticmethod
     def _group_by(files: List[File], key_func: Callable[[File], Any]) -> Dict[Any, List[File]]:
