@@ -92,7 +92,7 @@ Options:
 ### TESTS
 `pytest tests/ -v` 
 
-### Build with Pyinstaller  
+### Build with Pyinstaller
 `pyinstaller --noconfirm --clean --noconsole --copy-metadata=onlyone --onefile --paths ./src --name=OnlyOne --exclude-module=PySide6.QtNetwork ./src/onlyone/gui/launcher.py` 
 
 ### Built With  
