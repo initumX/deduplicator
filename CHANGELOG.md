@@ -17,3 +17,7 @@
 - NEW: Implemented "Excluded dirs" functionality
 - Removed using comma as separator in CLI
 - Fixed some issues
+
+### [2.4.8] - 21 Feb 2026
+- GUI: doesn't support comma as extension separator anymore (space only)
+- NEW: added one more option for "boost" - fuzzy filename (group files of same size and similar filename)

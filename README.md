@@ -75,13 +75,14 @@ Options:
 * `size` Group files of the same size only (default)  
 * `extension`  Group files of the same size and extension  
 * `filename`   Group files of the same size and filename  
+* `fuzzy`      Group files of the same size and similar filename
 
 `**Groups formed above will be checked (hash-checking) in further stages`  
 
 `--mode {fast, normal, full}` checking mode (normal by default)
-* `fast`    checks only by hashsum from the front part of file  
-* `normal`  checks by hashsum from 3 parts of file  
-* `full`    checks by hashsum from 2 part + whole file hashsum  
+* `fast`    check only by hashsum from the front part of file  
+* `normal`  check by hashsum from 3 parts of file  
+* `full`    check by hashsum from 2 part + whole file hashsum  
 
 `--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)  
 `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
