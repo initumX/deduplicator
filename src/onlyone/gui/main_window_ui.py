@@ -57,8 +57,11 @@ class Ui_MainWindow:
         self.extension_filter_input = QLineEdit(central_widget)
         self.extension_filter_input.setPlaceholderText(".jpg,.png")
         self.extension_filter_input.setToolTip(
-            """Enter comma-separated file extensions to filter (e.g., .jpg, .png, .pdf).
-                Leave empty to disable extension filtering."""
+            """
+        Enter file extensions separated by spaces (e.g., .jpg .png .pdf).
+        Leave empty to disable extension filtering.
+        Extensions can be with or without leading dot (both .jpg and jpg work).
+        """
         )
         self.extension_layout_inside.addWidget(self.extension_filter_input)
 
