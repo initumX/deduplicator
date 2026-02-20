@@ -84,20 +84,15 @@ Options:
     `--excluded-dirs`     excluded/ignored dirs (space separated)  
     `--boost {size,extension,filename}`  Rule for initial file grouping:
 * `size` Group files of the same size only (default)  
-*  `extension`  : Group files of the same size and extension  
-* `filename`   : Group files of the same size and filename  
+*  `extension`  Group files of the same size and extension  
+* `filename`   Group files of the same size and filename  
 
 `**Groups formed above will be checked (hash-checking) in further stages`  
 
 `--mode {fast, normal, full}` checking mode (normal by default)
-* `fast`    : checks only by hashsum from the front part of file  
-* `normal`  : checks by hashsum from 3 parts of file  
-* `full`    : checks by hashsum from 2 part + whole file hashsum  
-
-`**Normal/full modes work step by step: first check all groups 
-by frontal hash, filter dead groups(< 2 files), then check all
-groups by middle hash, filter dead groups, etc.`  
-
+* `fast`    checks only by hashsum from the front part of file  
+* `normal`  checks by hashsum from 3 parts of file  
+* `full`    checks by hashsum from 2 part + whole file hashsum
 `--sort {shortest-path, shortest-filename}`     sorting inside a group (shortest-path by default)  
 `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
 `--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
