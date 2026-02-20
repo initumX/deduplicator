@@ -132,6 +132,7 @@ class Ui_MainWindow:
         Size               = Compare only files of the same size
         Size + Extension   = Compare only files of the same size and extension
         Size + Filename    = Compare only files of the same size and filename
+        Size + Fuzzy Filename    = Compare only files of the same size and similar filename
                 """
         )
 
