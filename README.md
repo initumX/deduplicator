@@ -99,11 +99,10 @@ by frontal hash, filter dead groups(< 2 files), then check all
 groups by middle hash, filter dead groups, etc.`  
 
 `--sort {shortest-path, shortest-filename}`     sorting inside a group (shortest-path by default)  
-
-   `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
-   `--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
-   `--verbose, -v`         Show detailed statistics and progress  
-   `--help, -h`            Show help file  
+`--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
+`--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
+`--verbose, -v`         Show detailed statistics and progress  
+`--help, -h`            Show help file  
 ---
 
 ### TESTS
