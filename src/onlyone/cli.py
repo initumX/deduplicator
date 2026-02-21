@@ -58,9 +58,12 @@ class CLIApplication:
         self.verbose: bool = False
         self.quiet: bool = False
 
-        # Fix encoding for Windows consoles to prevent UnicodeEncodeError
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        # Fix encoding for Windows/Linux consoles to prevent UnicodeEncodeError
+        # Use surrogateescape to handle invalid UTF-8 bytes in file paths (Linux)
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='surrogateescape')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='surrogateescape')
 
     @staticmethod
     def parse_args(args=None) -> argparse.Namespace:
