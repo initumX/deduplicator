@@ -393,13 +393,18 @@ class MainWindow(QMainWindow):
         self.duplicate_groups = duplicate_groups
         self.on_ordering_changed()
 
-        # Show statistics
-        stats_text = stats.print_summary()
-        stats_box = QMessageBox(self)
-        stats_box.setWindowTitle("Deduplication Statistics")
-        stats_box.setText(stats_text)
-        stats_box.setIcon(QMessageBox.Icon.Information)
-        stats_box.exec()
+        # Show statistics AFTER event loop processes dialog cleanup
+        from PySide6.QtCore import QTimer
+
+        def show_stats():
+            stats_text = stats.print_summary()
+            stats_box = QMessageBox(self)
+            stats_box.setWindowTitle("Deduplication Statistics")
+            stats_box.setText(stats_text)
+            stats_box.setIcon(QMessageBox.Icon.Information)
+            stats_box.exec()
+
+        QTimer.singleShot(0, show_stats)
 
     def on_deduplicate_error(self, error_message):
         """Handles error completion of the worker."""
