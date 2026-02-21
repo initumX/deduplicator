@@ -16,6 +16,7 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
   4. Run the app: `onlyone-gui`  or `onlyone`(for cli)
 
 Binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)
+If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)
 
 ### Features
 * Filtering by file size and extension
