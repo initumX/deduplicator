@@ -81,8 +81,9 @@ class BoostMode(Enum):
     """
     SAME_SIZE = "same-size"
     SAME_SIZE_PLUS_EXT = "same-size-plus-ext"
-    SAME_SIZE_PLUS_FILENAME = "same-size-plus-filename"
     SAME_SIZE_PLUS_FUZZY_FILENAME = "same-size-plus-fuzzy-filename"
+    SAME_SIZE_PLUS_FILENAME = "same-size-plus-filename"
+
 
     @property
     def display_name(self) -> str:
@@ -90,8 +91,8 @@ class BoostMode(Enum):
         mapping = {
             BoostMode.SAME_SIZE: "Size",
             BoostMode.SAME_SIZE_PLUS_EXT: "Size + Extension",
-            BoostMode.SAME_SIZE_PLUS_FILENAME: "Size + exact f-name",
             BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME: "Size + fuzzy f-name",
+            BoostMode.SAME_SIZE_PLUS_FILENAME: "Size + exact f-name",
         }
         return mapping.get(self, self.value)
 
