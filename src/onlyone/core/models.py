@@ -303,7 +303,13 @@ class DeduplicationParams:
     @staticmethod
     def _normalize_extensions(extensions: List[str]) -> Tuple[List[str], str]:
         """
-        Centralized extension normalization logic.
+        Centralized extension normalization logic with forgiving input handling.
+
+        Handles common user mistakes:
+        - "^tmp" instead of "^", "tmp" (marker attached to extension)
+        - "^" not as first element (e.g., ["txt", "^", "tmp"])
+        - Extra whitespace, empty strings, None values
+        - Duplicate extensions (auto-removed)
 
         Args:
             extensions: Raw extension list from user input
@@ -318,20 +324,32 @@ class DeduplicationParams:
         normalized = []
         filter_mode = "whitelist"
 
-        for i, ext in enumerate(extensions):
+        for ext in extensions:
+            if not ext:
+                continue
+
             ext_clean = ext.strip().lower()
 
-            # Check for blacklist marker (must be first element)
-            if i == 0 and ext_clean == "^":
+            if not ext_clean:
+                continue
+
+            # Case 1: "^" as separate element → set blacklist mode
+            if ext_clean == "^":
                 filter_mode = "blacklist"
                 continue
 
+            # Case 2: "^" attached to extension (e.g., "^tmp", "^ .tmp")
+            if ext_clean.startswith("^"):
+                filter_mode = "blacklist"
+                ext_clean = ext_clean[1:].strip()
+                if not ext_clean:
+                    continue
+
             # Normalize extension (add dot if missing)
-            if ext_clean and not ext_clean.startswith('.'):
+            if not ext_clean.startswith('.'):
                 ext_clean = f".{ext_clean}"
 
-            if ext_clean:
-                normalized.append(ext_clean)
+            normalized.append(ext_clean)
 
         return normalized, filter_mode
 
