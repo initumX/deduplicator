@@ -310,12 +310,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Input Error", f"Invalid size format: {e}")
             return
 
-        # Parse extensions
-        extensions = [
-            ext.strip() for ext in self.ui.extension_filter_input.text().split()
-            if ext.strip()
-        ]
-        extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
+        extensions = self.ui.extension_filter_input.text().split()
 
         # Get boost, mode and sort order from UI controls
         boost_mode = self.ui.boost_combo.currentData()
