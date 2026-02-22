@@ -107,10 +107,10 @@ class FileService:
         """Moves a file to the system trash."""
         path = Path(file_path).resolve()
 
-        if not path.exists():
-            raise FileNotFoundError(f"File not found: {path}")
-
         try:
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {path}")
+
             send2trash(str(path))
         except Exception as e:
             raise RuntimeError(f"Failed to move to trash: {e}") from e
