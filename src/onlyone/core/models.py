@@ -7,7 +7,7 @@ Data models and domain logic for file scanning and deduplication.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Union, Callable
+from typing import List, Tuple, Dict, Optional, Union, Callable
 import os
 from enum import Enum
 
@@ -281,6 +281,10 @@ class DeduplicationParams:
     sort_order: SortOrder = SortOrder.SHORTEST_PATH
     boost: BoostMode = field(default=BoostMode.SAME_SIZE)
 
+    # === Read-only computed properties (set in __post_init__) ===
+    _extension_filter_mode: str = field(default="whitelist", init=False)
+    _normalized_extensions: List[str] = field(default_factory=list, init=False)
+
     def __post_init__(self):
         """Validate parameters immediately after creation."""
         if not self.root_dir:
@@ -292,22 +296,61 @@ class DeduplicationParams:
         if self.max_size_bytes < self.min_size_bytes:
             raise ValueError("Maximum size cannot be less than minimum size")
 
-        # Normalize extensions: ensure they start with dot and are lowercase
+        # === CENTRALIZED EXTENSION PARSING ===
+        self._normalized_extensions, self._extension_filter_mode = \
+            DeduplicationParams._normalize_extensions(self.extensions)
+
+    @staticmethod
+    def _normalize_extensions(extensions: List[str]) -> Tuple[List[str], str]:
+        """
+        Centralized extension normalization logic.
+
+        Args:
+            extensions: Raw extension list from user input
+
+        Returns:
+            Tuple of (normalized_extensions, filter_mode)
+            - filter_mode: "whitelist" or "blacklist"
+        """
+        if not extensions:
+            return [], "whitelist"
+
         normalized = []
-        for ext in self.extensions:
-            ext = ext.strip().lower()
-            if ext and not ext.startswith('.'):
-                ext = f".{ext}"
-            if ext:
-                normalized.append(ext)
-        self.extensions = normalized
+        filter_mode = "whitelist"
+
+        for i, ext in enumerate(extensions):
+            ext_clean = ext.strip().lower()
+
+            # Check for blacklist marker (must be first element)
+            if i == 0 and ext_clean == "^":
+                filter_mode = "blacklist"
+                continue
+
+            # Normalize extension (add dot if missing)
+            if ext_clean and not ext_clean.startswith('.'):
+                ext_clean = f".{ext_clean}"
+
+            if ext_clean:
+                normalized.append(ext_clean)
+
+        return normalized, filter_mode
+
+    @property
+    def normalized_extensions(self) -> List[str]:
+        """Get normalized extensions (read-only)."""
+        return self._normalized_extensions
+
+    @property
+    def extension_filter_mode(self) -> str:
+        """Get filter mode: 'whitelist' or 'blacklist' (read-only)."""
+        return self._extension_filter_mode
 
     @staticmethod
     def from_human_readable(
             root_dir: str,
             min_size_str: str,
             max_size_str: str,
-            extensions_str: str = "",
+            extensions: Optional[List[str]] = None,
             favourite_dirs: Optional[List[str]] = None,
             excluded_dirs: Optional[List[str]] = None,
             mode: DeduplicationMode = DeduplicationMode.NORMAL,
@@ -316,13 +359,16 @@ class DeduplicationParams:
         """
         Factory method to create params from human-readable inputs.
         Useful for CLI argument parsing or GUI input conversion.
+
+        Extensions format:
+        - Space-separated values (e.g., ".txt .md .pdf")
+        - Blacklist mode: start with "^" as separate token (e.g., "^ .tmp .log")
+        - Extensions without leading dot are auto-normalized (e.g., "tmp" → ".tmp")
         """
         min_size = ConvertUtils.human_to_bytes(min_size_str)
         max_size = ConvertUtils.human_to_bytes(max_size_str)
 
-        ext_list = [
-            ext.strip() for ext in extensions_str.split(",") if ext.strip()
-        ] if extensions_str else []
+        ext_list = extensions or []
 
         return DeduplicationParams(
             root_dir=root_dir,

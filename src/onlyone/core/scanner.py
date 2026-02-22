@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Local imports
-from onlyone.core.models import File
+from onlyone.core.models import File, DeduplicationParams
 from onlyone.core.interfaces import FileScanner
 
 class FileScannerImpl(FileScanner):
@@ -39,19 +39,15 @@ class FileScannerImpl(FileScanner):
 
     def __init__(
         self,
-        root_dir: str,
-        min_size: Optional[int] = None,
-        max_size: Optional[int] = None,
-        extensions: Optional[List[str]] = None,
-        favourite_dirs: Optional[List[str]] = None,
-        excluded_dirs: Optional[List[str]] = None
+        params: DeduplicationParams,
     ):
-        self.root_dir = root_dir
-        self.min_size = min_size
-        self.max_size = max_size
-        self.extensions = [ext.lower() for ext in extensions] if extensions else []
-        self.favourite_dirs = [str(Path(d).resolve()) for d in favourite_dirs] if favourite_dirs else []
-        self.excluded_dirs = [str(Path(d).resolve()) for d in excluded_dirs] if excluded_dirs else []
+        self.root_dir = params.root_dir
+        self.min_size = params.min_size_bytes
+        self.max_size = params.max_size_bytes
+        self.extensions = params.normalized_extensions
+        self._exclude_mode = (params.extension_filter_mode == "blacklist")
+        self.favourite_dirs = [str(Path(d).resolve()) for d in params.favourite_dirs] if params.favourite_dirs else []
+        self.excluded_dirs = [str(Path(d).resolve()) for d in params.excluded_dirs] if params.excluded_dirs else []
 
     def scan(self,
             stopped_flag: Optional[Callable[[], bool]] = None,
@@ -273,13 +269,34 @@ class FileScannerImpl(FileScanner):
 
     def _extension_passes(self, path: Path) -> bool:
         """
-        Check if file matches any of the allowed extensions.
+        Check if a file matches the configured extension filter rules.
+
+        Filter modes:
+        - If extensions list starts with "^" (as a separate first element):
+          BLACKLIST mode — exclude files whose extensions are in the list.
+        - Otherwise: WHITELIST mode — include only files whose extensions are in the list.
+        - Empty list: no filtering applied (all extensions pass).
+
         Args:
-            path: Path object pointing to the file
+            path: Path object pointing to the file.
+
         Returns:
-            True if file has one of the allowed extensions
+            True if the file passes the extension filter, False otherwise.
         """
         if not self.extensions:
             return True
+
         ext = path.suffix.lower()
-        return any(ext == allowed_ext for allowed_ext in self.extensions)
+
+        if self._exclude_mode:
+            # Blacklist mode: accept file if its extension is NOT in the exclude list
+            if ext in self.extensions:
+                logger.debug(f"Skipping {path} (extension '{ext}' is excluded)")
+                return False
+            return True
+        else:
+            # Whitelist mode: accept file only if its extension IS in the allow list
+            if ext in self.extensions:
+                return True
+            logger.debug(f"Skipping {path} (extension '{ext}' not in allowed list)")
+            return False

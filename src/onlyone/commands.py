@@ -60,12 +60,7 @@ class DeduplicationCommand:
         """
         # Step 1: Scan files using core scanner directly
         scanner = FileScannerImpl(
-            root_dir=params.root_dir,
-            min_size=params.min_size_bytes,
-            max_size=params.max_size_bytes,
-            extensions=params.extensions,
-            favourite_dirs=params.favourite_dirs,
-            excluded_dirs=params.excluded_dirs
+            params=params,
         )
 
         self._files = scanner.scan(
