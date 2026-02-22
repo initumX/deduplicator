@@ -238,13 +238,7 @@ class CLIApplication:
             min_size_bytes = ConvertUtils.human_to_bytes(args.min_size)
             max_size_bytes = ConvertUtils.human_to_bytes(args.max_size)
 
-            # Parse extensions
-            extensions = []
-            if args.extensions:
-                for ext in args.extensions:
-                    ext = ext.strip().lower()
-                    if ext:
-                        extensions.append(ext if ext.startswith(".") else f".{ext}")
+            extensions = args.extensions
 
             # Parse priority directories from CLI: comma-separated
             # convert it to internal favourite_dirs format for core engine
