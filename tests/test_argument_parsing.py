@@ -202,7 +202,7 @@ class TestParamsCreation:
         params = app.create_params(args)
 
         # Extensions should be normalized to lowercase with leading dot
-        assert set(params.extensions) == {".jpg", ".png", ".gif"}
+        assert set(params.normalized_extensions) == {".jpg", ".png", ".gif"}
         # Check DEFAULT values
         assert params.min_size_bytes == 0  # Default: "0"
         assert params.max_size_bytes == 100 * 1024 * 1024 * 1024  # Default: "100GB" = 100 GiB

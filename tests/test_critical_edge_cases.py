@@ -8,10 +8,11 @@ import sys
 import time
 from pathlib import Path
 from unittest import mock
-from onlyone.core.models import File, DuplicateGroup
+from onlyone.core.models import File, DuplicateGroup, DeduplicationParams
 from onlyone.core.stages import HashStageBase, FrontHashStage
 from onlyone.core.grouper import FileGrouperImpl
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
+from onlyone.core.scanner import FileScannerImpl
 from onlyone.services.file_service import FileService
 from onlyone.cli import CLIApplication
 
@@ -293,18 +294,17 @@ class TestFilesDeletedDuringOperation:
                 yield root, dirs, files
 
         with mock.patch("os.walk", side_effect=flaky_walk):
-            from onlyone.core.scanner import FileScannerImpl
-            scanner = FileScannerImpl(
+            params = DeduplicationParams(
                 root_dir=str(tmp_path),
-                min_size=0,
-                max_size=1024 * 1024,
+                min_size_bytes=0,
+                max_size_bytes=1024 * 1024,
                 extensions=[".txt"],
-                favourite_dirs=[]
+                favourite_dirs=[],
+                excluded_dirs=[]
             )
-            # Must NOT raise exception
+            scanner = FileScannerImpl(params=params)
             collection = scanner.scan(stopped_flag=lambda: False)
 
-        # Should find 9 files (10 created - 1 deleted during scan)
         assert len(collection) == 9, (
             f"Expected 9 files after mid-scan deletion, found {len(collection)}. "
             "Scanner failed to handle disappearing files gracefully."
@@ -329,31 +329,26 @@ class TestCancellationResourceCleanup:
         for i in range(50):
             (tmp_path / f"f{i}.txt").write_bytes(b"A" * 1024)
 
-        from onlyone.core.scanner import FileScannerImpl
-
-        # Run 5 cycles of scan + early cancellation
         for cycle in range(5):
             call_count = 0
 
             def stopped_flag():
                 nonlocal call_count
                 call_count += 1
-                return call_count > 5  # Cancel after 5 files processed
+                return call_count > 5
 
-            scanner = FileScannerImpl(
+            params = DeduplicationParams(
                 root_dir=str(tmp_path),
-                min_size=0,
-                max_size=1024 * 1024,
+                min_size_bytes=0,
+                max_size_bytes=1024 * 1024,
                 extensions=[".txt"],
-                favourite_dirs=[]
+                favourite_dirs=[],
+                excluded_dirs=[]
             )
+            scanner = FileScannerImpl(params=params)
             collection = scanner.scan(stopped_flag=stopped_flag)
 
             # Should have partial results (not all 50 files)
             assert 0 < len(collection) < 50, (
                 f"Cycle {cycle}: unexpected file count {len(collection)}"
             )
-
-        # No assertion on memory usage (hard to measure portably),
-        # but test passes if no exceptions raised during repeated cancellation
-        # This verifies no resource leaks causing crashes over time

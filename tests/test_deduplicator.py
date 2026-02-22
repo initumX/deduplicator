@@ -13,23 +13,18 @@ class TestDeduplicatorIntegration:
     def test_fast_mode_finds_duplicates(self, test_files):
         """FAST mode should detect duplicates using size → front hash."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
             files=files,
@@ -50,23 +45,18 @@ class TestDeduplicatorIntegration:
     def test_normal_mode_processes_all_stages(self, test_files):
         """NORMAL mode should execute size → front → middle → end stages."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
             files=files,
@@ -81,23 +71,18 @@ class TestDeduplicatorIntegration:
     def test_full_mode_executes_full_hash_stage(self, test_files):
         """FULL mode must execute size → front → middle → full_hash stages."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
             files=files,
@@ -123,24 +108,19 @@ class TestDeduplicatorIntegration:
         file1.write_bytes(file1_content)
         file2.write_bytes(file2_content)
 
-        scanner = FileScannerImpl(
-            root_dir=str(temp_dir),
-            min_size=0,
-            max_size=1024 * 1024 * 1024,
-            extensions=[".bin"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
-
         params = DeduplicationParams(
             root_dir=str(temp_dir),
             min_size_bytes=0,
             max_size_bytes=1024 * 1024 * 1024,
             extensions=[".bin"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
+
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
             files=files,
@@ -161,23 +141,18 @@ class TestDeduplicatorIntegration:
             return call_count > 15
 
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
             files=files,
@@ -198,23 +173,18 @@ class TestDeduplicatorIntegration:
             return call_count > 10
 
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
             files=files,
@@ -229,23 +199,18 @@ class TestDeduplicatorIntegration:
     def test_groups_sorted_by_size_descending(self, test_files):
         """Final groups should be sorted by size descending."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         groups, _ = DeduplicatorImpl().find_duplicates(
             files=files,
             params=params,
@@ -257,23 +222,18 @@ class TestDeduplicatorIntegration:
 
     def test_empty_directory_returns_empty_result(self, temp_dir):
         """Deduplication on empty directory should return zero groups."""
-        scanner = FileScannerImpl(
-            root_dir=str(temp_dir),
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=str(temp_dir),
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         groups, stats = DeduplicatorImpl().find_duplicates(
             files=files,
             params=params,
@@ -294,6 +254,7 @@ class TestDeduplicatorIntegration:
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FAST,
             sort_order=SortOrder.SHORTEST_PATH
         )
@@ -327,6 +288,7 @@ class TestDeduplicatorIntegration:
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[str(temp_dir)],
+            excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH
         )
@@ -360,23 +322,18 @@ class TestDeduplicatorIntegration:
         file2.write_bytes(identical_content)
         file3.write_bytes(unique_content)
 
-        scanner = FileScannerImpl(
-            root_dir=str(temp_dir),
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=str(temp_dir),
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
             files=files,
@@ -392,23 +349,18 @@ class TestDeduplicatorIntegration:
     def test_stats_collected_for_all_stages_in_full_mode(self, test_files):
         """FULL mode stats must contain entries for all stages including 'full'."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
-        scanner = FileScannerImpl(
-            root_dir=root_dir,
-            min_size=0,
-            max_size=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[]
-        )
-        files = scanner.scan(stopped_flag=lambda: False)
         params = DeduplicationParams(
             root_dir=root_dir,
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH
         )
+        scanner = FileScannerImpl(params=params)
+        files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         _, stats = deduper.find_duplicates(
             files=files,
