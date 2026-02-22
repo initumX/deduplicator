@@ -22,3 +22,6 @@
 - GUI: doesn't support comma as extension separator anymore (space only)
 - NEW: added one more option for "boost" - fuzzy filename (group files of same size and similar filename)
 - fix(gui): fix progress dialog overlap with stats message box
+
+### [2.4.9]
+-GUI: Fixed context menu issues on pyinstall builds
