@@ -15,8 +15,20 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
   3. Install onlyone into it: `pip install onlyone[gui]`
   4. Run the app: `onlyone-gui`  or `onlyone`(for cli)
 
-Binary for linux and windows are available in [github release](https://github.com/initumX/onlyone/releases)  
-If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
+##  [GitHub](https://github.com/initumX/onlyone)   
+* You can download binary for linux and windows from [github release](https://github.com/initumX/onlyone/releases)  
+* If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
+
+## [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
+Important notes:  
+* List elements, separated by comma don't work anymore. Use space as separator:  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png` <- Ok  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png` <- Wrong!  
+The same thing with priority dirs and excluded dirs (for cli).  
+If path contains space, just backslash space inside path:  
+`onlyone -i .~/Downloads -x .jpg .png --excluded-dirs ~/Downloads/spaced\ folder\ one`
+* Now extensions can work also in a blacklist mode (just use ^ as the first element of list for that):  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x ^ .jpg .png` <- Any extension except of jpg and png
 
 ### Features
 * Filtering by file size and extension
@@ -57,20 +69,23 @@ Basic usage - find duplicates in Downloads folder:
 `onlyone -i ~/Downloads`  
 
 Filter files by size and extensions and find duplicates:  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png`
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png`
+
+Filter files by size, exclude extensions jpg and png, find duplicates:  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x ^ .jpg .png`
 
 Same as above + move duplicates to trash (with confirmation prompt):  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one`
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one`
 
 Same as above but without confirmation and with output to a file (for scripts):  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt`
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one --force > ~/Downloads/report.txt`
     
 Options:  
 `-i, --input`          input folder  
 `-m, --min-size`       min size filter  
 `-M, --max-size`       max size filter  
-`-x, --extensions`     extension filter(space separated)  
-`-p, --priority-dirs`  priority dirs(space separated)  
+`-x, --extensions`     extension filter (space separated, start with ^ to make extensions list work in "blacklist" mode)  
+`-p, --priority-dirs`  priority dirs (space separated)  
 `--excluded-dirs`     excluded/ignored dirs (space separated)  
 `--boost {size,extension,filename,fuzzy}`  Rule for initial file grouping:  
 * `size` Group files of the same size only (default)  
@@ -107,7 +122,6 @@ Options:
 ### LINKS
  * [GitHub Page](https://github.com/initumX/onlyone)
  * [Releases](https://github.com/initumX/onlyone/releases)
- * [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
  * [PyPI](https://pypi.org/project/onlyone/)
  * email (initum.x@gmail.com)
 

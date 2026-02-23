@@ -41,15 +41,18 @@ EPILOG_TEXT = """
 Examples:
   Basic usage - find duplicates in Downloads folder
   %(prog)s -i ~/Downloads
+  
+  Filter files by size, exclude(^ inverts whitelist to blacklist) extensions jpg and png and find duplicates
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x ^ .jpg .png
 
   Filter files by size and extensions and find duplicates
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png
   
   Same as above + move duplicates to trash (with confirmation prompt)
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one
 
   Same as above but without confirmation and with output to a file (for scripts)
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg,.png --keep-one --force > ~/Downloads/report.txt
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one --force > ~/Downloads/report.txt
   
   Filter files by size, compare only files of the same filename
   %(prog)s -i ~/Downloads/ -m 1K -M 15M --boost filename
