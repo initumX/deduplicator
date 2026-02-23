@@ -49,6 +49,7 @@ from onlyone.aliases import (
     EPILOG_TEXT
 )
 from onlyone.progress_bar import ProgressBar
+from onlyone import __version__
 from onlyone.reporter import (
     format_groups_output,
     format_deletion_preview,
@@ -78,6 +79,12 @@ class CLIApplication:
             description="OnlyOne — Fast duplicate file finder with safe deletion",
             formatter_class=argparse.RawTextHelpFormatter,
             epilog=EPILOG_TEXT
+        )
+
+        parser.add_argument(
+            '--version', '-v',
+            action = 'version',
+            version = f'OnlyOne {__version__}'
         )
 
         # Required arguments
