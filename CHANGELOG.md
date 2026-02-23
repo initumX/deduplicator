@@ -23,5 +23,6 @@
 - NEW: added one more option for "boost" - fuzzy filename (group files of same size and similar filename)
 - fix(gui): fix progress dialog overlap with stats message box
 
-### [2.4.9]
--GUI: Fixed context menu issues on pyinstall builds
+### [2.4.9] - 23 Feb 2026
+-fix(build): Fixed context menu issues on pyinstall builds  
+-NEW: blacklist mode for extension list. To use it, just put a ^-sign as first "extension" in a list
