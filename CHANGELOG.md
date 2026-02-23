@@ -26,3 +26,11 @@
 ### [2.4.9] - 23 Feb 2026
 -fix(build): Fixed context menu issues on pyinstall builds  
 -NEW: blacklist mode for extension list. To use it, just put a ^-sign as first "extension" in a list
+
+### [2.5.0] 
+-CLI: Deleted useless --quiet key from cli  
+-CLI: Renamed --verbose to --stats (OnlyOne always works verbose, this key looked confusing)  
+-CLI: Added progress bar  
+-CLI: Report formating moved from cli to a separate module  
+-CLI: Clean output  
+-refactor(convert_utils): convert class to module functions and enhance API  

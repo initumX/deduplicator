@@ -40,7 +40,7 @@ if _MISSING_DEPS:
 # === NORMAL IMPORTS (after validation) ===
 from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, BoostMode
 from onlyone.commands import DeduplicationCommand
-from onlyone.utils.convert_utils import bytes_to_human, human_to_bytes
+from onlyone.utils.convert_utils import human_to_bytes
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.aliases import (
@@ -48,15 +48,20 @@ from onlyone.aliases import (
     DEDUP_MODE_ALIASES, DEDUP_MODE_CHOICES, DEDUP_MODE_HELP_TEXT,
     EPILOG_TEXT
 )
-
+from onlyone.progress_bar import ProgressBar
+from onlyone.reporter import (
+    format_groups_output,
+    format_deletion_preview,
+    format_deletion_result
+)
 
 class CLIApplication:
     """Main CLI application controller."""
 
     def __init__(self):
         self.start_time: float = time.time()
-        self.verbose: bool = False
-        self.quiet: bool = False
+        self.show_stats: bool = False
+        self._progress_bars: dict = {}
 
         # Fix encoding for Windows/Linux consoles to prevent UnicodeEncodeError
         # Use surrogateescape to handle invalid UTF-8 bytes in file paths (Linux)
@@ -166,15 +171,11 @@ class CLIApplication:
             action="store_true",
             help="Skip confirmation prompt when used with --keep-one (for automation/scripts)"
         )
+
         parser.add_argument(
-            "--quiet", "-q",
+            "--stats",
             action="store_true",
-            help="Suppress non-essential output"
-        )
-        parser.add_argument(
-            "--verbose", "-v",
-            action="store_true",
-            help="Show detailed statistics and progress"
+            help="Show deduplication statistics (files scanned, hash operations, etc.)"
         )
 
         return parser.parse_args(args)
@@ -273,18 +274,30 @@ class CLIApplication:
 
     def progress_callback(self, stage: str, current: int, total: Optional[int]) -> None:
         """CLI progress callback - shows progress in console."""
-        if not self.verbose:
-            return
 
-        if total and total > 0:
-            percent = (current / total) * 100
-            sys.stderr.write(
-                f"\r  [{stage}] {current}/{total} ({percent:.1f}%)"
+        # Format suffix: show actual count when total is unknown
+        suffix = f"{current:,} files" if total is None else 'files'
+
+        # Create new bar for this stage if needed
+        if stage not in self._progress_bars:
+            self._progress_bars[stage] = ProgressBar(
+                total=total,
+                prefix=f'  [{stage}]',
+                suffix=suffix,
+                length=40,
+                fill='█',
+                empty='-',
+                enable=True,
+                indeterminate=(total is None),
+                min_interval=0.1
             )
-            sys.stderr.flush()
+            self._progress_bars[stage].update(0)
         else:
-            sys.stderr.write(f"\r  [{stage}] {current} files processed...")
-            sys.stderr.flush()
+            # Update suffix dynamically for indeterminate mode
+            if total is None:
+                self._progress_bars[stage].suffix = f"{current:,} files"
+
+        self._progress_bars[stage].update(iteration=current)
 
     @staticmethod
     def stopped_flag() -> bool:
@@ -305,19 +318,21 @@ class CLIApplication:
     def run_deduplication(self, params: DeduplicationParams) -> List[DuplicateGroup]:
         """Execute deduplication workflow."""
         command = DeduplicationCommand()
-        if self.verbose:
-            mode_display = params.mode.value.capitalize()
-            print(f"Finding duplicates (mode: {mode_display})...")
+        mode_display = params.mode.value.capitalize()
+        print(f"Finding duplicates (mode: {mode_display})...")
+
+        # Reset progress bars for new run
+        self._progress_bars = {}
 
         try:
             groups, stats = command.execute(
                 params,
-                progress_callback=self.progress_callback if self.verbose else None,
+                progress_callback=self.progress_callback,
                 stopped_flag=self.stopped_flag
             )
 
-            if self.verbose:
-                sys.stderr.write("\n")
+            if self.show_stats:
+                print()
                 print("\nDeduplication Statistics:")
                 print(stats.print_summary())
 
@@ -325,104 +340,74 @@ class CLIApplication:
         except Exception as e:
             self.error_exit(f"Deduplication failed: {e}")
 
-    def output_results(self, groups: List[DuplicateGroup]) -> None:
-        """Output duplicate groups as plain text without additional sorting."""
-        if self.quiet:
-            return
-
+    @staticmethod
+    def output_results(groups: List[DuplicateGroup]) -> None:
+        """Output duplicate groups as plain text."""
         if not groups:
             print("No duplicate groups found.")
             return
 
-        total_files = sum(len(g.files) for g in groups)
-        print(f"\nFound {len(groups)} duplicate groups ({total_files} files)")
-
-        for idx, group in enumerate(groups, 1):
-            size_str = bytes_to_human(group.size)
-            print(f"\n📁 Group {idx} | Size: {size_str} | Files: {len(group.files)}")
-
-            # Use order from core (already sorted by favourite dirs + sort_order)
-            for file in group.files:
-                fav_marker = " ✅" if file.is_from_fav_dir else ""
-                print(f"   {file.path} [{bytes_to_human(file.size)}]{fav_marker}")
+        output = format_groups_output(groups, show_fav_markers=True)
+        print(output)
 
     def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, force: bool = False) -> None:
         """Keep one file per group, delete the rest. Always shows preview before deletion."""
         if not groups:
-            if not self.quiet:
-                print("No duplicate groups found.")
+            print("No duplicate groups found.")
             return
 
         files_to_delete, _ = DuplicateService.keep_only_one_file_per_group(groups)
 
         if not files_to_delete:
-            if not self.quiet:
-                print("No files to delete (all groups already have only one file).")
+            print("No files to delete (all groups already have only one file).")
             return
 
         # Calculate space savings
         space_saved = self.calculate_space_savings(groups, files_to_delete)
-        space_saved_str = bytes_to_human(space_saved)
 
-        # Always show deletion preview before action (safety first)
-        print()
-        preserved = len(groups)
-        for idx, group in enumerate(groups, 1):
-            size_str = bytes_to_human(group.size)
-            print(f"📁 Group {idx} | Total size: {size_str} | Files: {len(group.files)}")
-            print("-" * 60)
+        # Preview via reporter (formatting only)
+        preview = format_deletion_preview(groups, files_to_delete, space_saved, params)
+        print(preview)
 
-            # File that will be preserved (first file after core sorting)
-            preserved_file = group.files[0]
-            fav_marker = " ⭐" if preserved_file.is_from_fav_dir else ""
-            print(f"   [KEEP] {preserved_file.path}")
-            print(f"          Size: {bytes_to_human(preserved_file.size)}{fav_marker}")
-
-            if preserved_file.is_from_fav_dir:
-                print(f"          Reason: from favourite directory")
-            else:
-                # Show human-readable sort reason based on actual enum value
-                sort_reason = "shortest path" if params.sort_order == SortOrder.SHORTEST_PATH else "shortest filename"
-                print(f"          Reason: {sort_reason}")
-
-            # Files that would be deleted
-            for file in group.files[1:]:
-                fav_marker = " ⭐" if file.is_from_fav_dir else ""
-                print(f"   [DEL]  {file.path}")
-                print(f"          Size: {bytes_to_human(file.size)}{fav_marker}")
-            print()
-
-        print("=" * 60)
-        print(f"Summary: Keep 1 file per group ({preserved} files preserved, {len(files_to_delete)} files deleted)")
-        print(f"Total space saved: {space_saved_str}")
-        print()
-
-        # Skip confirmation if --force is used
+        # Confirmation (orchestration - stays in CLI)
         if force:
             print("⚠️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
         else:
-            # Safety check: confirm we're still in interactive mode
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 self.error_exit(
                     "Lost interactive terminal during operation. "
                     "Use --force to proceed in non-interactive environments."
                 )
-
-            # Ask for confirmation before actual deletion
             response = input(f"Are you sure you want to move {len(files_to_delete)} files to trash? [y/N]: ")
             if response.strip().lower() not in ("y", "yes"):
                 print("Deletion cancelled by user.")
                 return
 
-        # Execute deletion with error resilience (continue on individual file errors)
+        # Execute deletion
         print(f"\nMoving {len(files_to_delete)} files to trash...")
+
         deleted_count = 0
         failed_files = []
 
+        # Initialize progress bar for deletion
+        delete_bar = None
+        if len(files_to_delete) > 0:
+            delete_bar = ProgressBar(
+                total=len(files_to_delete),
+                prefix='  [Deleting]',
+                suffix='files',
+                length=40,
+                fill='█',
+                empty='-',
+                enable=True,
+                min_interval=0.1
+            )
+            delete_bar.update(0)
+
         try:
             for i, path in enumerate(files_to_delete, 1):
-                if self.verbose:
-                    print(f"  [{i}/{len(files_to_delete)}] {os.path.basename(path)}")
+                if delete_bar:
+                    delete_bar.update(i)
 
                 try:
                     FileService.move_to_trash(path)
@@ -432,28 +417,26 @@ class CLIApplication:
                     self.warning(f"Failed to delete {path}: {e}")
                     continue  # Continue with next file
 
-            # Report results
-            if failed_files:
-                print(f"\n⚠️  Partial success: {deleted_count}/{len(files_to_delete)} files moved to trash.")
-                print(f"Failed to delete {len(failed_files)} file(s):")
-                for path, error in failed_files[:5]:  # Show first 5 errors
-                    print(f"  • {os.path.basename(path)}: {error.split(':')[-1].strip()}")
-                if len(failed_files) > 5:
-                    print(f"  ...and {len(failed_files) - 5} more files")
-            else:
-                print(f"✅ Successfully moved {deleted_count} files to trash.")
-                print(f"Total space saved: {space_saved_str}")
+            if delete_bar:
+                delete_bar.finish()
+
+            result = format_deletion_result(deleted_count, len(files_to_delete), space_saved, failed_files)
+            print(result)
 
         except KeyboardInterrupt:
+            if delete_bar:
+                delete_bar.finish()  # Clean finish on interrupt
             print("\n⚠️  Operation cancelled by user (Ctrl+C)")
             sys.exit(130)
         except Exception as e:
+            if delete_bar:
+                delete_bar.finish()
             self.error_exit(f"Failed during deletion process: {e}")
 
-    def warning(self, message: str) -> None:
+    @staticmethod
+    def warning(message: str) -> None:
         """Print a warning message to stderr."""
-        if not self.quiet:
-            print(f"⚠️  {message}", file=sys.stderr)
+        print(f"⚠️  {message}", file=sys.stderr)
 
     @staticmethod
     def error_exit(message: str, code: int = 1) -> NoReturn:
@@ -464,14 +447,12 @@ class CLIApplication:
     def run(self) -> None:
         """Main entry point with conditional output behavior."""
         args = self.parse_args()
-        self.verbose = args.verbose
-        self.quiet = args.quiet
+        self.show_stats = args.stats
 
         self.validate_args(args)
         params = self.create_params(args)
 
-        if not self.quiet:
-            print(f"Scanning directory: {params.root_dir}")
+        print(f"Scanning directory: {params.root_dir}")
 
         groups = self.run_deduplication(params)
 
@@ -485,7 +466,7 @@ class CLIApplication:
 
         # Show completion time
         elapsed = time.time() - self.start_time
-        if self.verbose:
+        if self.show_stats:
             print(f"\n✅ Completed in {elapsed:.2f} seconds")
 
 

@@ -27,7 +27,8 @@ class ProgressBar:
         empty: str = '-',
         enable: bool = True,
         indeterminate: bool = False,
-        min_interval: float = 0.1
+        min_interval: float = 0.1,
+        force_tty: bool = False
     ):
         self.total = total
         self.indeterminate = indeterminate or (total is None)
@@ -43,6 +44,10 @@ class ProgressBar:
         self.enable = enable
         self.min_interval = min_interval
         self._last_update = 0.0
+
+        # Auto-disable if stderr is not a TTY (for piping to files)
+        if not force_tty and not sys.stderr.isatty():
+            self.enable = False
 
     def _format_percent(self) -> str:
         if self.indeterminate or self.total is None or self.total == 0:
@@ -85,11 +90,11 @@ class ProgressBar:
         percent = self._format_percent()
         bar = self._format_bar()
 
-        sys.stdout.write(f'\r{self.prefix}: |{bar}| {percent}% {self.suffix}')
-        sys.stdout.flush()
+        sys.stderr.write(f'\r{self.prefix}: |{bar}| {percent}% {self.suffix}')
+        sys.stderr.flush()
 
         if self.total is not None and self.current >= self.total:
-            print()
+            print(file=sys.stderr)
 
     def reset(self) -> None:
         self.current = 0
@@ -103,9 +108,9 @@ class ProgressBar:
         else:
             # For indeterminated progress bar
             self.current = 0
-            sys.stdout.write(f'\r{self.prefix}: |✓| Done {self.suffix}')
-            sys.stdout.flush()
-            print()
+            sys.stderr.write(f'\r{self.prefix}: |✓| Done {self.suffix}')
+            sys.stderr.flush()
+            print(file=sys.stderr)
 
 
 def progress_iter(
