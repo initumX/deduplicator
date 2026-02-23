@@ -77,11 +77,11 @@ class FileGrouperImpl(FileGrouper):
                 if key is not None:
                     groups[key].append(file)
             except Exception as e:
-                print(f"⚠️ Error processing {file.path}: {e}")
+                print(f"Error processing {file.path}: {e}")
                 skipped_files += 1
 
         if skipped_files > 0:
-            print(f"⚠️ Skipped {skipped_files} files due to hash computation errors")
+            print(f"Skipped {skipped_files} files due to hash computation errors")
 
         result = {}
         for key, group in groups.items():

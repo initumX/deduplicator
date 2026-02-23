@@ -143,7 +143,7 @@ class TestFileGrouperImpl:
 
         # Verify error was logged
         captured = capsys.readouterr()
-        assert "⚠️ Error processing /bad.txt" in captured.out
+        assert "Error processing /bad.txt" in captured.out
 
         # Good files should still be grouped correctly
         assert len(groups) == 1

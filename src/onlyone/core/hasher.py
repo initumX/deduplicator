@@ -40,7 +40,7 @@ class HasherImpl(Hasher):
                 file.hashes.full = result
                 return result
         except Exception as e:
-            print(f"⚠️ Error reading full content of {file.path}: {e}")
+            print(f"Error reading full content of {file.path}: {e}")
             return b''
 
     def compute_front_hash(self, file: File) -> bytes:
@@ -83,5 +83,5 @@ class HasherImpl(Hasher):
                     return b''
                 return data
         except Exception as e:
-            print(f"⚠️ Error reading {file.path} at offset {offset}: {e}")
+            print(f"Error reading {file.path} at offset {offset}: {e}")
             return b''

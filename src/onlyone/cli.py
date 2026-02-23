@@ -31,7 +31,7 @@ except ImportError:
     _MISSING_DEPS.append("xxhash")
 
 if _MISSING_DEPS:
-    print("❌ Missing required dependencies:", file=sys.stderr)
+    print(" Missing required dependencies:", file=sys.stderr)
     print(f"   pip install {' '.join(_MISSING_DEPS)}", file=sys.stderr)
     print("\nOr install all dependencies:", file=sys.stderr)
     print("   pip install -r requirements.txt", file=sys.stderr)
@@ -62,6 +62,7 @@ class CLIApplication:
         self.start_time: float = time.time()
         self.show_stats: bool = False
         self._progress_bars: dict = {}
+        self._args_ascii: bool = False
 
         # Fix encoding for Windows/Linux consoles to prevent UnicodeEncodeError
         # Use surrogateescape to handle invalid UTF-8 bytes in file paths (Linux)
@@ -178,6 +179,12 @@ class CLIApplication:
             help="Show deduplication statistics (files scanned, hash operations, etc.)"
         )
 
+        parser.add_argument(
+            "--ascii",
+            action="store_true",
+            help="Use ASCII characters instead of emojis (for old terminals)"
+        )
+
         return parser.parse_args(args)
 
     def validate_args(self, args: argparse.Namespace) -> None:
@@ -289,7 +296,8 @@ class CLIApplication:
                 empty='-',
                 enable=True,
                 indeterminate=(total is None),
-                min_interval=0.1
+                min_interval=0.1,
+                ascii_only=self._get_ascii_flag()
             )
             self._progress_bars[stage].update(0)
         else:
@@ -298,6 +306,10 @@ class CLIApplication:
                 self._progress_bars[stage].suffix = f"{current:,} files"
 
         self._progress_bars[stage].update(iteration=current)
+
+    def _get_ascii_flag(self) -> bool:
+        """Helper to get ascii flag from args if available."""
+        return getattr(self, '_args_ascii', False)
 
     @staticmethod
     def stopped_flag() -> bool:
@@ -341,16 +353,22 @@ class CLIApplication:
             self.error_exit(f"Deduplication failed: {e}")
 
     @staticmethod
-    def output_results(groups: List[DuplicateGroup]) -> None:
+    def output_results(groups: List[DuplicateGroup], ascii_only: bool = False) -> None:
         """Output duplicate groups as plain text."""
         if not groups:
             print("No duplicate groups found.")
             return
 
-        output = format_groups_output(groups, show_fav_markers=True)
+        output = format_groups_output(groups, show_fav_markers=True, ascii_only=ascii_only)
         print(output)
 
-    def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, force: bool = False) -> None:
+    def execute_keep_one(
+            self,
+            groups: List[DuplicateGroup],
+            params: DeduplicationParams,
+            force: bool = False,
+            ascii_only: bool = False
+    ) -> None:
         """Keep one file per group, delete the rest. Always shows preview before deletion."""
         if not groups:
             print("No duplicate groups found.")
@@ -366,12 +384,12 @@ class CLIApplication:
         space_saved = self.calculate_space_savings(groups, files_to_delete)
 
         # Preview via reporter (formatting only)
-        preview = format_deletion_preview(groups, files_to_delete, space_saved, params)
+        preview = format_deletion_preview(groups, files_to_delete, space_saved, params, ascii_only=ascii_only)
         print(preview)
 
         # Confirmation (orchestration - stays in CLI)
         if force:
-            print("⚠️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
+            print("️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
         else:
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 self.error_exit(
@@ -400,7 +418,8 @@ class CLIApplication:
                 fill='█',
                 empty='-',
                 enable=True,
-                min_interval=0.1
+                min_interval=0.1,
+                ascii_only=ascii_only
             )
             delete_bar.update(0)
 
@@ -420,13 +439,15 @@ class CLIApplication:
             if delete_bar:
                 delete_bar.finish()
 
-            result = format_deletion_result(deleted_count, len(files_to_delete), space_saved, failed_files)
+            result = format_deletion_result(
+                deleted_count, len(files_to_delete), space_saved, failed_files, ascii_only=ascii_only
+            )
             print(result)
 
         except KeyboardInterrupt:
             if delete_bar:
                 delete_bar.finish()  # Clean finish on interrupt
-            print("\n⚠️  Operation cancelled by user (Ctrl+C)")
+            print("\n️  Operation cancelled by user (Ctrl+C)")
             sys.exit(130)
         except Exception as e:
             if delete_bar:
@@ -436,18 +457,19 @@ class CLIApplication:
     @staticmethod
     def warning(message: str) -> None:
         """Print a warning message to stderr."""
-        print(f"⚠️  {message}", file=sys.stderr)
+        print(f"  {message}", file=sys.stderr)
 
     @staticmethod
     def error_exit(message: str, code: int = 1) -> NoReturn:
         """Print error and exit."""
-        print(f"❌ Error: {message}", file=sys.stderr)
+        print(f" Error: {message}", file=sys.stderr)
         sys.exit(code)
 
     def run(self) -> None:
         """Main entry point with conditional output behavior."""
         args = self.parse_args()
         self.show_stats = args.stats
+        self._args_ascii = args.ascii  # Store for progress_callback
 
         self.validate_args(args)
         params = self.create_params(args)
@@ -459,10 +481,10 @@ class CLIApplication:
         # Conditional output based on flags
         if args.keep_one:
             # Always show preview before deletion (safety first)
-            self.execute_keep_one(groups, params=params, force=args.force)
+            self.execute_keep_one(groups, params=params, force=args.force, ascii_only=args.ascii)
         else:
             # Show standard duplicate groups list
-            self.output_results(groups)
+            self.output_results(groups, ascii_only=args.ascii)
 
         # Show completion time
         elapsed = time.time() - self.start_time
@@ -476,12 +498,12 @@ def main() -> None:
     try:
         app.run()
     except KeyboardInterrupt:
-        print("\n⚠️  Operation cancelled by user (Ctrl+C)")
+        print("\n️  Operation cancelled by user (Ctrl+C)")
         sys.exit(130)
     except Exception as e:
         if os.environ.get("DEBUG"):
             raise
-        print(f"❌ Unexpected error: {e}", file=sys.stderr)
+        print(f" Unexpected error: {e}", file=sys.stderr)
         sys.exit(1)
 
 

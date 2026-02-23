@@ -235,20 +235,20 @@ class DeduplicationStats:
             try:
                 listener(stage_name, {"status": "started"})
             except Exception as e:
-                print(f"⚠️ Error in stats event handler: {e}")
+                print(f"Error in stats event handler: {e}")
 
 
     def print_summary(self) -> str:
         labels = {
-            "size": "📁 Size Groups",
-            "front": "📄 Front Hash Groups",
-            "middle": "🧠 Middle Hash Groups",
-            "end": "🔚 End Hash Groups",
-            "full": "🔍 Full Content Hash Groups",
+            "size": "Size Groups",
+            "front": "Front Hash Groups",
+            "middle": "Middle Hash Groups",
+            "end": "End Hash Groups",
+            "full": "Full Content Hash Groups",
         }
 
         lines = [
-            "📊 Deduplication Statistics:",
+            "Deduplication Statistics:",
             f"Total Execution Time: {self.total_time:.3f}s\n",
             "Stage: GROUPS / FILES / TIME"
         ]

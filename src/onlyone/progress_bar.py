@@ -28,18 +28,29 @@ class ProgressBar:
         enable: bool = True,
         indeterminate: bool = False,
         min_interval: float = 0.1,
-        force_tty: bool = False
+        force_tty: bool = False,
+        ascii_only: bool = False
     ):
         self.total = total
         self.indeterminate = indeterminate or (total is None)
         self.current = 0
         self._animation_frame = 0
-        self._animation_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        self.ascii_only = ascii_only
+
+        # Set characters based on ascii_only flag
+        if ascii_only:
+            self._animation_chars = ['|', '/', '-', '\\']
+            self.fill_char = '#'
+            self.done_marker = '[DONE]'
+        else:
+            self._animation_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+            self.fill_char = fill
+            self.done_marker = '✓'
+
         self.prefix = prefix
         self.suffix = suffix
         self.decimals = max(decimals, 0)
         self.length = max(length, 1)
-        self.fill = fill
         self.empty = empty
         self.enable = enable
         self.min_interval = min_interval
@@ -65,7 +76,7 @@ class ProgressBar:
             # Normal progress-bar
             filled = int(self.length * self.current // self.total)
             filled = min(filled, self.length)
-            return self.fill * filled + self.empty * (self.length - filled)
+            return self.fill_char * filled + self.empty * (self.length - filled)
 
     def update(self, iteration: Optional[int] = None, increment: int = 1) -> None:
         if not self.enable:
@@ -106,9 +117,9 @@ class ProgressBar:
             self.current = self.total
             self.update(self.total)
         else:
-            # For indeterminated progress bar
+            # For indeterminate progress bar
             self.current = 0
-            sys.stderr.write(f'\r{self.prefix}: |✓| Done {self.suffix}')
+            sys.stderr.write(f'\r{self.prefix}: |{self.done_marker}| Done {self.suffix}')
             sys.stderr.flush()
             print(file=sys.stderr)
 
@@ -121,7 +132,8 @@ def progress_iter(
     decimals: int = 1,
     length: int = 50,
     fill: str = '█',
-    enable: bool = True
+    enable: bool = True,
+    ascii_only: bool = False
 ) -> Iterable[Any]:
     """
     Wrap any iterable with a progress bar.
@@ -140,7 +152,8 @@ def progress_iter(
         length=length,
         fill=fill,
         enable=enable,
-        indeterminate=(total is None)
+        indeterminate=(total is None),
+        ascii_only=ascii_only
     )
 
     bar.update(0)
@@ -162,7 +175,8 @@ class ProgressContext:
         decimals: int = 1,
         length: int = 50,
         fill: str = '█',
-        enable: bool = True
+        enable: bool = True,
+        ascii_only: bool = False
     ):
         self.bar = ProgressBar(
             total=total,
@@ -172,7 +186,8 @@ class ProgressContext:
             length=length,
             fill=fill,
             enable=enable,
-            indeterminate=(total is None)
+            indeterminate=(total is None),
+            ascii_only=ascii_only
         )
 
     def __enter__(self) -> ProgressBar:
@@ -192,6 +207,7 @@ def progress(
     length: int = 50,
     fill: str = '█',
     enable: bool = True,
+    ascii_only: bool = False,
 ) -> ProgressBar:
     """
     Create and return a ProgressBar instance.
@@ -204,5 +220,6 @@ def progress(
         length=length,
         fill=fill,
         enable=enable,
-        indeterminate=(total is None)
+        indeterminate=(total is None),
+        ascii_only=ascii_only
     )
