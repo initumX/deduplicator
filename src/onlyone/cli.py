@@ -181,6 +181,12 @@ class CLIApplication:
         )
 
         parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Show which files would be deleted without actually deleting them"
+        )
+
+        parser.add_argument(
             "--stats",
             action="store_true",
             help="Show deduplication statistics (files scanned, hash operations, etc.)"
@@ -198,6 +204,9 @@ class CLIApplication:
         """Validate command-line arguments before execution."""
         if args.force and not args.keep_one:
             self.error_exit("--force can only be used with --keep-one")
+
+        if (args.dry_run and args.keep_one) or (args.dry_run and args.force):
+            self.error_exit("--dry-run and cannot be used together with --keep-one or --force")
 
         # Prevent interactive confirmation in non-TTY environments
         if args.keep_one and not args.force:
@@ -460,6 +469,33 @@ class CLIApplication:
                 delete_bar.finish()
             self.error_exit(f"Failed during deletion process: {e}")
 
+    def show_dry_run_preview(self, groups: List[DuplicateGroup]) -> None:
+        """Show which files would be deleted without actually deleting them."""
+        if not groups:
+            print("No duplicate groups found.")
+            return
+
+        files_to_delete, _ = DuplicateService.keep_only_one_file_per_group(groups)
+
+        if not files_to_delete:
+            print("No files to delete (all groups already have only one file).")
+            return
+
+        # Calculate space savings
+        space_saved = self.calculate_space_savings(groups, files_to_delete)
+
+        # Show preview header
+        print()
+        print("DRY RUN — No files will be deleted")
+        print("=" * 60)
+
+        # Use the same preview formatter as execute_keep_one
+        preview = format_deletion_preview(groups, files_to_delete, space_saved, ascii_only=self._args_ascii)
+        print(preview)
+
+        # Final notice
+        print("ℹ️  This was a dry run. Use --keep-one to actually delete files.")
+
     @staticmethod
     def warning(message: str) -> None:
         """Print a warning message to stderr."""
@@ -485,7 +521,9 @@ class CLIApplication:
         groups = self.run_deduplication(params)
 
         # Conditional output based on flags
-        if args.keep_one:
+        if args.dry_run:
+            self.show_dry_run_preview(groups)
+        elif args.keep_one:
             # Always show preview before deletion (safety first)
             self.execute_keep_one(groups, force=args.force, ascii_only=args.ascii)
         else:
