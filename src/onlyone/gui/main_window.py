@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
             A tool to find and remove duplicate files.<br><br>
             
             Check <a href="https://github.com/initumX/onlyone">OnlyOne github</a> for help<br><br>
+            Push a start on github page, if you like this app<br><br>
             
             © Copyright (c) 2026 initumX (initum.x@gmail.com)<br><br>
             License: MIT License<br>
