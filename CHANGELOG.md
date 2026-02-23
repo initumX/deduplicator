@@ -33,4 +33,5 @@
 -CLI: Added progress bar  
 -CLI: Report formating moved from cli to a separate module  
 -CLI: Clean output  
+-CLI: ASCII-support (--ascii key)
 -refactor(convert_utils): convert class to module functions and enhance API  
