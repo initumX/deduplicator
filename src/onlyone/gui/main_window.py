@@ -19,7 +19,7 @@ from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
-from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import human_to_bytes
 from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
 from onlyone import __version__
@@ -305,8 +305,8 @@ class MainWindow(QMainWindow):
         max_size_str = f"{max_size_value}{max_unit}"
 
         try:
-            min_size = ConvertUtils.human_to_bytes(min_size_str)
-            max_size = ConvertUtils.human_to_bytes(max_size_str)
+            min_size = human_to_bytes(min_size_str)
+            max_size = human_to_bytes(max_size_str)
         except ValueError as e:
             QMessageBox.warning(self, "Input Error", f"Invalid size format: {e}")
             return

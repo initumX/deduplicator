@@ -266,7 +266,7 @@ Interface-agnostic — used by both GUI and CLI.
 """
 from dataclasses import dataclass, field
 from typing import List, Optional
-from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import human_to_bytes
 
 @dataclass
 class DeduplicationParams:
@@ -383,8 +383,8 @@ class DeduplicationParams:
         - Blacklist mode: start with "^" as separate token (e.g., "^ .tmp .log")
         - Extensions without leading dot are auto-normalized (e.g., "tmp" → ".tmp")
         """
-        min_size = ConvertUtils.human_to_bytes(min_size_str)
-        max_size = ConvertUtils.human_to_bytes(max_size_str)
+        min_size = human_to_bytes(min_size_str)
+        max_size = human_to_bytes(max_size_str)
 
         ext_list = extensions or []
 

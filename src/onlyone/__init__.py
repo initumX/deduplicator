@@ -29,7 +29,7 @@ from onlyone.aliases import (
     EPILOG_TEXT
 )
 from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
-from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import bytes_to_human, human_to_bytes
 from onlyone.services import DuplicateService
 from onlyone.services.file_service import FileService
 
@@ -40,7 +40,8 @@ __all__ = [
     "SortOrder",
     "File",
     "DuplicateGroup",
-    "ConvertUtils",
+    "bytes_to_human",
+    "human_to_bytes",
     "DuplicateService",
     "FileService",
     "__version__",

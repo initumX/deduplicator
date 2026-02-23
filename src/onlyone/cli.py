@@ -40,7 +40,7 @@ if _MISSING_DEPS:
 # === NORMAL IMPORTS (after validation) ===
 from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, BoostMode
 from onlyone.commands import DeduplicationCommand
-from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import bytes_to_human, human_to_bytes
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.aliases import (
@@ -200,8 +200,8 @@ class CLIApplication:
 
         # Validate size formats
         try:
-            min_size = ConvertUtils.human_to_bytes(args.min_size)
-            max_size = ConvertUtils.human_to_bytes(args.max_size)
+            min_size = human_to_bytes(args.min_size)
+            max_size = human_to_bytes(args.max_size)
             if min_size < 0:
                 self.error_exit("Minimum size cannot be negative")
             if max_size < min_size:
@@ -235,8 +235,8 @@ class CLIApplication:
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
         try:
-            min_size_bytes = ConvertUtils.human_to_bytes(args.min_size)
-            max_size_bytes = ConvertUtils.human_to_bytes(args.max_size)
+            min_size_bytes = human_to_bytes(args.min_size)
+            max_size_bytes = human_to_bytes(args.max_size)
 
             extensions = args.extensions
 
@@ -338,13 +338,13 @@ class CLIApplication:
         print(f"\nFound {len(groups)} duplicate groups ({total_files} files)")
 
         for idx, group in enumerate(groups, 1):
-            size_str = ConvertUtils.bytes_to_human(group.size)
+            size_str = bytes_to_human(group.size)
             print(f"\n📁 Group {idx} | Size: {size_str} | Files: {len(group.files)}")
 
             # Use order from core (already sorted by favourite dirs + sort_order)
             for file in group.files:
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
-                print(f"   {file.path} [{ConvertUtils.bytes_to_human(file.size)}]{fav_marker}")
+                print(f"   {file.path} [{bytes_to_human(file.size)}]{fav_marker}")
 
     def execute_keep_one(self, groups: List[DuplicateGroup], params: DeduplicationParams, force: bool = False) -> None:
         """Keep one file per group, delete the rest. Always shows preview before deletion."""
@@ -362,13 +362,13 @@ class CLIApplication:
 
         # Calculate space savings
         space_saved = self.calculate_space_savings(groups, files_to_delete)
-        space_saved_str = ConvertUtils.bytes_to_human(space_saved)
+        space_saved_str = bytes_to_human(space_saved)
 
         # Always show deletion preview before action (safety first)
         print()
         preserved = len(groups)
         for idx, group in enumerate(groups, 1):
-            size_str = ConvertUtils.bytes_to_human(group.size)
+            size_str = bytes_to_human(group.size)
             print(f"📁 Group {idx} | Total size: {size_str} | Files: {len(group.files)}")
             print("-" * 60)
 
@@ -376,7 +376,7 @@ class CLIApplication:
             preserved_file = group.files[0]
             fav_marker = " ⭐" if preserved_file.is_from_fav_dir else ""
             print(f"   [KEEP] {preserved_file.path}")
-            print(f"          Size: {ConvertUtils.bytes_to_human(preserved_file.size)}{fav_marker}")
+            print(f"          Size: {bytes_to_human(preserved_file.size)}{fav_marker}")
 
             if preserved_file.is_from_fav_dir:
                 print(f"          Reason: from favourite directory")
@@ -389,7 +389,7 @@ class CLIApplication:
             for file in group.files[1:]:
                 fav_marker = " ⭐" if file.is_from_fav_dir else ""
                 print(f"   [DEL]  {file.path}")
-                print(f"          Size: {ConvertUtils.bytes_to_human(file.size)}{fav_marker}")
+                print(f"          Size: {bytes_to_human(file.size)}{fav_marker}")
             print()
 
         print("=" * 60)

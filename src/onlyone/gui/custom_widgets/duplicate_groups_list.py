@@ -17,7 +17,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
 from onlyone.core.models import File, DuplicateGroup
 from onlyone.services.file_service import FileService
-from onlyone.utils.convert_utils import ConvertUtils
+from onlyone.utils.convert_utils import  bytes_to_human
 
 
 class DuplicateGroupsList(QListWidget):
@@ -49,7 +49,7 @@ class DuplicateGroupsList(QListWidget):
         self.clear()
         for idx, group in enumerate(self.current_groups):
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
-            size_str = ConvertUtils.bytes_to_human(group.size)
+            size_str = bytes_to_human(group.size)
 
             folder_title = f"📁 Group {idx+1} | Size: {size_str}"
             folder_title_item = QListWidgetItem(folder_title)
