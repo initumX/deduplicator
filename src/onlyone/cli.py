@@ -365,7 +365,6 @@ class CLIApplication:
     def execute_keep_one(
             self,
             groups: List[DuplicateGroup],
-            params: DeduplicationParams,
             force: bool = False,
             ascii_only: bool = False
     ) -> None:
@@ -384,7 +383,7 @@ class CLIApplication:
         space_saved = self.calculate_space_savings(groups, files_to_delete)
 
         # Preview via reporter (formatting only)
-        preview = format_deletion_preview(groups, files_to_delete, space_saved, params, ascii_only=ascii_only)
+        preview = format_deletion_preview(groups, files_to_delete, space_saved, ascii_only=ascii_only)
         print(preview)
 
         # Confirmation (orchestration - stays in CLI)
@@ -481,7 +480,7 @@ class CLIApplication:
         # Conditional output based on flags
         if args.keep_one:
             # Always show preview before deletion (safety first)
-            self.execute_keep_one(groups, params=params, force=args.force, ascii_only=args.ascii)
+            self.execute_keep_one(groups, force=args.force, ascii_only=args.ascii)
         else:
             # Show standard duplicate groups list
             self.output_results(groups, ascii_only=args.ascii)

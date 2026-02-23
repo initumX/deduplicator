@@ -54,7 +54,7 @@ class ProgressBar:
         self.empty = empty
         self.enable = enable
         self.min_interval = min_interval
-        self._last_update = 0.0
+        self._last_update = -min_interval
 
         # Auto-disable if stderr is not a TTY (for piping to files)
         if not force_tty and not sys.stderr.isatty():
