@@ -7,6 +7,7 @@ A lightweight, dependency-free progress bar for CLI applications.
 """
 
 import sys
+import time
 from typing import Optional, Iterable, Any, Union, Sized
 
 
@@ -25,7 +26,8 @@ class ProgressBar:
         fill: str = '█',
         empty: str = '-',
         enable: bool = True,
-        indeterminate: bool = False
+        indeterminate: bool = False,
+        min_interval: float = 0.1
     ):
         self.total = total
         self.indeterminate = indeterminate or (total is None)
@@ -39,6 +41,8 @@ class ProgressBar:
         self.fill = fill
         self.empty = empty
         self.enable = enable
+        self.min_interval = min_interval
+        self._last_update = 0.0
 
     def _format_percent(self) -> str:
         if self.indeterminate or self.total is None or self.total == 0:
@@ -69,6 +73,15 @@ class ProgressBar:
 
         if self.total is not None:
             self.current = min(self.current, self.total)
+
+        # Throttling by time
+        if self.min_interval > 0:
+            now = time.time()
+            if now - self._last_update < self.min_interval:
+                if self.total is None or self.current < self.total:
+                    return
+            self._last_update = now
+
         percent = self._format_percent()
         bar = self._format_bar()
 
