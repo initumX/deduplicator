@@ -92,7 +92,9 @@ class CLIApplication:
             "--input", "-i",
             required=True,
             type=str,
-            help="Input directory to scan for duplicates"
+            nargs="+",
+            metavar="DIR",
+            help="Input directory (or directories) to scan for duplicates"
         )
 
         # Filtering options
@@ -216,11 +218,13 @@ class CLIApplication:
                     "Use --force flag to proceed without confirmation when piping output or running in scripts."
                 )
 
-        root_path = Path(args.input).resolve()
-        if not root_path.exists():
-            self.error_exit(f"Directory not found: {args.input}")
-        if not root_path.is_dir():
-            self.error_exit(f"Path is not a directory: {args.input}")
+        # Validate all input directories
+        for i, input_path in enumerate(args.input):
+            root_path = Path(input_path).resolve()
+            if not root_path.exists():
+                self.error_exit(f"Directory not found: {input_path}")
+            if not root_path.is_dir():
+                self.error_exit(f"Path is not a directory: {input_path}")
 
         # Validate size formats
         try:
@@ -281,8 +285,11 @@ class CLIApplication:
             mode = DEDUP_MODE_ALIASES.get(args.mode, DeduplicationMode.NORMAL)
             boost_mode = BOOST_ALIASES.get(args.boost, BoostMode.SAME_SIZE)
 
+            # Normalize all root directories
+            root_dirs = [str(Path(p).resolve()) for p in args.input]
+
             return DeduplicationParams(
-                root_dir=str(Path(args.input).resolve()),
+                root_dirs=root_dirs,
                 min_size_bytes=min_size_bytes,
                 max_size_bytes=max_size_bytes,
                 extensions=extensions,
@@ -516,7 +523,13 @@ class CLIApplication:
         self.validate_args(args)
         params = self.create_params(args)
 
-        print(f"Scanning directory: {params.root_dir}")
+        # Show all scanned directories
+        if len(params.normalized_root_dirs) == 1:
+            print(f"Scanning directory: {params.normalized_root_dirs[0]}")
+        else:
+            print(f"Scanning {len(params.normalized_root_dirs)} directories:")
+            for dir_path in params.normalized_root_dirs:
+                print(f"  - {dir_path}")
 
         groups = self.run_deduplication(params)
 
