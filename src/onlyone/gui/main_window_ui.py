@@ -44,8 +44,8 @@ class Ui_MainWindow:
         # Directory list widget
         self.root_dir_list = QListWidget(central_widget)
         self.root_dir_list.setToolTip("List of directories to scan for duplicates")
-        self.root_dir_list.setMinimumHeight(50)
-        self.root_dir_list.setMaximumHeight(50)
+        self.root_dir_list.setMinimumHeight(60)
+        self.root_dir_list.setMaximumHeight(60)
         self.root_dir_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.root_layout.addWidget(self.root_dir_list)
 
