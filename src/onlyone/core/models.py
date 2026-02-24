@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional, Union, Callable
 import os
 from enum import Enum
+from pathlib import Path
 
 
 # =============================
@@ -265,13 +266,12 @@ DTO for deduplication parameters with built-in validation.
 Interface-agnostic — used by both GUI and CLI.
 """
 from dataclasses import dataclass, field
-from typing import List, Optional
 from onlyone.utils.convert_utils import human_to_bytes
 
 @dataclass
 class DeduplicationParams:
     """Parameters for deduplication operation with validation."""
-    root_dir: str
+    root_dirs: List[str]
     min_size_bytes: int
     max_size_bytes: int
     extensions: List[str] = field(default_factory=list)
@@ -284,21 +284,95 @@ class DeduplicationParams:
     # === Read-only computed properties (set in __post_init__) ===
     _extension_filter_mode: str = field(default="whitelist", init=False)
     _normalized_extensions: List[str] = field(default_factory=list, init=False)
+    _normalized_root_dirs: List[str] = field(default_factory=list, init=False)
 
     def __post_init__(self):
         """Validate parameters immediately after creation."""
-        if not self.root_dir:
-            raise ValueError("Root directory cannot be empty")
+        # === UNIFIED NORMALIZATION PATTERN ===
+        # Both root_dirs and extensions now use static helper methods
+
+        self._normalized_root_dirs = self._normalize_root_dirs(self.root_dirs)
+        self._normalized_extensions, self._extension_filter_mode = \
+            self._normalize_extensions(self.extensions)
+        # === END NORMALIZATION ===
+
+        # === VALIDATION ===
+        if not self._normalized_root_dirs:
+            raise ValueError("No valid root directories provided")
 
         if self.min_size_bytes < 0:
             raise ValueError("Minimum size cannot be negative")
 
         if self.max_size_bytes < self.min_size_bytes:
             raise ValueError("Maximum size cannot be less than minimum size")
+        # === END VALIDATION ===
 
-        # === CENTRALIZED EXTENSION PARSING ===
-        self._normalized_extensions, self._extension_filter_mode = \
-            DeduplicationParams._normalize_extensions(self.extensions)
+    @property
+    def normalized_root_dirs(self) -> List[str]:
+        """Get normalized root directories (read-only)."""
+        return self._normalized_root_dirs
+
+    @property
+    def normalized_extensions(self) -> List[str]:
+        """Get normalized extensions (read-only)."""
+        return self._normalized_extensions
+
+    @property
+    def extension_filter_mode(self) -> str:
+        """Get filter mode: 'whitelist' or 'blacklist' (read-only)."""
+        return self._extension_filter_mode
+
+    @staticmethod
+    def _normalize_root_dirs(root_dirs: List[str]) -> List[str]:
+        """
+        Centralized root directory normalization logic.
+
+        Handles:
+        - Empty list validation
+        - Type checking (must be list of strings)
+        - Path existence and directory validation
+        - Path resolution (absolute paths)
+        - Duplicate removal while preserving order
+
+        Args:
+            root_dirs: Raw directory list from user input
+
+        Returns:
+            List of normalized, validated, deduplicated absolute paths
+
+        Raises:
+            ValueError: If validation fails
+        """
+        if not root_dirs:
+            return []
+
+        if not isinstance(root_dirs, list):
+            raise ValueError("Root directories must be a list of strings")
+
+        normalized_dirs = []
+        for i, dir_path in enumerate(root_dirs):
+            if not dir_path or not isinstance(dir_path, str):
+                raise ValueError(f"Root directory at index {i} must be a non-empty string")
+
+            path = Path(dir_path).resolve()
+
+            if not path.exists():
+                raise ValueError(f"Directory does not exist: {dir_path}")
+
+            if not path.is_dir():
+                raise ValueError(f"Path is not a directory: {dir_path}")
+
+            normalized_dirs.append(str(path))
+
+        # Remove duplicates while preserving order
+        seen = set()
+        result = []
+        for dir_path in normalized_dirs:
+            if dir_path not in seen:
+                seen.add(dir_path)
+                result.append(dir_path)
+
+        return result
 
     @staticmethod
     def _normalize_extensions(extensions: List[str]) -> Tuple[List[str], str]:
@@ -353,19 +427,9 @@ class DeduplicationParams:
 
         return normalized, filter_mode
 
-    @property
-    def normalized_extensions(self) -> List[str]:
-        """Get normalized extensions (read-only)."""
-        return self._normalized_extensions
-
-    @property
-    def extension_filter_mode(self) -> str:
-        """Get filter mode: 'whitelist' or 'blacklist' (read-only)."""
-        return self._extension_filter_mode
-
     @staticmethod
     def from_human_readable(
-            root_dir: str,
+            root_dirs: List[str],
             min_size_str: str,
             max_size_str: str,
             extensions: Optional[List[str]] = None,
@@ -377,11 +441,6 @@ class DeduplicationParams:
         """
         Factory method to create params from human-readable inputs.
         Useful for CLI argument parsing or GUI input conversion.
-
-        Extensions format:
-        - Space-separated values (e.g., ".txt .md .pdf")
-        - Blacklist mode: start with "^" as separate token (e.g., "^ .tmp .log")
-        - Extensions without leading dot are auto-normalized (e.g., "tmp" → ".tmp")
         """
         min_size = human_to_bytes(min_size_str)
         max_size = human_to_bytes(max_size_str)
@@ -389,7 +448,7 @@ class DeduplicationParams:
         ext_list = extensions or []
 
         return DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=root_dirs,
             min_size_bytes=min_size,
             max_size_bytes=max_size,
             extensions=ext_list,
