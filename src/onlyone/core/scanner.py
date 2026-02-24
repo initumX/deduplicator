@@ -4,16 +4,17 @@ Licensed under the MIT License
 
 core/scanner.py
 Implements file scanning functionality using object-oriented design and modern pathlib.
+
 Features:
 - Uses pathlib.Path for robust, cross-platform path handling
-- Recursively scans directories
+- Recursively scans multiple root directories
 - Applies size and extension filters
+- Prevents duplicate file processing when root directories overlap
 - Returns a List containing scanned files
 """
-
 import os
 import sys
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Set
 from pathlib import Path
 import time
 import logging
@@ -24,44 +25,65 @@ logger = logging.getLogger(__name__)
 from onlyone.core.models import File, DeduplicationParams
 from onlyone.core.interfaces import FileScanner
 
+
 class FileScannerImpl(FileScanner):
     """
     Scans directories recursively and filters files based on size and extensions.
     Uses `pathlib.Path` for safe and consistent cross-platform behavior.
+    Supports multiple root directories with overlap protection.
 
     Attributes:
-        root_dir: Root directory to scan
+        root_dirs: List of root directories to scan
         min_size: Minimum file size in bytes (optional)
         max_size: Maximum file size in bytes (optional)
         extensions: List of allowed file extensions (e.g., [".txt", ".jpg"])
         favourite_dirs: Directories marked as favourites for special processing
+        excluded_dirs: Directories to ignore during scanning
     """
 
-    def __init__(
-        self,
-        params: DeduplicationParams,
-    ):
-        self.root_dir = params.root_dir
+    def __init__(self, params: DeduplicationParams):
+        """
+        Initialize the scanner with validated parameters.
+
+        Args:
+            params: DeduplicationParams object containing all configuration.
+        """
+        # Use normalized roots from params (already validated and resolved)
+        self.root_dirs = params.normalized_root_dirs
         self.min_size = params.min_size_bytes
         self.max_size = params.max_size_bytes
         self.extensions = params.normalized_extensions
         self._exclude_mode = (params.extension_filter_mode == "blacklist")
+
+        # Normalize favourite and excluded directories for consistent comparison
         self.favourite_dirs = [str(Path(d).resolve()) for d in params.favourite_dirs] if params.favourite_dirs else []
         self.excluded_dirs = [str(Path(d).resolve()) for d in params.excluded_dirs] if params.excluded_dirs else []
 
-    def scan(self,
-            stopped_flag: Optional[Callable[[], bool]] = None,
-            progress_callback: Optional[Callable[[str, int, object], None]] = None) -> List[File]:
+    def scan(
+        self,
+        stopped_flag: Optional[Callable[[], bool]] = None,
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
+    ) -> List[File]:
         """
         Single-pass scanner with real-time progress updates and debug logging.
-        Returns a filtered list of files found in the directory tree.
+        Scans all configured root directories.
+        Prevents processing the same file twice if root directories overlap.
+
+        Args:
+            stopped_flag: Function that returns True if operation should be canceled.
+            progress_callback: Callback for reporting progress (stage, current, total).
+
+        Returns:
+            List[File]: Filtered list of files found in the directory tree.
         """
         logger.debug("Starting scan operation")
-        logger.debug(f"Root directory: {self.root_dir}")
+        logger.debug(f"Root directories: {self.root_dirs}")
         logger.debug(f"Filters: min_size={self.min_size}, max_size={self.max_size}, extensions={self.extensions}")
 
-        found_files = []
-        root_path = Path(self.root_dir)
+        found_files: List[File] = []
+        # Track resolved absolute paths to prevent duplicates when roots overlap
+        seen_paths: Set[str] = set()
+
         processed_files = 0
 
         # Check for cancellation before starting
@@ -69,60 +91,77 @@ class FileScannerImpl(FileScanner):
             logger.debug("Scan cancelled before start")
             return []
 
-        # Validate root directory exists and is accessible
-        if not root_path.exists():
-            error_msg = f"Directory does not exist: {self.root_dir}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-        if not root_path.is_dir():
-            error_msg = f"Not a directory: {self.root_dir}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
-
         # Progress throttling: update every N files to reduce UI overhead
         progress_interval = 5000  # Update every 5,000 files
         progress_counter = 0
 
         try:
-            logger.debug(f"Scanning directory: {self.root_dir}")
             start_time = time.time()
 
-            # Use os.walk instead of Path.rglob for faster traversal
-            for root, dirs, files in os.walk(str(root_path)):
-                # Check for cancellation at each directory level
-                if stopped_flag and stopped_flag():
-                    logger.debug("Scan interrupted by user")
-                    return []
+            for root_dir in self.root_dirs:
+                root_path = Path(root_dir)
 
-                # Pre-filter subdirectories BEFORE os.walk enters them
-                dirs[:] = [d for d in dirs if self._prefilter_dirs(Path(root) / d)]
+                # Validate root directory exists and is accessible
+                if not root_path.exists():
+                    logger.warning(f"Directory does not exist (skipping): {root_dir}")
+                    continue
 
-                for filename in files:
-                    path = Path(root) / filename
-                    file_info = self._process_file(path, stopped_flag=stopped_flag)
-                    if file_info:
-                        found_files.append(file_info)
-                    processed_files += 1
-                    progress_counter += 1
+                if not root_path.is_dir():
+                    logger.warning(f"Not a directory (skipping): {root_dir}")
+                    continue
 
-                    # Update progress only when threshold reached (no time.time() calls!)
-                    if progress_callback and progress_counter >= progress_interval:
-                        progress_callback('scanning', processed_files, None)
-                        progress_counter = 0
+                logger.debug(f"Scanning directory: {root_dir}")
 
-            # Final update for small datasets
+                # Use os.walk instead of Path.rglob for faster traversal
+                for root, dirs, files in os.walk(str(root_path)):
+                    # Check for cancellation at each directory level
+                    if stopped_flag and stopped_flag():
+                        logger.debug("Scan interrupted by user")
+                        return []
+
+                    # Pre-filter subdirectories BEFORE os.walk enters them
+                    dirs[:] = [d for d in dirs if self._prefilter_dirs(Path(root) / d)]
+
+                    for filename in files:
+                        path = Path(root) / filename
+
+                        # Resolve absolute path to detect overlaps across different roots
+                        try:
+                            resolved_path = str(path.resolve())
+                        except (OSError, ValueError):
+                            # If resolution fails, skip file to avoid crashes
+                            logger.debug(f"Could not resolve path (skipping): {path}")
+                            continue
+
+                        # Skip if already processed (overlap protection)
+                        if resolved_path in seen_paths:
+                            logger.debug(f"Duplicate path detected (skipping): {resolved_path}")
+                            continue
+
+                        seen_paths.add(resolved_path)
+
+                        file_info = self._process_file(path, stopped_flag=stopped_flag)
+                        if file_info:
+                            found_files.append(file_info)
+                            processed_files += 1
+                            progress_counter += 1
+
+                            # Update progress only when threshold reached
+                            if progress_callback and progress_counter >= progress_interval:
+                                progress_callback('scanning', processed_files, None)
+                                progress_counter = 0
+
+            # Final update for small datasets or remaining count
             if progress_callback and progress_counter > 0:
                 progress_callback('scanning', processed_files, None)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
-
             logger.debug(f"Total scan time: {elapsed_time:.2f} seconds")
             logger.debug(f"Scan completed. Found {len(found_files)} matching files.")
 
         except PermissionError as pe:
             logger.warning(f"Permission denied during scan: {pe}")
-
         except Exception:
             logger.exception("Unexpected error during scanning")
             raise
@@ -134,11 +173,16 @@ class FileScannerImpl(FileScanner):
         """
         Check if path belongs to OS trash/recycle bin (cross-platform).
         Returns False on any error (fail-safe: better to scan than skip valid data).
+
+        Args:
+            path: Path object to check.
+
+        Returns:
+            bool: True if path is within system trash, False otherwise.
         """
         try:
             # Resolve to absolute path for reliable substring matching
             path_str = str(path.resolve(strict=False))
-
             if sys.platform == "win32":
                 # Windows: $Recycle.Bin on system drive (C: by default)
                 if "$Recycle.Bin" in path_str or "\\Recycler\\" in path_str:
@@ -151,7 +195,6 @@ class FileScannerImpl(FileScanner):
                 # Linux/BSD: freedesktop.org standard locations
                 if ".local/share/Trash" in path_str or "/.trash/" in path_str:
                     return True
-
             return False
         except (OSError, ValueError):
             # Fail-safe: on any filesystem error, assume NOT trash
@@ -159,20 +202,37 @@ class FileScannerImpl(FileScanner):
 
     @staticmethod
     def _is_excluded_directory(path: Path, excluded_dirs: List[str]) -> bool:
-        """Check if path is within an excluded directory."""
+        """
+        Check if path is within an excluded directory.
+
+        Args:
+            path: Path object to check.
+            excluded_dirs: List of normalized excluded directory paths.
+
+        Returns:
+            bool: True if path is excluded, False otherwise.
+        """
         try:
             path_str = str(path.resolve(strict=False))
             for excluded_dir in excluded_dirs:
                 normalized_excluded = os.path.normpath(excluded_dir)
                 if path_str.startswith(normalized_excluded + os.sep) or \
-                        path_str == normalized_excluded:
+                   path_str == normalized_excluded:
                     return True
             return False
         except (OSError, ValueError):
             return False
 
     def _prefilter_dirs(self, path: Path) -> bool:
-        """Pre-filter directories: skip system trash and inaccessible locations."""
+        """
+        Pre-filter directories: skip system trash and inaccessible locations.
+
+        Args:
+            path: Path object of the directory to check.
+
+        Returns:
+            bool: True if directory should be scanned, False if skipped.
+        """
         # Skip system trash directories to avoid rescanning deleted files
         if FileScannerImpl._is_system_trash(path):
             logger.debug(f"Skipping system trash directory: {path}")
@@ -189,14 +249,20 @@ class FileScannerImpl(FileScanner):
             logger.debug(f"Skipping inaccessible directory: {path}")
             return False
 
-    def _process_file(self, path: Path, stopped_flag: Optional[Callable[[], bool]] = None) -> Optional[File]:
+    def _process_file(
+        self,
+        path: Path,
+        stopped_flag: Optional[Callable[[], bool]] = None
+    ) -> Optional[File]:
         """
         Process an individual file path and return a File if it passes all filters.
+
         Args:
-            path: Path object pointing to the file
+            path: Path object pointing to the file.
             stopped_flag: Function that returns True if operation should be stopped.
+
         Returns:
-            Optional[File]: File object if it passes filters, else None
+            Optional[File]: File object if it passes filters, else None.
         """
         if stopped_flag and stopped_flag():
             return None
@@ -233,7 +299,7 @@ class FileScannerImpl(FileScanner):
             return None
 
         try:
-            path_depth = str(path).rstrip(os.sep).count(os.sep) # number of path separators
+            path_depth = str(path).rstrip(os.sep).count(os.sep)  # Number of path separators
             file = File(
                 path=str(path),
                 size=size,
@@ -256,10 +322,12 @@ class FileScannerImpl(FileScanner):
     def _size_passes(self, size: int) -> bool:
         """
         Check if file size is within configured limits.
+
         Args:
-            size: File size in bytes
+            size: File size in bytes.
+
         Returns:
-            True if file meets size criteria
+            bool: True if file meets size criteria.
         """
         if self.min_size is not None and size < self.min_size:
             return False
@@ -281,7 +349,7 @@ class FileScannerImpl(FileScanner):
             path: Path object pointing to the file.
 
         Returns:
-            True if the file passes the extension filter, False otherwise.
+            bool: True if the file passes the extension filter, False otherwise.
         """
         if not self.extensions:
             return True
