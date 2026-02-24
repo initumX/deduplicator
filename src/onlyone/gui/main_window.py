@@ -3,17 +3,17 @@ Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 main_window.py
 OnlyOne GUI Application
-A PyQt-based graphical interface for finding and removing duplicate files.
+A PySide6-based graphical interface for finding and removing duplicate files.
 """
 import os
-from typing import Any
+from typing import Any, List
 
 from PySide6.QtWidgets import (
     QMainWindow, QFileDialog,
     QDialog, QMessageBox,
-    QProgressDialog, QApplication,
+    QProgressDialog, QApplication, QListWidgetItem,
 )
-from PySide6.QtCore import Qt, QSettings, QThreadPool
+from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
 from onlyone.core.models import DeduplicationParams
 from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
@@ -24,15 +24,20 @@ from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
 from onlyone import __version__
 
+
 class SettingsManager:
+    """Manages application settings persistence using QSettings."""
     def __init__(self):
         self.settings = QSettings("InitumSoft", "OnlyOne")
 
-    def save_settings(self, key: str, value: Any):
+    def save_settings(self, key: str, value: Any) -> None:
+        """Save a setting value by key."""
         self.settings.setValue(key, value)
 
     def load_settings(self, key: str, default: Any = None) -> Any:
+        """Load a setting value by key with optional default."""
         return self.settings.value(key, default)
+
 
 class MainWindow(QMainWindow):
     """Main application window using composition with Ui_MainWindow."""
@@ -43,25 +48,25 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         # Local state storage
-        self.files = []
-        self.duplicate_groups = []
-        self.favourite_dirs = []
-        self.excluded_dirs = []
+        self.files: List = []
+        self.duplicate_groups: List = []
+        self.favourite_dirs: List[str] = []
+        self.excluded_dirs: List[str] = []
         self.settings_manager = SettingsManager()
         self.worker = None  # Holds reference to current worker for cancellation
         self.progress_dialog = None
         self.original_image_preview_size = None
 
         self._ordering_connected = False
-        self.restore_settings()
         self.setup_connections()
-
-        from PySide6.QtCore import QTimer
+        # Defer settings restore to ensure UI is fully initialized
         QTimer.singleShot(0, self.restore_settings)
 
     def setup_connections(self):
+        """Connect UI signals to handler methods."""
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
+        self.ui.remove_dir_button.clicked.connect(self.remove_selected_folder)
         self.ui.favourite_dirs_button.clicked.connect(self.select_favourite_dirs)
         self.ui.excluded_dirs_button.clicked.connect(self.select_excluded_dirs)
         self.ui.find_duplicates_button.clicked.connect(self.start_deduplication)
@@ -80,6 +85,7 @@ class MainWindow(QMainWindow):
         self.ui.groups_list.set_groups(self.duplicate_groups)
 
     def resizeEvent(self, event):
+        """Handle window resize to maintain splitter proportions."""
         super().resizeEvent(event)
         sizes = self.ui.splitter.sizes()
         total = sum(sizes)
@@ -90,11 +96,40 @@ class MainWindow(QMainWindow):
             self.ui.splitter.setSizes([new_left, new_right])
 
     def select_root_folder(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Root Folder")
+        """Open folder dialog and add selected path to the list."""
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Folder to Scan")
         if dir_path:
-            self.ui.root_dir_input.setText(dir_path)
+            # Check for duplicates in the list
+            for i in range(self.ui.root_dir_list.count()):
+                if self.ui.root_dir_list.item(i).text() == dir_path:
+                    QMessageBox.information(self, "Info", "This folder is already in the list")
+                    return
+
+            # Remove placeholder item if it exists (disabled item used for empty state)
+            if self.ui.root_dir_list.count() > 0:
+                first_item = self.ui.root_dir_list.item(0)
+                if first_item and not (first_item.flags() & Qt.ItemFlag.ItemIsEnabled):
+                    self.ui.root_dir_list.takeItem(0)
+
+            self.ui.root_dir_list.addItem(dir_path)
+
+    def remove_selected_folder(self):
+        """Remove selected folder(s) from the scan list."""
+        selected_items = self.ui.root_dir_list.selectedItems()
+        if not selected_items:
+            # If nothing selected, remove the current row as fallback
+            current_row = self.ui.root_dir_list.currentRow()
+            if current_row >= 0:
+                self.ui.root_dir_list.takeItem(current_row)
+            return
+
+        for item in selected_items:
+            row = self.ui.root_dir_list.row(item)
+            if row >= 0:
+                self.ui.root_dir_list.takeItem(row)
 
     def select_favourite_dirs(self):
+        """Open dialog to manage priority (favourite) directories."""
         dialog = FavouriteDirsDialog(self, self.favourite_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.favourite_dirs = dialog.get_selected_dirs()
@@ -115,6 +150,7 @@ class MainWindow(QMainWindow):
             )
 
     def select_excluded_dirs(self):
+        """Open dialog to manage excluded directories."""
         from onlyone.gui.custom_widgets.excluded_dirs_dialog import ExcludedDirsDialog
         dialog = ExcludedDirsDialog(self, self.excluded_dirs)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -129,6 +165,7 @@ class MainWindow(QMainWindow):
             )
 
     def keep_one_file_per_group(self):
+        """Keep one file per duplicate group and move the rest to trash."""
         if not self.duplicate_groups:
             QMessageBox.information(self, "Information", "No duplicate groups found")
             return
@@ -151,6 +188,7 @@ class MainWindow(QMainWindow):
         self.handle_delete_files(files_to_delete)
 
     def handle_delete_files(self, file_paths):
+        """Execute file deletion with progress tracking and error handling."""
         if not file_paths:
             return
 
@@ -227,26 +265,27 @@ class MainWindow(QMainWindow):
                 "\n\n".join(messages)
             )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"{'Error occurred'}:\n{e}")
+            QMessageBox.critical(self, "Error", f"Error occurred:\n{e}")
         finally:
             if self.progress_dialog:
                 self.progress_dialog.close()
                 self.progress_dialog = None
 
     def show_about_dialog(self):
+        """Display application information dialog."""
         QMessageBox.about(
             self,
-        "About",
-        f"""
+            "About",
+            f'''
             <b>OnlyOne v{__version__}</b><br>
             A tool to find and remove duplicate files.<br><br>
             
-            Check <a href="https://github.com/initumX/onlyone">OnlyOne github</a> for help<br><br>
-            Push a start on github page, if you like this app<br><br>
+            Check <a href="https://github.com/initumX/onlyone">OnlyOne GitHub</a> for help<br><br>
+            Leave a star on the GitHub page if you like this app<br><br>
             
             © Copyright (c) 2026 initumX (initum.x@gmail.com)<br><br>
             License: MIT License<br>
-            """
+            '''
         )
 
     def _cleanup_progress_dialog(self):
@@ -282,10 +321,23 @@ class MainWindow(QMainWindow):
         except (RuntimeError, AttributeError):
             pass
 
+    def _collect_root_dirs(self) -> List[str]:
+        """Collect all root directories from the UI list widget."""
+        root_dirs = []
+        for i in range(self.ui.root_dir_list.count()):
+            item = self.ui.root_dir_list.item(i)
+            if item and item.flags() & Qt.ItemFlag.ItemIsEnabled:
+                path = item.text().strip()
+                if path:
+                    root_dirs.append(path)
+        return root_dirs
+
     def start_deduplication(self):
-        root_dir = self.ui.root_dir_input.text().strip()
-        if not root_dir:
-            QMessageBox.warning(self, "Input Error", "Please, select folder to scan!")
+        """Start the deduplication process with current UI settings."""
+        # Collect all root directories from the list widget
+        root_dirs = self._collect_root_dirs()
+        if not root_dirs:
+            QMessageBox.warning(self, "Input Error", "Please, select at least one folder to scan!")
             return
 
         # Cancel existing worker if any
@@ -332,9 +384,9 @@ class MainWindow(QMainWindow):
         # Connect cancel action
         self.progress_dialog.canceled.connect(self._cancel_worker)
 
-        # Create unified parameters object
+        # Create unified parameters object with multiple root directories
         params = DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=root_dirs,
             min_size_bytes=min_size,
             max_size_bytes=max_size,
             extensions=extensions,
@@ -390,8 +442,6 @@ class MainWindow(QMainWindow):
         self.on_ordering_changed()
 
         # Show statistics AFTER event loop processes dialog cleanup
-        from PySide6.QtCore import QTimer
-
         def show_stats():
             stats_text = stats.print_summary()
             stats_box = QMessageBox(self)
@@ -413,7 +463,7 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(
             self,
             "Error",
-            f"{'Error occurred'}:\n{error_message}"
+            f"Error occurred:\n{error_message}"
         )
 
     def closeEvent(self, event):
@@ -430,7 +480,11 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def save_settings(self):
-        self.settings_manager.save_settings("root_dir", self.ui.root_dir_input.text())
+        """Persist current UI state to settings."""
+        # Save root directories as a list
+        root_dirs = self._collect_root_dirs()
+        self.settings_manager.save_settings("root_dirs", root_dirs)
+
         self.settings_manager.save_settings("min_size", self.ui.min_size_spin.value())
         self.settings_manager.save_settings("max_size", self.ui.max_size_spin.value())
         self.settings_manager.save_settings("min_unit_index", self.ui.min_unit_combo.currentIndex())
@@ -444,41 +498,73 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("ordering_mode", self.ui.ordering_combo.currentIndex())
 
     def restore_settings(self):
-        self.ui.root_dir_input.setText(self.settings_manager.load_settings("root_dir", ""))
-        self.ui.min_size_spin.setValue(int(self.settings_manager.load_settings("min_size", "100")))
-        self.ui.max_size_spin.setValue(int(self.settings_manager.load_settings("max_size", "100")))
-        self.ui.min_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("min_unit_index", "0")))
-        self.ui.max_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("max_unit_index", "1")))
-        self.ui.boost_combo.setCurrentIndex(int(self.settings_manager.load_settings("boost_mode", "0")))
-        self.ui.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", "1")))
+        """Restore UI state from persisted settings with migration support."""
+        # Load root directories with migration from old single 'root_dir' setting
+        saved_dirs = self.settings_manager.load_settings("root_dirs", None)
+
+        # Migration: if new format doesn't exist, try old format
+        if saved_dirs is None:
+            old_dir = self.settings_manager.load_settings("root_dir", "")
+            if old_dir and isinstance(old_dir, str) and old_dir.strip():
+                saved_dirs = [old_dir.strip()]
+            else:
+                saved_dirs = []
+
+        # Handle different possible types from QSettings
+        if isinstance(saved_dirs, str):
+            # Might be serialized as semicolon-separated string
+            saved_dirs = [d.strip() for d in saved_dirs.split(";") if d.strip()]
+        elif not isinstance(saved_dirs, list):
+            saved_dirs = []
+
+        # Populate the list widget
+        self.ui.root_dir_list.clear()
+        if saved_dirs:
+            for path in saved_dirs:
+                self.ui.root_dir_list.addItem(path)
+        else:
+            # Add disabled placeholder item for empty state
+            placeholder = QListWidgetItem("No folders selected — click 'Add Folder' to begin")
+            placeholder.setFlags(Qt.ItemFlag.NoItemFlags)
+            self.ui.root_dir_list.addItem(placeholder)
+
+        self.ui.min_size_spin.setValue(int(self.settings_manager.load_settings("min_size", 100)))
+        self.ui.max_size_spin.setValue(int(self.settings_manager.load_settings("max_size", 100)))
+        self.ui.min_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("min_unit_index", 0)))
+        self.ui.max_unit_combo.setCurrentIndex(int(self.settings_manager.load_settings("max_unit_index", 1)))
+        self.ui.boost_combo.setCurrentIndex(int(self.settings_manager.load_settings("boost_mode", 0)))
+        self.ui.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", 1)))
         self.ui.extension_filter_input.setText(self.settings_manager.load_settings("extensions", ""))
 
         splitter_sizes = self.settings_manager.load_settings("splitter_sizes", None)
-        if splitter_sizes:
+        if splitter_sizes and isinstance(splitter_sizes, (list, tuple)):
             self.ui.splitter.setSizes([int(x) for x in splitter_sizes])
         else:
             self.ui.splitter.setSizes([400, 600])
 
-        saved_dirs = self.settings_manager.load_settings("favourite_dirs", [])
-        if isinstance(saved_dirs, str):
-            saved_dirs = [d.strip() for d in saved_dirs.split(";") if d.strip()]
-        elif not isinstance(saved_dirs, list):
-            saved_dirs = []
-        self.favourite_dirs = saved_dirs
+        # Restore favourite directories
+        saved_fav = self.settings_manager.load_settings("favourite_dirs", [])
+        if isinstance(saved_fav, str):
+            saved_fav = [d.strip() for d in saved_fav.split(";") if d.strip()]
+        elif not isinstance(saved_fav, list):
+            saved_fav = []
+        self.favourite_dirs = saved_fav
         self.ui.favourite_list_widget.clear()
         for path in self.favourite_dirs:
             self.ui.favourite_list_widget.addItem(path)
 
-        saved_excluded = self.settings_manager.load_settings("excluded_dirs", [])
-        if isinstance(saved_excluded, str):
-            saved_excluded = [d.strip() for d in saved_excluded.split(";") if d.strip()]
-        elif not isinstance(saved_excluded, list):
-            saved_excluded = []
-        self.excluded_dirs = saved_excluded
+        # Restore excluded directories
+        saved_excl = self.settings_manager.load_settings("excluded_dirs", [])
+        if isinstance(saved_excl, str):
+            saved_excl = [d.strip() for d in saved_excl.split(";") if d.strip()]
+        elif not isinstance(saved_excl, list):
+            saved_excl = []
+        self.excluded_dirs = saved_excl
         self.ui.excluded_list_widget.clear()
         for path in self.excluded_dirs:
             self.ui.excluded_list_widget.addItem(path)
 
+        # Restore ordering mode
         ordering_index = int(self.settings_manager.load_settings("ordering_mode", 0))
         self.ui.ordering_combo.setCurrentIndex(ordering_index)
         self.on_ordering_changed()

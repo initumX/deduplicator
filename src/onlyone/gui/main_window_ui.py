@@ -11,6 +11,7 @@ from onlyone.gui.custom_widgets.image_preview_label import ImagePreviewLabel
 from onlyone.core.models import DeduplicationMode
 from onlyone.core.models import SortOrder, BoostMode
 
+
 class Ui_MainWindow:
     """Pure UI class following Qt's official pattern (composition, not inheritance)."""
 
@@ -21,15 +22,32 @@ class Ui_MainWindow:
         central_widget = QWidget(MainWindow)
         MainWindow.setCentralWidget(central_widget)
 
-        # Root directory layout
-        self.root_layout = QHBoxLayout()
+        # Root directory layout (Multiple directories support)
+        self.root_layout = QVBoxLayout()
+
+        # Top row: Label + Add Button + Remove Button
+        self.root_header_layout = QHBoxLayout()
         self.label_root_folder = QLabel(central_widget)
-        self.root_layout.addWidget(self.label_root_folder)
-        self.root_dir_input = QLineEdit(central_widget)
+        self.root_header_layout.addWidget(self.label_root_folder)
+        self.root_header_layout.addStretch()
         self.select_dir_button = QPushButton(central_widget)
-        self.root_dir_input.setPlaceholderText("Select Folder to scan")
-        self.root_layout.addWidget(self.root_dir_input)
-        self.root_layout.addWidget(self.select_dir_button)
+        self.select_dir_button.setText("Add Folder")
+        self.root_header_layout.addWidget(self.select_dir_button)
+
+        self.remove_dir_button = QPushButton(central_widget)
+        self.remove_dir_button.setText("Remove Selected")
+        self.remove_dir_button.setToolTip("Remove selected folder from the list")
+        self.remove_dir_button.setMaximumWidth(150)
+        self.root_header_layout.addWidget(self.remove_dir_button)
+        self.root_layout.addLayout(self.root_header_layout)
+
+        # Directory list widget
+        self.root_dir_list = QListWidget(central_widget)
+        self.root_dir_list.setToolTip("List of directories to scan for duplicates")
+        self.root_dir_list.setMinimumHeight(50)
+        self.root_dir_list.setMaximumHeight(50)
+        self.root_dir_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.root_layout.addWidget(self.root_dir_list)
 
         # Size filters
         self.min_size_layout = QHBoxLayout()
@@ -57,11 +75,9 @@ class Ui_MainWindow:
         self.extension_filter_input = QLineEdit(central_widget)
         self.extension_filter_input.setPlaceholderText(".jpg .png .pdf")
         self.extension_filter_input.setToolTip(
-            """
-        Enter file extensions separated by spaces (e.g., .jpg .png .pdf).
-        Leave empty to disable extension filtering.
-        Extensions can be with or without leading dot (both .jpg and jpg work).
-        """
+            "Enter file extensions separated by spaces (e.g., .jpg .png .pdf). "
+            "Leave empty to disable extension filtering. "
+            "Extensions can be with or without leading dot (both .jpg and jpg work)."
         )
         self.extension_layout_inside.addWidget(self.extension_filter_input)
 
@@ -78,7 +94,7 @@ class Ui_MainWindow:
         self.favourite_group = QGroupBox(central_widget)
         self.favourite_dirs_button = QPushButton(central_widget)
         self.favourite_dirs_button.setToolTip(
-            "Files from these folders are prioritized to keep (goes first, as 'original') in each group.\n"
+            "Files from these folders are prioritized to keep (goes first, as 'original') in each group."
         )
         self.favourite_list_widget = QListWidget(central_widget)
         self.favourite_list_widget.setContentsMargins(0, 0, 0, 0)
@@ -91,7 +107,6 @@ class Ui_MainWindow:
         favourite_layout.addWidget(self.favourite_list_widget)
         self.favourite_group.setLayout(favourite_layout)
         self.favourite_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
 
         # Excluded folders
         self.excluded_group = QGroupBox(central_widget)
@@ -127,43 +142,37 @@ class Ui_MainWindow:
         self.boost_label = QLabel(central_widget)
         self.boost_combo = QComboBox(central_widget)
         self.boost_combo.setToolTip(
-                """
-            Boost for initial file grouping
-        Size               = Compare only files of the same size
-        Size + Extension   = Compare only files of the same size and extension
-        Size + Filename    = Compare only files of the same size and filename
-        Size + Fuzzy Filename    = Compare only files of the same size and similar filename
-                """
+            "Boost for initial file grouping\n"
+            "Size               = Compare only files of the same size\n"
+            "Size + Extension   = Compare only files of the same size and extension\n"
+            "Size + Filename    = Compare only files of the same size and filename\n"
+            "Size + Fuzzy Filename = Compare only files of the same size and similar filename"
         )
 
         # Control buttons and mode selection
         self.mode_label = QLabel(central_widget)
         self.dedupe_mode_combo = QComboBox(central_widget)
         self.dedupe_mode_combo.setToolTip(
-            """
-            FAST    = Boost + checksum from the first few KB (may produce false positives)
-            NORMAL  = Boost + checksums from 3 parts of the file (generally reliable)
-            FULL    = Boost + checksums from 2 parts + entire file (very slow for large files)
-            """
+            "FAST    = Boost + checksum from the first few KB (may produce false positives)\n"
+            "NORMAL  = Boost + checksums from 3 parts of the file (generally reliable)\n"
+            "FULL    = Boost + checksums from 2 parts + entire file (very slow for large files)"
         )
 
         self.ordering_label = QLabel(central_widget)
         self.ordering_combo = QComboBox(central_widget)
         self.ordering_combo.setToolTip(
-            """
-            Which file should be kept/considered as "original"?
-                • The file closest to the root folder (shortest path)
-                • The file with the shortest filename
-            """
+            "Which file should be kept/considered as 'original'?\n"
+            "- The file closest to the root folder (shortest path)\n"
+            "- The file with the shortest filename"
         )
 
         self.find_duplicates_button = QPushButton(central_widget)
         self.find_duplicates_button.setToolTip(
-            "Start searching for duplicate files.\nFiles from Priority Folders are marked with ✅"
+            "Start searching for duplicate files.\nFiles from Priority Folders are marked with a star."
         )
 
         self.keep_one_button = QPushButton(central_widget)
-        self.keep_one_button.setToolTip("Keep one file (the first) per group \nand move the rest to trash")
+        self.keep_one_button.setToolTip("Keep one file (the first) per group and move the rest to trash")
 
         self.about_button = QPushButton(central_widget)
         self.about_button.setToolTip("Show Help")
@@ -183,8 +192,8 @@ class Ui_MainWindow:
 
         # Main content area: groups list + image preview
         self.splitter = QSplitter(Qt.Orientation.Horizontal, central_widget)
-        self.groups_list = DuplicateGroupsList()  # Parent will be set by splitter
-        self.image_preview = ImagePreviewLabel()  # Custom widget - no parent argument
+        self.groups_list = DuplicateGroupsList()
+        self.image_preview = ImagePreviewLabel()
         self.splitter.addWidget(self.groups_list)
         self.splitter.addWidget(self.image_preview)
         self.splitter.setCollapsible(0, False)
@@ -216,13 +225,13 @@ class Ui_MainWindow:
         MainWindow.setWindowTitle("OnlyOne")
 
         # Buttons and input fields
-        self.select_dir_button.setText("Select Folder")
-        self.root_dir_input.setPlaceholderText("Select Folder to scan")
+        self.select_dir_button.setText("Add Folder")
+        self.remove_dir_button.setText("Remove Selected")
         self.find_duplicates_button.setText("Find Duplicates")
         self.keep_one_button.setText("Keep OnlyOne File Per Group")
         self.about_button.setText("Help/About")
-        self.favourite_dirs_button.setText("Manage Priority Folders List")
-        self.excluded_dirs_button.setText("Manage Excluded Folders List")
+        self.favourite_dirs_button.setText("Manage Priority Folders")
+        self.excluded_dirs_button.setText("Manage Excluded Folders")
 
         # Group box titles
         self.filters_group.setTitle("Filters")
@@ -230,7 +239,7 @@ class Ui_MainWindow:
         self.excluded_group.setTitle("Excluded Folders")
 
         # Labels
-        self.label_root_folder.setText("Root Folder")
+        self.label_root_folder.setText("Scan Folders:")
         self.label_min_size.setText("Min size:")
         self.label_max_size.setText("Max size:")
         self.label_extensions.setText("Extensions:")
@@ -239,20 +248,16 @@ class Ui_MainWindow:
         self.ordering_label.setText("Order:")
 
         # Boost Mode Combo
-        #-----------------
         current_boost_index = self.boost_combo.currentIndex()
         self.boost_combo.clear()
 
-        # Use Enum properties for consistent text and data
         for mode in BoostMode:
             self.boost_combo.addItem(mode.display_name, userData=mode)
 
-        # Restore selection if valid
         if 0 <= current_boost_index < self.boost_combo.count():
             self.boost_combo.setCurrentIndex(current_boost_index)
 
         # Deduplication Mode Combo
-        #-----------------------------
         current_mode_index = self.dedupe_mode_combo.currentIndex()
         self.dedupe_mode_combo.clear()
 
@@ -263,12 +268,11 @@ class Ui_MainWindow:
             self.dedupe_mode_combo.setCurrentIndex(current_mode_index)
 
         # Ordering Combo
-        #----------------
         current_order_index = self.ordering_combo.currentIndex()
         self.ordering_combo.clear()
 
         for sort_order in SortOrder:
-            self.ordering_combo.addItem(sort_order.display_name,userData=sort_order)
+            self.ordering_combo.addItem(sort_order.display_name, userData=sort_order)
 
         if 0 <= current_order_index < self.ordering_combo.count():
             self.ordering_combo.setCurrentIndex(current_order_index)
