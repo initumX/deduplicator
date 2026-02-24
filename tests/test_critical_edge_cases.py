@@ -2,13 +2,17 @@
 Critical edge case tests for production safety.
 Focuses on resource leaks during cancellation, accurate space calculation after partial deletion,
 and robustness against files disappearing during operation.
+Updated to match new DeduplicationParams API (root_dirs list, boost parameter).
 """
 import os
 import sys
 import time
 from pathlib import Path
 from unittest import mock
-from onlyone.core.models import File, DuplicateGroup, DeduplicationParams
+from onlyone.core.models import (
+    File, DuplicateGroup, DeduplicationParams,
+    DeduplicationMode, SortOrder, BoostMode
+)
 from onlyone.core.stages import HashStageBase, FrontHashStage
 from onlyone.core.grouper import FileGrouperImpl
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
@@ -294,13 +298,17 @@ class TestFilesDeletedDuringOperation:
                 yield root, dirs, files
 
         with mock.patch("os.walk", side_effect=flaky_walk):
+            # ← FIXED: root_dirs as list, added boost and excluded_dirs
             params = DeduplicationParams(
-                root_dir=str(tmp_path),
+                root_dirs=[str(tmp_path)],  # ← FIXED: list instead of str
                 min_size_bytes=0,
                 max_size_bytes=1024 * 1024,
                 extensions=[".txt"],
                 favourite_dirs=[],
-                excluded_dirs=[]
+                excluded_dirs=[],  # ← ADDED
+                mode=DeduplicationMode.NORMAL,  # ← ADDED
+                sort_order=SortOrder.SHORTEST_PATH,  # ← ADDED
+                boost=BoostMode.SAME_SIZE  # ← ADDED
             )
             scanner = FileScannerImpl(params=params)
             collection = scanner.scan(stopped_flag=lambda: False)
@@ -337,13 +345,17 @@ class TestCancellationResourceCleanup:
                 call_count += 1
                 return call_count > 5
 
+            # ← FIXED: root_dirs as list, added boost and excluded_dirs
             params = DeduplicationParams(
-                root_dir=str(tmp_path),
+                root_dirs=[str(tmp_path)],  # ← FIXED: list instead of str
                 min_size_bytes=0,
                 max_size_bytes=1024 * 1024,
                 extensions=[".txt"],
                 favourite_dirs=[],
-                excluded_dirs=[]
+                excluded_dirs=[],  # ← ADDED
+                mode=DeduplicationMode.NORMAL,  # ← ADDED
+                sort_order=SortOrder.SHORTEST_PATH,  # ← ADDED
+                boost=BoostMode.SAME_SIZE  # ← ADDED
             )
             scanner = FileScannerImpl(params=params)
             collection = scanner.scan(stopped_flag=stopped_flag)

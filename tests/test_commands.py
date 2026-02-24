@@ -1,15 +1,17 @@
 """
 Integration tests for DeduplicationCommand — the orchestration layer between UI and core.
-Verifies correct wiring of scanner → onlyone with progress/cancellation support.
+Verifies correct wiring of scanner → deduplicator with progress/cancellation support.
+Updated to match new DeduplicationParams API (root_dirs list, boost parameter).
 """
 import pytest
 from pathlib import Path
+from onlyone.core.models import BoostMode
 from onlyone import DeduplicationParams, DeduplicationMode, SortOrder
 from onlyone import DeduplicationCommand
 
 
 class TestDeduplicationCommand:
-    """Test command orchestration logic (scanner + onlyone integration)."""
+    """Test command orchestration logic (scanner + deduplicator integration)."""
 
     def test_execute_returns_groups_and_stats(self, test_files):
         """
@@ -19,13 +21,15 @@ class TestDeduplicationCommand:
         root_dir = str(Path(test_files["dup1_a"]).parent)
 
         params = DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=[root_dir],  # ← FIXED: root_dirs as list
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],  # ← ADDED: required parameter
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE  # ← ADDED: required parameter
         )
 
         command = DeduplicationCommand()
@@ -43,13 +47,15 @@ class TestDeduplicationCommand:
         Prevents wasted deduplication effort on empty input.
         """
         params = DeduplicationParams(
-            root_dir=str(temp_dir),
+            root_dirs=[str(temp_dir)],  # ← FIXED
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],  # No .txt files in empty dir
             favourite_dirs=[],
+            excluded_dirs=[],  # ← ADDED
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE  # ← ADDED
         )
 
         command = DeduplicationCommand()
@@ -69,13 +75,15 @@ class TestDeduplicationCommand:
             progress_events.append((stage, current, total))
 
         params = DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=[root_dir],  # ← FIXED
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],  # ← ADDED
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE  # ← ADDED
         )
 
         command = DeduplicationCommand()
@@ -100,13 +108,15 @@ class TestDeduplicationCommand:
         root_dir = str(Path(test_files["dup1_a"]).parent)
 
         params = DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=[root_dir],  # ← FIXED
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],  # ← ADDED
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE  # ← ADDED
         )
 
         command = DeduplicationCommand()
@@ -145,13 +155,15 @@ class TestDeduplicationCommand:
             return dedupe_call_count > 3
 
         params = DeduplicationParams(
-            root_dir=root_dir,
+            root_dirs=[root_dir],  # ← FIXED
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],  # ← ADDED
             mode=DeduplicationMode.FULL,  # Longer pipeline = easier to cancel
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE  # ← ADDED
         )
 
         command = DeduplicationCommand()
@@ -164,3 +176,72 @@ class TestDeduplicationCommand:
         assert dedupe_call_count <= 10
         # May have partial groups (not necessarily full 2 groups)
         assert len(groups) <= 2
+
+    def test_execute_with_multiple_root_dirs(self, temp_dir):
+        """
+        Command must handle multiple root directories correctly.
+        New feature: root_dirs as list instead of single root_dir.
+        """
+        dir1 = temp_dir / "dir1"
+        dir1.mkdir()
+        dir2 = temp_dir / "dir2"
+        dir2.mkdir()
+
+        # Create duplicate files across directories
+        content = b"identical content for testing"
+        (dir1 / "file1.txt").write_bytes(content)
+        (dir2 / "file2.txt").write_bytes(content)
+
+        params = DeduplicationParams(
+            root_dirs=[str(dir1), str(dir2)],  # ← NEW: multiple roots
+            min_size_bytes=0,
+            max_size_bytes=1024 * 1024,
+            extensions=[".txt"],
+            favourite_dirs=[],
+            excluded_dirs=[],
+            mode=DeduplicationMode.FAST,
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE
+        )
+
+        command = DeduplicationCommand()
+        groups, stats = command.execute(params)
+
+        # Should find 1 duplicate group across both directories
+        assert len(groups) == 1
+        assert len(groups[0].files) == 2
+
+    def test_execute_with_excluded_dirs(self, temp_dir):
+        """
+        Command must respect excluded_dirs parameter.
+        Files in excluded directories should not be scanned.
+        """
+        included_dir = temp_dir / "included"
+        included_dir.mkdir()
+        excluded_dir = temp_dir / "excluded"
+        excluded_dir.mkdir()
+
+        content = b"identical content"
+        (included_dir / "file1.txt").write_bytes(content)
+        (included_dir / "file2.txt").write_bytes(content)
+        (excluded_dir / "file3.txt").write_bytes(content)
+
+        params = DeduplicationParams(
+            root_dirs=[str(temp_dir)],
+            min_size_bytes=0,
+            max_size_bytes=1024 * 1024,
+            extensions=[".txt"],
+            favourite_dirs=[],
+            excluded_dirs=[str(excluded_dir)],  # ← NEW: exclude directory
+            mode=DeduplicationMode.FAST,
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE
+        )
+
+        command = DeduplicationCommand()
+        groups, stats = command.execute(params)
+
+        # Should find 1 group with 2 files (excluded dir file not counted)
+        assert len(groups) == 1
+        assert len(groups[0].files) == 2
+        assert not any("excluded" in f.path for f in groups[0].files)

@@ -1,7 +1,6 @@
 """
 Unit tests for CLI --excluded-dirs argument parsing and validation.
 """
-import pytest
 from pathlib import Path
 from onlyone.cli import CLIApplication
 

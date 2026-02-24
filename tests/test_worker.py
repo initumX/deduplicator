@@ -1,12 +1,16 @@
 """
 Unit tests for DeduplicateWorker — Qt thread integration layer.
 Verifies thread-safe cancellation, signal emission, and error handling.
+Updated to match new DeduplicationParams API (root_dirs list).
 """
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from pathlib import Path
+import tempfile
+import pytest
 from onlyone.core import (
     DeduplicationParams, DeduplicationMode,
-    SortOrder, DuplicateGroup, DeduplicationStats
+    SortOrder, DuplicateGroup, DeduplicationStats, BoostMode
 )
 from onlyone.gui import DeduplicateWorker
 
@@ -14,40 +18,35 @@ from onlyone.gui import DeduplicateWorker
 class TestDeduplicateWorker:
     """Test worker thread safety and signal emission."""
 
-    def test_stop_sets_stopped_flag(self):
-        """stop() must set internal _stopped flag to True."""
-        params = DeduplicationParams(
-            root_dir="/tmp",
+    @pytest.fixture
+    def valid_params(self, tmp_path):
+        """Fixture providing valid DeduplicationParams for tests."""
+        return DeduplicationParams(
+            root_dirs=[str(tmp_path)],  # ← FIXED: root_dirs as list
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
+            excluded_dirs=[],
             mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE
         )
 
-        worker = DeduplicateWorker(params)
+    def test_stop_sets_stopped_flag(self, valid_params):
+        """stop() must set internal _stopped flag to True."""
+        worker = DeduplicateWorker(valid_params)
 
         assert worker.is_stopped() is False
         worker.stop()
         assert worker.is_stopped() is True
 
-    def test_is_stopped_is_thread_safe(self):
+    def test_is_stopped_is_thread_safe(self, valid_params):
         """
         is_stopped() must be safe to call from multiple threads without races.
         Verified by absence of exceptions during repeated access.
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
 
         # Simulate repeated access (simplified concurrency check)
         for _ in range(100):
@@ -57,22 +56,12 @@ class TestDeduplicateWorker:
         for _ in range(100):
             assert worker.is_stopped() is True
 
-    def test_safe_progress_emit_skips_after_stop(self):
+    def test_safe_progress_emit_skips_after_stop(self, valid_params):
         """
         safe_progress_emit() must NOT emit signals after stop() is called.
         Prevents UI updates after cancellation (race condition protection).
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
         progress_handler = Mock()
         worker.signals.progress.connect(progress_handler)
 
@@ -87,22 +76,11 @@ class TestDeduplicateWorker:
         worker.safe_progress_emit("hashing", 20, 100)
         assert progress_handler.call_count == 1  # Still 1, not 2
 
-    def test_run_emits_finished_on_success(self):
+    def test_run_emits_finished_on_success(self, valid_params):
         """
         Successful execution must emit finished signal with groups/stats.
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        # Create worker first, then mock its command instance
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
         mock_groups = [DuplicateGroup(size=1024, files=[])]
         mock_stats = DeduplicationStats()
         mock_stats.total_time = 1.23
@@ -125,21 +103,11 @@ class TestDeduplicateWorker:
         assert call_args[0] == mock_groups
         assert call_args[1] == mock_stats
 
-    def test_run_emits_error_on_exception(self):
+    def test_run_emits_error_on_exception(self, valid_params):
         """
         Execution failure must emit error signal with descriptive message.
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
         worker.command.execute = Mock(side_effect=ValueError("Simulated failure"))
 
         error_handler = Mock()
@@ -155,22 +123,12 @@ class TestDeduplicateWorker:
         assert "ValueError" in error_msg
         assert "Simulated failure" in error_msg
 
-    def test_run_does_not_emit_after_stop(self):
+    def test_run_does_not_emit_after_stop(self, valid_params):
         """
         Worker must NOT emit finished/error signals after stop() is called.
         Critical protection against use-after-free when UI is destroyed.
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
         mock_groups = [DuplicateGroup(size=1024, files=[])]
         mock_stats = DeduplicationStats()
 
@@ -192,22 +150,12 @@ class TestDeduplicateWorker:
         assert finished_handler.call_count == 0
         assert error_handler.call_count == 0
 
-    def test_worker_auto_deletes_after_run(self):
+    def test_worker_auto_deletes_after_run(self, valid_params):
         """
         QRunnable with setAutoDelete(True) must be deleted after run() completes.
         Verified by checking that auto-delete flag is set.
         """
-        params = DeduplicationParams(
-            root_dir="/tmp",
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[],
-            mode=DeduplicationMode.FAST,
-            sort_order=SortOrder.SHORTEST_PATH
-        )
-
-        worker = DeduplicateWorker(params)
+        worker = DeduplicateWorker(valid_params)
 
         # Verify auto-delete is enabled (critical for memory safety)
         assert worker.autoDelete() is True
@@ -221,3 +169,14 @@ class TestDeduplicateWorker:
         worker.run()
         # No assertion needed — successful execution proves auto-delete works
         # (Actual deletion happens at C++ level after run() returns)
+
+    def test_worker_passes_correct_params_to_command(self, valid_params, tmp_path):
+        """
+        Worker must pass normalized params to DeduplicationCommand.
+        """
+        worker = DeduplicateWorker(valid_params)
+
+        # Verify params were normalized during init
+        assert isinstance(worker.params.normalized_root_dirs, list)
+        assert len(worker.params.normalized_root_dirs) >= 1
+        assert Path(worker.params.normalized_root_dirs[0]).is_absolute()

@@ -15,15 +15,20 @@ class TestArgumentParsing:
         """Test both long (--input) and short (-i) forms."""
         app = CLIApplication()
 
-        # Long form
+        # Long form - returns LIST now (nargs="+")
         with mock.patch.object(sys, 'argv', ['onlyone', '--input', '/tmp/test']):
             args = app.parse_args()
-        assert args.input == "/tmp/test"
+        assert args.input == ["/tmp/test"]  # ← FIXED: list, not string
 
         # Short form
         with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp/test']):
             args = app.parse_args()
-        assert args.input == "/tmp/test"
+        assert args.input == ["/tmp/test"]  # ← FIXED: list, not string
+
+        # Multiple directories (NEW feature)
+        with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp/test1', '/tmp/test2']):
+            args = app.parse_args()
+        assert args.input == ["/tmp/test1", "/tmp/test2"]  # ← NEW test case
 
     def test_extensions_flag_variants(self):
         """Test both long (--extensions) and short (-x) forms with space-separated values."""

@@ -3,7 +3,6 @@ Tests for duplicate service logic — validates correct file preservation behavi
 These tests verify that DuplicateService correctly identifies files to delete,
 preserving ONLY the first file in pre-sorted groups (sorting is handled upstream).
 """
-import pytest
 from onlyone.core.models import File, DuplicateGroup
 from onlyone.services.duplicate_service import DuplicateService
 
