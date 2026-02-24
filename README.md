@@ -86,8 +86,8 @@ Options:
 `-i, --input`          input folder  
 `-m, --min-size`       min size filter  
 `-M, --max-size`       max size filter  
-`-x, --extensions`     extension filter (space separated, start with ^ to make extensions list work in "blacklist" mode)  
-`-p, --priority-dirs`  priority dirs (space separated)  
+`-x, --extensions`     extension filter (space separated, start with ^ to make extensions list work in "blacklist" mode)    
+`-p, --priority-dirs`  priority dirs (space separated). Files from here are prioritized to keep (come first in each group)   
 `--excluded-dirs`     excluded/ignored dirs (space separated)  
 `--boost {size,extension,filename,fuzzy}`  Rule for initial file grouping:  
 * `size` Group files of the same size only (default)  
