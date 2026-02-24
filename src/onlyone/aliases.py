@@ -42,11 +42,14 @@ Examples:
   Basic usage - find duplicates in Downloads folder
   %(prog)s -i ~/Downloads
   
+  Dry run with ascii-compilant output
+  %(prog)s -i ~/Downloads --dry-run --ascii
+  
   Filter files by size, exclude(^ inverts whitelist to blacklist) extensions jpg and png and find duplicates
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x ^ .jpg .png
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x ^ .jpg .png --dry-run
 
   Filter files by size and extensions and find duplicates
-  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png
+  %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png --dry-run
   
   Same as above + move duplicates to trash (with confirmation prompt)
   %(prog)s -i ~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one

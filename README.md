@@ -101,9 +101,12 @@ Options:
 * `full`    check by hashsum from 2 part + whole file hashsum  
 
 `--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)  
+`--dry-run`             Test running  
 `--keep-one`            Keep one file/per group and move the rest to trash (one confirmation)  
 `--keep-one --force`    Keep one file/per group and move the rest to trash (no confirmation)  
-`--verbose, -v`         Show detailed statistics and progress  
+`--ascii`               ASCII-compilant output  
+`--stats`               Show stats  
+`--version, -v`         Show version and exit   
 `--help, -h`            Show help file  
 
 ### TESTS
