@@ -9,17 +9,8 @@ Core features:
 """
 
 # Get version
-try:
-    from importlib.metadata import version as _version
-    __version__ = _version("onlyone")
-except Exception:
-    try:
-        import tomllib  # Python 3.11+
-    except ImportError:
-        import tomli as tomllib  # Python < 3.11: pip install tomli
-
-    with open("pyproject.toml", "rb") as f:
-        __version__ = tomllib.load(f)["project"]["version"]
+from importlib.metadata import version as _version
+__version__ = _version("onlyone")
 
 # Public API — only what users should import directly
 from onlyone.commands import DeduplicationCommand

@@ -3,7 +3,7 @@ from onlyone.core.models import DuplicateGroup, File
 
 class DuplicateService:
     @staticmethod
-    def remove_files_from_groups(groups: list[DuplicateGroup], file_paths: list[str]) -> list[DuplicateGroup]:
+    def remove_files_from_groups(groups: List[DuplicateGroup], file_paths: List[str]) -> List[DuplicateGroup]:
         """
         Removes files with the specified paths from all duplicate groups.
 
@@ -25,7 +25,7 @@ class DuplicateService:
         return updated_groups
 
     @staticmethod
-    def remove_files_from_file_list(files: list[File], file_paths: list[str]) -> list[File]:
+    def remove_files_from_file_list(files: List[File], file_paths: List[str]) -> List[File]:
         """
         Removes files matching the given file paths from the main file list.
 

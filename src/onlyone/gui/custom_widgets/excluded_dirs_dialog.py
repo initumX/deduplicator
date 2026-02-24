@@ -8,12 +8,12 @@ from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
     QVBoxLayout, QFileDialog, QAbstractItemView
 )
-
+from typing import List
 
 class ExcludedDirsDialog(QDialog):
     """Dialog for managing the list of excluded folders."""
 
-    def __init__(self, parent=None, initial_dirs: list[str] = None):
+    def __init__(self, parent=None, initial_dirs: List[str] = None):
         super().__init__(parent)
         self.setWindowTitle("Excluded Folders")
         self.setMinimumWidth(500)
@@ -47,7 +47,7 @@ class ExcludedDirsDialog(QDialog):
         ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
 
-    def get_selected_dirs(self) -> list[str]:
+    def get_selected_dirs(self) -> List[str]:
         """Returns the selected excluded folders."""
         return [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 

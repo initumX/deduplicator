@@ -37,3 +37,4 @@
 -refactor(convert_utils): convert class to module functions and enhance API  
 -CLI: --version, -v added
 -CLI: --dry-run added
+-NEW: Now it can work on python 3.8 too, but I recommend you use 3.9 or newer.

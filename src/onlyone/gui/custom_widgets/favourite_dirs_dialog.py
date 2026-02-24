@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QDialog, QListWidget, QPushButton, QHBoxLayout,
     QVBoxLayout, QFileDialog, QAbstractItemView
 )
+from typing import List
 
 
 class FavouriteDirsDialog(QDialog):
@@ -28,7 +29,7 @@ class FavouriteDirsDialog(QDialog):
         favourite_dirs (list[str]): List of current favourite folders.
         list_widget (QListWidget): Widget for displaying folder list.
     """
-    def __init__(self, parent=None, initial_dirs: list[str] = None):
+    def __init__(self, parent=None, initial_dirs: List[str] = None):
         super().__init__(parent)
 
         self.setWindowTitle("Priority Folders")
@@ -67,7 +68,7 @@ class FavouriteDirsDialog(QDialog):
         ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
 
-    def get_selected_dirs(self) -> list[str]:
+    def get_selected_dirs(self) -> List[str]:
         """Returns the selected favourite folders."""
         return [self.list_widget.item(i).text() for i in range(self.list_widget.count())]
 
