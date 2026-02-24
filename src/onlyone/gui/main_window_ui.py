@@ -78,7 +78,7 @@ class Ui_MainWindow:
         self.favourite_group = QGroupBox(central_widget)
         self.favourite_dirs_button = QPushButton(central_widget)
         self.favourite_dirs_button.setToolTip(
-            "Files from these folders are prioritized (goes first, as 'original') in each group.\n"
+            "Files from these folders are prioritized to keep (goes first, as 'original') in each group.\n"
         )
         self.favourite_list_widget = QListWidget(central_widget)
         self.favourite_list_widget.setContentsMargins(0, 0, 0, 0)

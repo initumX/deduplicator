@@ -125,7 +125,7 @@ class CLIApplication:
             type=str,
             metavar='',
             dest="priority_dirs",
-            help="Directories (space separated) with files to prioritize when deleting duplicates"
+            help="Files from here are prioritized to keep (go first, as 'original') in each group.\n"
         )
 
         parser.add_argument(
