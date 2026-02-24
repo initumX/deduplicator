@@ -124,6 +124,13 @@ class FileScannerImpl(FileScanner):
 
                     for filename in files:
                         path = Path(root) / filename
+                        # avoid symlinks BEFORE resolve
+                        try:
+                            if path.is_symlink():
+                                logger.debug(f"Skipping symbolic link: {path}")
+                                continue
+                        except (OSError, PermissionError):
+                            continue
 
                         # Resolve absolute path to detect overlaps across different roots
                         try:
