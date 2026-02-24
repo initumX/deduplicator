@@ -74,7 +74,7 @@ class DeduplicationCommand:
         # Step 2: Find duplicates using core onlyone directly
         groups, stats = self._deduplicator.find_duplicates(
             self._files,
-            params,  # ← Unified params object with sort_order, mode, etc.
+            params,  # Unified params object with sort_order, mode, etc.
             stopped_flag=stopped_flag,
             progress_callback=progress_callback
         )
