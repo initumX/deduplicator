@@ -40,4 +40,4 @@
 -NEW: Now it can work on python 3.8 too, but I recommend you use 3.9 or newer.
 
 ### [2.5.1] 25 Feb 2026
--NEW: Accepts list of folders (space separated) as input. Updated bot gui and cli
+-NEW: Accepts list of folders (space separated) as input. Updated both gui and cli
