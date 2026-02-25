@@ -1,7 +1,7 @@
 
 # [OnlyOne](https://github.com/initumX/onlyone)
 
-![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone247.jpg)
+![screenshot](https://raw.githubusercontent.com/initumX/onlyone/refs/heads/main/onlyone251.jpg)
 
 A PyQt-based tool for finding and removing duplicate files with advanced filtering and progress tracking.
 
@@ -30,6 +30,8 @@ If path contains space, just backslash space inside path:
 `onlyone -i .~/Downloads -x .jpg .png --excluded-dirs ~/Downloads/spaced\ folder\ one`
 * Now extensions can work also in a blacklist mode (just use ^ as the first element of list for that):  
 `onlyone -i .~/Downloads -m 500KB -M 10MB -x ^ .jpg .png` <- Any extension except of jpg and png  
+* Now you can use multiple directories(space separated) for input:  
+`onlyone -i ~/Downloads ~/Documents ~/Videos` 
 * A lot of changing in OnlyOne 2.5.0 cli (see changelog file)  
 
 ### Features
