@@ -67,14 +67,17 @@ If both files have the same path depth, the file with shortest filename wins the
 
 ### How to use cli-version
 Examples:  
-Basic usage - find duplicates in Downloads folder:  
-`onlyone -i ~/Downloads`  
+Find and show duplicates in Downloads, Documents and Videos folders:  
+`onlyone -i ~/Downloads ~/Documents ~/Videos`  
 
 Filter files by size and extensions and find duplicates:  
 `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png`
 
 Filter files by size, exclude extensions jpg and png, find duplicates:  
 `onlyone -i .~/Downloads -m 500KB -M 10MB -x ^ .jpg .png`
+
+Filter files by size, include extensions jpg and png only, find duplicates:  
+`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png`
 
 Same as above + move duplicates to trash (with confirmation prompt):  
 `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one`
@@ -83,7 +86,7 @@ Same as above but without confirmation and with output to a file (for scripts):
 `onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png --keep-one --force > ~/Downloads/report.txt`
     
 Options:  
-`-i, --input`          input folder  
+`-i, --input`          input folder(or multiple space separated folders)  
 `-m, --min-size`       min size filter  
 `-M, --max-size`       max size filter  
 `-x, --extensions`     extension filter (space separated, start with ^ to make extensions list work in "blacklist" mode)    

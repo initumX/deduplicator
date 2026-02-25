@@ -39,8 +39,11 @@ DEDUP_MODE_HELP_TEXT = (
 
 EPILOG_TEXT = """
 Examples:
-  Basic usage - find duplicates in Downloads folder
+  Basic usage - find and show duplicates from Downloads folder
   %(prog)s -i ~/Downloads
+  
+  Find and show duplicates from Downloads, Documents and Videos folders:  
+  `onlyone -i ~/Downloads ~/Documents ~/Videos`  
   
   Dry run with ascii-compilant output
   %(prog)s -i ~/Downloads --dry-run --ascii
