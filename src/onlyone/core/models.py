@@ -199,6 +199,8 @@ class DeduplicationStats:
     """
     def __init__(self):
         self.total_time: float = 0.0
+        self.scan_time: float = 0.0
+        self.grouping_time: float = 0.0
         self.stage_stats: Dict[str, Dict[str, Union[int, float]]] = {}
         self._listeners: List[Callable[[str, Dict], None]] = []
 
@@ -241,17 +243,21 @@ class DeduplicationStats:
 
     def print_summary(self) -> str:
         labels = {
-            "size": "Size Groups",
-            "front": "Front Hash Groups",
-            "middle": "Middle Hash Groups",
-            "end": "End Hash Groups",
-            "full": "Full Content Hash Groups",
+            "size": "Initial",
+            "front": "Front",
+            "middle": "Middle",
+            "end": "End",
+            "full": "Full",
         }
 
         lines = [
             "Deduplication Statistics:",
-            f"Total Execution Time: {self.total_time:.3f}s\n",
-            "Stage: GROUPS / FILES / TIME"
+            "================",
+            f"Scanning Time: {self.scan_time:.3f}s",
+            f"Calculations Time: {self.grouping_time:.3f}s",
+            f"Total Time: {self.total_time:.3f}s",
+            "================",
+            "Stage: Groups / Files / Time",
         ]
 
         for stage, data in self.stage_stats.items():

@@ -83,7 +83,7 @@ class TestDeduplicateWorker:
         worker = DeduplicateWorker(valid_params)
         mock_groups = [DuplicateGroup(size=1024, files=[])]
         mock_stats = DeduplicationStats()
-        mock_stats.total_time = 1.23
+        mock_stats.grouping_time = 1.23
 
         # Mock the INSTANCE'S command, not the class
         worker.command.execute = Mock(return_value=(mock_groups, mock_stats))

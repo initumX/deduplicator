@@ -3,6 +3,7 @@ Unified command orchestrator for deduplication.
 This is the SINGLE source of truth for business logic — used by both GUI and CLI.
 No Qt/PySide6 dependencies — pure Python.
 """
+import time
 from typing import List, Optional, Callable, Tuple
 from onlyone.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
 from onlyone.core.scanner import FileScannerImpl
@@ -59,14 +60,15 @@ class DeduplicationCommand:
             RuntimeError: If scanning/deduplication fails
         """
         # Step 1: Scan files using core scanner directly
-        scanner = FileScannerImpl(
-            params=params,
-        )
+        scanner = FileScannerImpl(params=params)
 
+        # Measure scanning time
+        scan_start = time.time()
         self._files = scanner.scan(
             stopped_flag=stopped_flag,
             progress_callback=progress_callback
         )
+        scan_duration = time.time() - scan_start
 
         if not self._files:
             raise RuntimeError("No files found matching filters")
@@ -78,6 +80,10 @@ class DeduplicationCommand:
             stopped_flag=stopped_flag,
             progress_callback=progress_callback
         )
+
+        # Update statistics with scanning time
+        stats.scan_time = scan_duration
+        stats.total_time = scan_duration + stats.grouping_time
 
         return groups, stats
 

@@ -37,7 +37,7 @@ class TestDeduplicationCommand:
 
         # Should find 2 duplicate groups (1KB + 2KB sets)
         assert len(groups) == 2
-        assert stats.total_time > 0
+        assert stats.grouping_time > 0
         assert "size" in stats.stage_stats
         assert "front" in stats.stage_stats
 

@@ -368,7 +368,6 @@ class CLIApplication:
 
             if self.show_stats:
                 print()
-                print("\nDeduplication Statistics:")
                 print(stats.print_summary())
 
             return groups

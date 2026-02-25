@@ -80,7 +80,7 @@ class DeduplicatorImpl(Deduplicator):
         all_duplicates.sort(key=lambda g: -g.files[0].size if g.files else 0)
 
         # Finalize stats
-        stats.total_time = time.time() - total_start_time
+        stats.grouping_time = time.time() - total_start_time
 
         return all_duplicates, stats
 

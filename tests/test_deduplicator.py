@@ -279,7 +279,7 @@ class TestDeduplicatorIntegration:
             progress_callback=None
         )
         assert len(groups) == 0
-        assert stats.total_time >= 0
+        assert stats.grouping_time >= 0
 
     def test_deduplicator_favourite_dirs_sorting(self, temp_dir):
         """Files from favourite directories must appear first within each duplicate group."""
