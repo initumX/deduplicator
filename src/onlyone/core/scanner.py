@@ -91,9 +91,9 @@ class FileScannerImpl(FileScanner):
             logger.debug("Scan cancelled before start")
             return []
 
-        # Progress throttling: update every N files to reduce UI overhead
-        progress_interval = 5000  # Update every 5,000 files
-        progress_counter = 0
+        # Progress throttling: update every 200ms for smooth UI updates
+        progress_interval = 0.2  # seconds
+        last_progress_time = time.time()
 
         try:
             start_time = time.time()
@@ -151,15 +151,15 @@ class FileScannerImpl(FileScanner):
                         if file_info:
                             found_files.append(file_info)
                             processed_files += 1
-                            progress_counter += 1
 
-                            # Update progress only when threshold reached
-                            if progress_callback and progress_counter >= progress_interval:
+                            # Timer-based progress throttling
+                            current_time = time.time()
+                            if progress_callback and (current_time - last_progress_time) >= progress_interval:
                                 progress_callback('scanning', processed_files, None)
-                                progress_counter = 0
+                                last_progress_time = current_time
 
-            # Final update for small datasets or remaining count
-            if progress_callback and progress_counter > 0:
+            # Final progress update for remaining count
+            if progress_callback:
                 progress_callback('scanning', processed_files, None)
 
             end_time = time.time()
