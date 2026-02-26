@@ -41,3 +41,6 @@
 
 ### [2.5.1] 25 Feb 2026
 -NEW: Accepts list of folders (space separated) as input. Updated both gui and cli
+
+### [2.5.2] 26 Feb 2026
+-fix(stats): show correct total scanning time, calculation/grouping time and total time
