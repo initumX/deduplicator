@@ -40,7 +40,6 @@ if _MISSING_DEPS:
 # === NORMAL IMPORTS (after validation) ===
 from onlyone.core.models import DeduplicationMode, DeduplicationParams, DuplicateGroup, SortOrder, BoostMode
 from onlyone.commands import DeduplicationCommand
-from onlyone.utils.convert_utils import human_to_bytes
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.aliases import (
@@ -226,17 +225,6 @@ class CLIApplication:
             if not root_path.is_dir():
                 self.error_exit(f"Path is not a directory: {input_path}")
 
-        # Validate size formats
-        try:
-            min_size = human_to_bytes(args.min_size)
-            max_size = human_to_bytes(args.max_size)
-            if min_size < 0:
-                self.error_exit("Minimum size cannot be negative")
-            if max_size < min_size:
-                self.error_exit("Maximum size cannot be less than minimum size")
-        except ValueError as e:
-            self.error_exit(f"Invalid size format: {e}")
-
         # Validate Priority directories
         for fav_dir in args.priority_dirs:
             fav_path = Path(fav_dir).resolve()
@@ -263,9 +251,6 @@ class CLIApplication:
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
         try:
-            min_size_bytes = human_to_bytes(args.min_size)
-            max_size_bytes = human_to_bytes(args.max_size)
-
             extensions = args.extensions
 
             # Parse priority directories from CLI: comma-separated
@@ -288,10 +273,10 @@ class CLIApplication:
             # Normalize all root directories
             root_dirs = [str(Path(p).resolve()) for p in args.input]
 
-            return DeduplicationParams(
+            return DeduplicationParams.from_human_readable(
                 root_dirs=root_dirs,
-                min_size_bytes=min_size_bytes,
-                max_size_bytes=max_size_bytes,
+                min_size_str=args.min_size,
+                max_size_str=args.max_size,
                 extensions=extensions,
                 favourite_dirs=favourite_dirs,
                 excluded_dirs=excluded_dirs,
@@ -511,7 +496,7 @@ class CLIApplication:
     def error_exit(message: str, code: int = 1) -> NoReturn:
         """Print error and exit."""
         print(f" Error: {message}", file=sys.stderr)
-        sys.exit(code)
+        raise SystemExit(code)
 
     def run(self) -> None:
         """Main entry point with conditional output behavior."""

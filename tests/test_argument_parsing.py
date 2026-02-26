@@ -158,7 +158,7 @@ class TestArgumentValidation:
             args = app.parse_args()
 
         with pytest.raises(SystemExit):
-            app.validate_args(args)
+            app.create_params(args)
 
     def test_validate_size_range(self, tmp_path):
         """Test validation fails when min_size > max_size."""
@@ -167,7 +167,7 @@ class TestArgumentValidation:
             args = app.parse_args()
 
         with pytest.raises(SystemExit):
-            app.validate_args(args)
+            app.create_params(args)
 
     def test_validate_force_without_keep_one(self, tmp_path):
         """Test that --force without --keep-one raises error."""

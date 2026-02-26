@@ -441,6 +441,7 @@ class DeduplicationParams:
             extensions: Optional[List[str]] = None,
             favourite_dirs: Optional[List[str]] = None,
             excluded_dirs: Optional[List[str]] = None,
+            sort_order: SortOrder = SortOrder.SHORTEST_PATH,
             mode: DeduplicationMode = DeduplicationMode.NORMAL,
             boost: BoostMode = BoostMode.SAME_SIZE,
     ) -> 'DeduplicationParams':
@@ -461,5 +462,6 @@ class DeduplicationParams:
             favourite_dirs=favourite_dirs or [],
             excluded_dirs=excluded_dirs or [],
             mode=mode,
+            sort_order=sort_order,
             boost=boost,
         )

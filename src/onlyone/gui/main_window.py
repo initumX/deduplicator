@@ -19,7 +19,6 @@ from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
-from onlyone.utils.convert_utils import human_to_bytes
 from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
 from onlyone import __version__
@@ -356,13 +355,6 @@ class MainWindow(QMainWindow):
         min_size_str = f"{min_size_value}{min_unit}"
         max_size_str = f"{max_size_value}{max_unit}"
 
-        try:
-            min_size = human_to_bytes(min_size_str)
-            max_size = human_to_bytes(max_size_str)
-        except ValueError as e:
-            QMessageBox.warning(self, "Input Error", f"Invalid size format: {e}")
-            return
-
         extensions = self.ui.extension_filter_input.text().split()
 
         # Get boost, mode and sort order from UI controls
@@ -385,10 +377,10 @@ class MainWindow(QMainWindow):
         self.progress_dialog.canceled.connect(self._cancel_worker)
 
         # Create unified parameters object with multiple root directories
-        params = DeduplicationParams(
+        params = DeduplicationParams.from_human_readable(
             root_dirs=root_dirs,
-            min_size_bytes=min_size,
-            max_size_bytes=max_size,
+            min_size_str=min_size_str,
+            max_size_str=max_size_str,
             extensions=extensions,
             favourite_dirs=self.favourite_dirs,
             excluded_dirs=self.excluded_dirs,
