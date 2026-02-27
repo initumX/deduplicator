@@ -11,10 +11,10 @@ This package contains the performance-critical foundation of the onlyone:
 All components are pure Python with no GUI dependencies — suitable for CLI and server usage.
 """
 
-from .scanner import FileScannerImpl
-from .grouper import FileGrouperImpl
+from .scanner import FileScanner
+from .grouper import FileGrouper
 from .hasher import HasherImpl, XXHashAlgorithmImpl
-from .deduplicator import Deduplicator, DeduplicatorImpl
+from .deduplicator import DeduplicatorImpl
 from .sorter import Sorter
 from .demasker import demask_filename
 from .models import (
@@ -23,11 +23,10 @@ from .models import (
 from onlyone.core.measurer import bytes_to_human, human_to_bytes, is_valid_size_format
 
 __all__ = [
-    "FileScannerImpl",
-    "FileGrouperImpl",
+    "FileScanner",
+    "FileGrouper",
     "HasherImpl",
     "XXHashAlgorithmImpl",
-    "Deduplicator",
     "DeduplicatorImpl",
     "File",
     "DuplicateGroup",

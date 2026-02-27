@@ -11,7 +11,23 @@ caching results in the File object's Hashes container.
 
 import xxhash
 from onlyone.core.models import File
-from onlyone.core.interfaces import Hasher, HashAlgorithm
+from typing import Protocol
+
+class Hasher(Protocol):
+    """Interface for hashing different parts of a file."""
+    def compute_front_hash(self, file: File) -> bytes: ...
+    def compute_middle_hash(self, file: File) -> bytes: ...
+    def compute_end_hash(self, file: File) -> bytes: ...
+    def compute_full_hash(self, file: File) -> bytes: ...
+
+
+class HashAlgorithm(Protocol):
+    """Interface for generic hash algorithms."""
+
+    @staticmethod
+    def hash(data: bytes) -> bytes:
+        """Computes the hash of the provided byte data."""
+        ...
 
 
 # Use the same way to implement and use any other hashing algorithm

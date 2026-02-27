@@ -5,7 +5,7 @@ including early duplicate confirmation for small files and adaptive chunk sizing
 """
 import pytest
 from onlyone.core.stages import (
-    SizeStageImpl,
+    SizeStage,
     FrontHashStage,
     MiddleHashStage,
     EndHashStage,
@@ -14,7 +14,7 @@ from onlyone.core.stages import (
     HashStageBase,
     BoostMode
 )
-from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.grouper import FileGrouper
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
 from onlyone.core.models import File, DuplicateGroup
 
@@ -63,8 +63,8 @@ class TestSizeStageImpl:
             File(path="/c.png", size=1024),
             File(path="/d.txt", size=2048),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE)
         groups = stage.process(files)
 
         assert len(groups) == 1
@@ -83,8 +83,8 @@ class TestSizeStageImpl:
             File(path="/c.jpg", size=1024),
             File(path="/d.jpg", size=1024),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
         groups = stage.process(files)
 
         assert len(groups) == 2
@@ -106,8 +106,8 @@ class TestSizeStageImpl:
             File(path="/summary.txt", size=1024),
             File(path="/summary.txt", size=1024),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_FILENAME)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE_PLUS_FILENAME)
         groups = stage.process(files)
 
         assert len(groups) == 2
@@ -127,8 +127,8 @@ class TestSizeStageImpl:
             File(path="/report_copy.txt", size=1024, name="report_copy.txt"),
             File(path="/different.txt", size=1024, name="different.txt"),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME)
         groups = stage.process(files)
 
         # report.txt variants should be grouped, different.txt separate
@@ -146,8 +146,8 @@ class TestSizeStageImpl:
             File(path="/Makefile", size=512, name="Makefile", extension=""),
             File(path="/config.txt", size=512, name="config.txt", extension=".txt"),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
         groups = stage.process(files)
 
         assert len(groups) == 1
@@ -165,8 +165,8 @@ class TestSizeStageImpl:
             File(path="/a.txt", size=1024),
             File(path="/b.jpg", size=1024),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper)
         groups = stage.process(files)
 
         assert len(groups) == 1
@@ -182,21 +182,21 @@ class TestSizeStageImpl:
             files.append(File(path=f"/doc{i}.txt", size=2048))
             files.append(File(path=f"/img{i}.jpg", size=2048))
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
 
-        stage_size_only = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE)
+        stage_size_only = SizeStage(grouper, boost=BoostMode.SAME_SIZE)
         groups_size_only = stage_size_only.process(files)
         assert len(groups_size_only) == 1
         assert len(groups_size_only[0].files) == 10
 
-        stage_boost = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
+        stage_boost = SizeStage(grouper, boost=BoostMode.SAME_SIZE_PLUS_EXT)
         groups_boost = stage_boost.process(files)
         assert len(groups_boost) == 2
         assert all(len(g.files) == 5 for g in groups_boost)
 
     def test_empty_input_returns_empty_list(self):
         """Size stage must handle empty file list gracefully."""
-        stage = SizeStageImpl(FileGrouperImpl())
+        stage = SizeStage(FileGrouper())
         groups = stage.process([])
         assert groups == []
 
@@ -208,7 +208,7 @@ class TestSizeStageImpl:
         def progress_callback(stage_name, current_count, total_count):
             progress_calls.append((stage_name, current_count, total_count))
 
-        stage = SizeStageImpl(FileGrouperImpl())
+        stage = SizeStage(FileGrouper())
         stage.process(files, progress_callback=progress_callback)
 
         assert len(progress_calls) == 1
@@ -223,8 +223,8 @@ class TestSizeStageImpl:
             File(path="/unique2.txt", size=2048),
             File(path="/unique3.txt", size=4096),
         ]
-        grouper = FileGrouperImpl()
-        stage = SizeStageImpl(grouper, boost=BoostMode.SAME_SIZE)
+        grouper = FileGrouper()
+        stage = SizeStage(grouper, boost=BoostMode.SAME_SIZE)
         groups = stage.process(files)
 
         assert len(groups) == 0
@@ -238,7 +238,7 @@ class TestSizeStageImpl:
             stop_after[0] += 1
             return stop_after[0] > 10
 
-        stage = SizeStageImpl(FileGrouperImpl())
+        stage = SizeStage(FileGrouper())
         groups = stage.process(files, stopped_flag=stopped_flag)
 
         assert stop_after[0] <= 15
@@ -268,7 +268,7 @@ class TestFrontHashStage:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=100 * 1024, files=files)], confirmed)
@@ -296,7 +296,7 @@ class TestFrontHashStage:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
         remaining_groups = stage.process(
@@ -337,7 +337,7 @@ class TestFrontHashStage:
         ]
         HashStageBase.assign_chunk_sizes(small_files + large_files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
 
@@ -370,7 +370,7 @@ class TestFrontHashStage:
             call_count[0] += 1
             return call_count[0] > 3
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
         remaining = stage.process(
@@ -397,7 +397,7 @@ class TestFrontHashStage:
         def progress_callback(stage_name, current, total):
             progress_calls.append((stage_name, current, total))
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         stage.process(
             [DuplicateGroup(size=1024, files=files)],
@@ -416,13 +416,13 @@ class TestMiddleAndEndHashStages:
 
     def test_middle_hash_stage_confirmation_threshold(self):
         """Middle hash stage must use 256KB threshold (2x base limit)."""
-        stage = MiddleHashStage(FileGrouperImpl())
+        stage = MiddleHashStage(FileGrouper())
         assert stage.get_threshold() == 256 * 1024
         assert "middle" in stage.get_stage_name().lower()
 
     def test_end_hash_stage_confirmation_threshold(self):
         """End hash stage must use 384KB threshold (3x base limit)."""
-        stage = EndHashStage(FileGrouperImpl())
+        stage = EndHashStage(FileGrouper())
         assert stage.get_threshold() == 384 * 1024
         assert "end" in stage.get_stage_name().lower()
 
@@ -440,7 +440,7 @@ class TestMiddleAndEndHashStages:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = MiddleHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=200 * 1024, files=files)], confirmed)
@@ -462,7 +462,7 @@ class TestMiddleAndEndHashStages:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = EndHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=300 * 1024, files=files)], confirmed)
@@ -486,7 +486,7 @@ class TestMiddleAndEndHashStages:
             call_count[0] += 1
             return call_count[0] > 3
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = MiddleHashStage(grouper)
         confirmed = []
         remaining = stage.process(
@@ -514,7 +514,7 @@ class TestMiddleAndEndHashStages:
             call_count[0] += 1
             return call_count[0] > 3
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = EndHashStage(grouper)
         confirmed = []
         remaining = stage.process(
@@ -557,7 +557,7 @@ class TestFullHashStage:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FullHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=len(file1_content), files=files)], confirmed)
@@ -578,7 +578,7 @@ class TestFullHashStage:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FullHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=len(content), files=files)], confirmed)
@@ -603,7 +603,7 @@ class TestFullHashStage:
             call_count[0] += 1
             return call_count[0] > 3
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FullHashStage(grouper)
         confirmed = []
         remaining = stage.process(
@@ -637,7 +637,7 @@ class TestFullHashStage:
         def progress_callback(stage_name, current, total):
             progress_calls.append((stage_name, current, total))
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FullHashStage(grouper)
         stage.process(
             [DuplicateGroup(size=1024, files=files)],
@@ -676,7 +676,7 @@ class TestStageIntegration:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         front_stage = FrontHashStage(grouper)
         confirmed = []
         remaining = front_stage.process(
@@ -702,7 +702,7 @@ class TestStageIntegration:
         ]
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
 
         confirmed = []
         remaining = [DuplicateGroup(size=len(content), files=files)]
@@ -720,7 +720,7 @@ class TestStageIntegration:
 
     def test_empty_groups_passed_to_stage(self):
         """Stages must handle empty group lists gracefully."""
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
 
         for stage_class in [FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage]:
             stage = stage_class(grouper)
@@ -745,7 +745,7 @@ class TestStageIntegration:
         files[1].is_from_fav_dir = False
         HashStageBase.assign_chunk_sizes(files)
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=len(content), files=files)], confirmed)

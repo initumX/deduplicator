@@ -43,8 +43,7 @@ OPTIMIZATIONS
 
 from typing import List, Dict, Optional, Callable
 from onlyone.core.models import File, DuplicateGroup, BoostMode
-from onlyone.core.grouper import FileGrouperImpl
-from onlyone.core.interfaces import SizeStage, PartialHashStage
+from onlyone.core.grouper import FileGrouper
 
 #=============================
 # Base Class and Config
@@ -90,13 +89,13 @@ class DeduplicationConfig:
 # =============================
 # Partial Hashing Base Class
 # =============================
-class PartialHashStageBase(HashStageBase, PartialHashStage):
+class PartialHashStageBase(HashStageBase):
     """
     Abstract base class for stages that perform partial hashing.
     Encapsulates common logic for front/middle/end hash stages.
     """
 
-    def __init__(self, grouper: FileGrouperImpl):
+    def __init__(self, grouper: FileGrouper):
         self.grouper = grouper
 
     def get_threshold(self) -> int:
@@ -179,8 +178,8 @@ class PartialHashStageBase(HashStageBase, PartialHashStage):
 # =============================
 # Individual Stages
 # =============================
-class SizeStageImpl(SizeStage):
-    def __init__(self, grouper: FileGrouperImpl, boost: BoostMode = BoostMode.SAME_SIZE):
+class SizeStage:
+    def __init__(self, grouper: FileGrouper, boost: BoostMode = BoostMode.SAME_SIZE):
         self.grouper = grouper
         self.boost = boost
 
@@ -272,7 +271,7 @@ class EndHashStage(PartialHashStageBase):
 
 
 class FullHashStage:
-    def __init__(self, grouper: FileGrouperImpl):
+    def __init__(self, grouper: FileGrouper):
         self.grouper = grouper
 
     def process(

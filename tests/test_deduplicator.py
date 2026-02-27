@@ -4,7 +4,7 @@ Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 Updated to match new DeduplicationParams API (root_dirs list, boost parameter).
 """
 from pathlib import Path
-from onlyone.core import FileScannerImpl, DeduplicatorImpl
+from onlyone.core import FileScanner, DeduplicatorImpl
 from onlyone.core import (
     DeduplicationParams, DeduplicationMode, SortOrder,
     File, FileHashes, BoostMode
@@ -28,7 +28,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED: required parameter
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -61,7 +61,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -88,7 +88,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -126,7 +126,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
 
         deduper = DeduplicatorImpl()
@@ -160,7 +160,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -193,7 +193,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, _ = deduper.find_duplicates(
@@ -220,7 +220,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         groups, _ = DeduplicatorImpl().find_duplicates(
             files=files,
@@ -244,7 +244,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         groups, stats = DeduplicatorImpl().find_duplicates(
             files=files,
@@ -347,7 +347,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         groups, stats = deduper.find_duplicates(
@@ -375,7 +375,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         deduper = DeduplicatorImpl()
         _, stats = deduper.find_duplicates(

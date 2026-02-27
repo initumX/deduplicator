@@ -14,9 +14,9 @@ from onlyone.core.models import (
     DeduplicationMode, SortOrder, BoostMode
 )
 from onlyone.core.stages import HashStageBase, FrontHashStage
-from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.grouper import FileGrouper
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl
-from onlyone.core.scanner import FileScannerImpl
+from onlyone.core.scanner import FileScanner
 from onlyone.services.file_service import FileService
 from onlyone.cli import CLIApplication
 
@@ -60,7 +60,7 @@ class TestFileDescriptorLeaksOnCancellation:
                 return False  # Allow first hash computation to start
             return True  # Cancel on second check
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
 
@@ -114,7 +114,7 @@ class TestFileDescriptorLeaksOnCancellation:
             groups_processed += 1
             return groups_processed > max_groups_to_process
 
-        grouper = FileGrouperImpl(HasherImpl(XXHashAlgorithmImpl()))
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
 
@@ -310,7 +310,7 @@ class TestFilesDeletedDuringOperation:
                 sort_order=SortOrder.SHORTEST_PATH,  # ← ADDED
                 boost=BoostMode.SAME_SIZE  # ← ADDED
             )
-            scanner = FileScannerImpl(params=params)
+            scanner = FileScanner(params=params)
             collection = scanner.scan(stopped_flag=lambda: False)
 
         assert len(collection) == 9, (
@@ -357,7 +357,7 @@ class TestCancellationResourceCleanup:
                 sort_order=SortOrder.SHORTEST_PATH,  # ← ADDED
                 boost=BoostMode.SAME_SIZE  # ← ADDED
             )
-            scanner = FileScannerImpl(params=params)
+            scanner = FileScanner(params=params)
             collection = scanner.scan(stopped_flag=stopped_flag)
 
             # Should have partial results (not all 50 files)

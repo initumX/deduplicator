@@ -10,26 +10,28 @@ Supports three modes:
     - full: size → front → middle → full_hash
 """
 import time
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Union, Optional, Callable
 from onlyone.core.models import (
     File, DuplicateGroup, DeduplicationStats,
     DeduplicationMode, DeduplicationParams,
     )
-from onlyone.core.grouper import FileGrouperImpl
-from onlyone.core.interfaces import PartialHashStage, Deduplicator
-from onlyone.core.stages import SizeStageImpl, FrontHashStage, MiddleHashStage, EndHashStage, FullHashStage
+from onlyone.core.grouper import FileGrouper
+from onlyone.core.stages import (
+    SizeStage, FrontHashStage, MiddleHashStage, EndHashStage,
+    FullHashStage, PartialHashStageBase
+)
 from onlyone.core.sorter import Sorter
 
 # =============================
 # Main Deduplicator Class
 # =============================
-class DeduplicatorImpl(Deduplicator):
+class DeduplicatorImpl:
     """
     Implements multi-stage duplicate detection using a pipeline architecture.
     Respects the DeduplicationMode enum and collects detailed statistics.
     """
     def __init__(self, grouper=None):
-        self.grouper = grouper or FileGrouperImpl()
+        self.grouper = grouper or FileGrouper()
 
     def find_duplicates(
         self,
@@ -43,7 +45,7 @@ class DeduplicatorImpl(Deduplicator):
         total_start_time = time.time()
 
         # Initial stage: group by size
-        size_stage = SizeStageImpl(self.grouper, boost=params.boost)
+        size_stage = SizeStage(self.grouper, boost=params.boost)
         start_time = time.time()
         groups = size_stage.process(
             files,
@@ -84,7 +86,7 @@ class DeduplicatorImpl(Deduplicator):
 
         return all_duplicates, stats
 
-    def _build_pipeline(self, mode: DeduplicationMode) -> List[Tuple[str, PartialHashStage]]:
+    def _build_pipeline(self, mode: DeduplicationMode) -> List[Tuple[str, Union[PartialHashStageBase, FullHashStage]]]:
         """Builds the appropriate pipeline based on deduplication mode."""
         pipeline = []
         if mode == DeduplicationMode.FAST:

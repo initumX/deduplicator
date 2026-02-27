@@ -5,8 +5,8 @@ Verifies file discovery with size/extension filters, error handling, and edge ca
 from pathlib import Path
 import sys
 import pytest
-from onlyone.core.scanner import FileScannerImpl
-from onlyone.core.grouper import FileGrouperImpl
+from onlyone.core.scanner import FileScanner
+from onlyone.core.grouper import FileGrouper
 from onlyone.core.models import DeduplicationParams, File
 
 
@@ -147,7 +147,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 3
 
@@ -165,7 +165,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 2
         assert all(f.extension == ".txt" for f in files)
@@ -184,7 +184,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert files[0].extension == ".txt"
@@ -202,7 +202,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert files[0].size >= 500
@@ -220,7 +220,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert files[0].size <= 500
@@ -240,7 +240,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 2
         paths = [f.path for f in files]
@@ -259,7 +259,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         # Check by size, not by filename (more reliable)
         assert len(files) == 1
@@ -295,7 +295,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
 
         # Should find exactly the real file (symlink skipped)
@@ -324,7 +324,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
 
         # File should appear only once (not twice via symlink)
@@ -353,7 +353,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
 
         assert len(files) == 1
@@ -374,7 +374,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         sizes = sorted([f.size for f in files])
         assert 1024 in sizes
@@ -395,7 +395,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 2
         assert all(f.extension == ".txt" for f in files)
@@ -410,7 +410,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 0
 
@@ -431,7 +431,7 @@ class TestFileScannerImpl:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 2
 
@@ -458,7 +458,7 @@ class TestSystemTrashDirectories:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.txt" in files[0].path
@@ -480,7 +480,7 @@ class TestSystemTrashDirectories:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.jpg" in files[0].path
@@ -502,7 +502,7 @@ class TestSystemTrashDirectories:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "normal.pdf" in files[0].path
@@ -532,7 +532,7 @@ class TestFavouriteDirectories:
             favourite_dirs=[str(fav_dir)],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         files_by_name = {Path(f.path).name: f for f in files}
         assert files_by_name["fav.txt"].is_from_fav_dir is True
@@ -560,7 +560,7 @@ class TestExcludedDirectories:
             favourite_dirs=[],
             excluded_dirs=[str(excluded_subdir)]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert "included.txt" in files[0].path
@@ -580,7 +580,7 @@ class TestExcludedDirectories:
             favourite_dirs=[str(special_dir)],
             excluded_dirs=[str(special_dir)]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 0
 
@@ -608,7 +608,7 @@ class TestPathDepthAndMetadata:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         files_by_name = {Path(f.path).name: f for f in files}
 
@@ -627,7 +627,7 @@ class TestPathDepthAndMetadata:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
         assert len(files) == 1
         assert files[0].extension == ".txt"  # Lowercase
@@ -661,7 +661,7 @@ class TestCancellationAndProgress:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=stopped_flag)
 
         assert call_count <= 5
@@ -685,7 +685,7 @@ class TestCancellationAndProgress:
             favourite_dirs=[],
             excluded_dirs=[]
         )
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
         scanner.scan(progress_callback=progress_callback)  # ← FIXED: removed unused 'files ='
 
         assert len(progress_calls) > 0
@@ -766,7 +766,7 @@ class TestBoostModes:
         file4 = File(path=str(temp_dir / "d.txt"), size=200)  # Different size
         file5 = File(path=str(temp_dir / "e.txt"), size=200)  # Same size = duplicate
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         size_groups = grouper.group_by_size([file1, file2, file3, file4, file5])
 
         # Only groups with 2+ files are returned
@@ -783,7 +783,7 @@ class TestBoostModes:
         file3 = File(path=str(temp_dir / "c.pdf"), size=100)  # Same size, diff ext
         file4 = File(path=str(temp_dir / "d.pdf"), size=100)  # Same size + ext
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         groups = grouper.group_by_size_and_extension([file1, file2, file3, file4])
 
         # .txt and .pdf should be in separate groups (both have 2+ files)
@@ -796,7 +796,7 @@ class TestBoostModes:
         file3 = File(path=str(temp_dir / "other.txt"), size=100)  # Different name
         file4 = File(path=str(temp_dir / "sub/other.txt"), size=100)  # Same name + size
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         groups = grouper.group_by_size_and_name([file1, file2, file3, file4])
 
         # doc.txt and other.txt should be in separate groups
@@ -819,7 +819,7 @@ class TestBoostModes:
         file2 = File(path=str(temp_dir / "DSC_0001Copy2.JPG"), size=100)
         file3 = File(path=str(temp_dir / "DSC_0002.JPG"), size=100)  # Different base name
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         groups = grouper.group_by_size_and_normalized_name([file1, file2, file3])
 
         # DSC_0001 variants should be in one group, DSC_0002 in another (but only 1 file)

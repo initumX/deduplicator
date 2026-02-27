@@ -2,7 +2,7 @@
 Unit tests for FileGrouperImpl.
 Verifies grouping logic for size and hash-based grouping with proper filtering.
 """
-from onlyone.core import FileGrouperImpl
+from onlyone.core import FileGrouper
 from onlyone.core import HasherImpl, XXHashAlgorithmImpl
 from onlyone.core import File, FileHashes
 
@@ -21,7 +21,7 @@ class TestFileGrouperImpl:
             File(path="/c.txt", size=2048),  # Single file → filtered
         ]
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         size_groups = grouper.group_by_size(files)
 
         # Only 1 group (1024B with 2 files), 2048B group filtered out (single file)
@@ -44,7 +44,7 @@ class TestFileGrouperImpl:
         files[2].hashes = FileHashes(front=b"unique___")  # Different hash
 
         hasher = HasherImpl(XXHashAlgorithmImpl())
-        grouper = FileGrouperImpl(hasher)
+        grouper = FileGrouper(hasher)
 
         hash_groups = grouper.group_by_front_hash(files)
 
@@ -69,7 +69,7 @@ class TestFileGrouperImpl:
         files[1].hashes = FileHashes(front=hash_val)
 
         hasher = HasherImpl(XXHashAlgorithmImpl())
-        grouper = FileGrouperImpl(hasher)
+        grouper = FileGrouper(hasher)
 
         hash_groups = grouper.group_by_front_hash(files)
 
@@ -94,7 +94,7 @@ class TestFileGrouperImpl:
             File(path="/file4.txt", size=400),
         ]
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         size_groups = grouper.group_by_size(files_different_sizes)
 
         # No groups possible — all sizes unique
@@ -113,7 +113,7 @@ class TestFileGrouperImpl:
         files_same_size_different_hashes[2].hashes = FileHashes(front=b"hash_cccc")
 
         hasher = HasherImpl(XXHashAlgorithmImpl())
-        grouper_with_hasher = FileGrouperImpl(hasher)
+        grouper_with_hasher = FileGrouper(hasher)
         hash_groups = grouper_with_hasher.group_by_front_hash(files_same_size_different_hashes)
 
         # No groups possible — all hashes unique
@@ -121,7 +121,7 @@ class TestFileGrouperImpl:
 
     def test_group_by_empty_input(self):
         """Empty file list should return empty dict."""
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         assert grouper.group_by_size([]) == {}
         assert grouper.group_by_front_hash([]) == {}
 
@@ -138,7 +138,7 @@ class TestFileGrouperImpl:
                 raise ValueError("Simulated hash error")
             return f.size
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         groups = grouper._group_by(files, flaky_key_func)
 
         # Verify error was logged
@@ -159,7 +159,7 @@ class TestFileGrouperImpl:
             File(path="/d.jpg", size=2048, name="d.jpg", extension=".jpg"),  # Diff size → diff group
         ]
 
-        grouper = FileGrouperImpl()
+        grouper = FileGrouper()
         groups = grouper.group_by_size_and_extension(files)
 
         # Only (1024, ".jpg") should have 2+ files
@@ -183,7 +183,7 @@ class TestFileGrouperImpl:
             )
 
         hasher = HasherImpl(XXHashAlgorithmImpl())
-        grouper = FileGrouperImpl(hasher)
+        grouper = FileGrouper(hasher)
 
         # All methods should produce 1 group with 2 files
         methods = [

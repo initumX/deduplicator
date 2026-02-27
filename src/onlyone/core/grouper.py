@@ -9,13 +9,12 @@ Replaces multiple standalone groupers with a single class implementing FileGroup
 
 from typing import List, Dict, Tuple, Any, Callable
 from collections import defaultdict
-from onlyone.core.interfaces import FileGrouper
 from onlyone.core.models import File
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
 from onlyone.core.demasker import demask_filename
 
 
-class FileGrouperImpl(FileGrouper):
+class FileGrouper:
     """
     A concrete implementation of FileGrouper using xxHash-based hashing.
     Uses an injected Hasher instance for flexibility and testability.

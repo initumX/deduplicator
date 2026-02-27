@@ -23,10 +23,9 @@ logger = logging.getLogger(__name__)
 
 # Local imports
 from onlyone.core.models import File, DeduplicationParams
-from onlyone.core.interfaces import FileScanner
 
 
-class FileScannerImpl(FileScanner):
+class FileScanner:
     """
     Scans directories recursively and filters files based on size and extensions.
     Uses `pathlib.Path` for safe and consistent cross-platform behavior.
@@ -241,7 +240,7 @@ class FileScannerImpl(FileScanner):
             bool: True if directory should be scanned, False if skipped.
         """
         # Skip system trash directories to avoid rescanning deleted files
-        if FileScannerImpl._is_system_trash(path):
+        if FileScanner._is_system_trash(path):
             logger.debug(f"Skipping system trash directory: {path}")
             return False
 

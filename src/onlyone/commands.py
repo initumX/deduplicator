@@ -6,7 +6,7 @@ No Qt/PySide6 dependencies — pure Python.
 import time
 from typing import List, Optional, Callable, Tuple
 from onlyone.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
-from onlyone.core.scanner import FileScannerImpl
+from onlyone.core.scanner import FileScanner
 from onlyone.core.deduplicator import DeduplicatorImpl
 
 class DeduplicationCommand:
@@ -60,7 +60,7 @@ class DeduplicationCommand:
             RuntimeError: If scanning/deduplication fails
         """
         # Step 1: Scan files using core scanner directly
-        scanner = FileScannerImpl(params=params)
+        scanner = FileScanner(params=params)
 
         # Measure scanning time
         scan_start = time.time()
