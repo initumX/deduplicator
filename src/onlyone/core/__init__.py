@@ -16,7 +16,7 @@ from .grouper import FileGrouperImpl
 from .hasher import HasherImpl, XXHashAlgorithmImpl
 from .deduplicator import Deduplicator, DeduplicatorImpl
 from .sorter import Sorter
-from .normalizer import normalize_filename
+from .demasker import demask_filename
 from .models import (
     File, DuplicateGroup, DeduplicationMode, DeduplicationParams, DeduplicationStats,
     SortOrder, FileHashes, BoostMode)
@@ -36,7 +36,7 @@ __all__ = [
     "DeduplicationParams",
     "DeduplicationStats",
     "SortOrder",
-    "normalize_filename",
+    "demask_filename",
     "FileHashes",
     "Sorter",
     "bytes_to_human",

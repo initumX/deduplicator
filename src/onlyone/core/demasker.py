@@ -2,8 +2,8 @@
 Copyright (c) 2026 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-core/normalizer.py
-Implements fuzzy filename normalization for duplicate detection.
+core/demasker.py
+Implements filename "demasking" (remove duplicate indicators from filename for fuzzy-filename comparing/grouping).
 """
 
 import re
@@ -17,11 +17,11 @@ _PATTERN_TRAILING_NUMBERS = re.compile(r'[_\-]\d{1,3}\s*$')
 _PATTERN_NOISE = re.compile(r'[_\s.\-]')
 
 @lru_cache(maxsize=8192)
-def normalize_filename(filename: str) -> str:
+def demask_filename(filename: str) -> str:
     """
-    Normalize a filename for fuzzy duplicate detection.
+    Demask a filename for fuzzy duplicate detection.
 
-    Normalization rules:
+    Demasking rules:
     - Convert to lowercase
     - Remove bracket content: (1), (copy), (Final Version), etc.
     - Remove trailing copy markers: _copy, Copy2, -new3, _final, backup_1, etc.

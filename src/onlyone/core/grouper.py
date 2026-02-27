@@ -12,7 +12,7 @@ from collections import defaultdict
 from onlyone.core.interfaces import FileGrouper
 from onlyone.core.models import File
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
-from onlyone.core.normalizer import normalize_filename
+from onlyone.core.demasker import demask_filename
 
 
 class FileGrouperImpl(FileGrouper):
@@ -40,7 +40,7 @@ class FileGrouperImpl(FileGrouper):
         """Groups files by size and a normalized(fuzzy) version of the filename. Tries to guess duplicates by its name"""
         return self._group_by(
             files,
-            lambda f: (f.size, normalize_filename(f.name))
+            lambda f: (f.size, demask_filename(f.name))
         )
 
     def group_by_front_hash(self, files: List[File]) -> Dict[bytes, List[File]]:

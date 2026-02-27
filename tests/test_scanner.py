@@ -804,12 +804,12 @@ class TestBoostModes:
 
     def test_boost_mode_fuzzy_filename(self, temp_dir):
         """BoostMode.SAME_SIZE_PLUS_FUZZY_FILENAME should normalize names."""
-        from onlyone.core.normalizer import normalize_filename
+        from onlyone.core.demasker import demask_filename
 
         # These should normalize to the same name
-        name1 = normalize_filename("DSC_0001.JPG")
-        name2 = normalize_filename("DSC_0001Copy2.JPG")
-        name3 = normalize_filename("DSC_0001 (1).JPG")
+        name1 = demask_filename("DSC_0001.JPG")
+        name2 = demask_filename("DSC_0001Copy2.JPG")
+        name3 = demask_filename("DSC_0001 (1).JPG")
 
         assert name1 == name2
         assert name1 == name3
