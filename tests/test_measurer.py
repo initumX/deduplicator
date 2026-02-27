@@ -4,7 +4,7 @@ Tests cover bytes_to_human, human_to_bytes, and is_valid_size_format.
 """
 
 import pytest
-from onlyone.utils.convert_utils import bytes_to_human, human_to_bytes, is_valid_size_format
+from onlyone.core.measurer import bytes_to_human, human_to_bytes, is_valid_size_format
 
 
 class TestBytesToHuman:

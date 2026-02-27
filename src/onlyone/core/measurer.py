@@ -2,9 +2,9 @@
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
-utils/convert_utils.py
+core/measurer.py
 
-This module provides utility functions to handle file size conversions,
+This module provides functions to handle file size conversions,
 making it easier to display storage information in UIs, logs, or APIs.
 """
 

@@ -20,6 +20,7 @@ from .normalizer import normalize_filename
 from .models import (
     File, DuplicateGroup, DeduplicationMode, DeduplicationParams, DeduplicationStats,
     SortOrder, FileHashes, BoostMode)
+from onlyone.core.measurer import bytes_to_human, human_to_bytes, is_valid_size_format
 
 __all__ = [
     "FileScannerImpl",
@@ -37,5 +38,8 @@ __all__ = [
     "SortOrder",
     "normalize_filename",
     "FileHashes",
-    "Sorter"
+    "Sorter",
+    "bytes_to_human",
+    "human_to_bytes",
+    "is_valid_size_format"
 ]

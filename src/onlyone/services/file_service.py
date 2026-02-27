@@ -44,7 +44,6 @@ class FileService:
             else:
                 FileService._open_linux(path)
         except Exception as e:
-            # Переводим любую ошибку в понятное исключение
             raise RuntimeError(f"Failed to open file: {e}") from e
 
     @staticmethod

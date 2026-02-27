@@ -8,7 +8,7 @@ Formatting helpers for CLI output. Returns strings; cli.py handles printing.
 
 from typing import List
 from onlyone.core.models import DuplicateGroup
-from onlyone.utils.convert_utils import bytes_to_human
+from onlyone.core.measurer import bytes_to_human
 
 
 def _get_icons(ascii_only: bool) -> dict:

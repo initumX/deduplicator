@@ -17,7 +17,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
 from onlyone.core.models import File, DuplicateGroup
 from onlyone.services.file_service import FileService
-from onlyone.utils.convert_utils import  bytes_to_human
+from onlyone.core.measurer import  bytes_to_human
 
 
 class DuplicateGroupsList(QListWidget):

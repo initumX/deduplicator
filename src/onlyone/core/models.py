@@ -272,7 +272,7 @@ DTO for deduplication parameters with built-in validation.
 Interface-agnostic — used by both GUI and CLI.
 """
 from dataclasses import dataclass, field
-from onlyone.utils.convert_utils import human_to_bytes
+from onlyone.core.measurer import human_to_bytes
 
 @dataclass
 class DeduplicationParams:
