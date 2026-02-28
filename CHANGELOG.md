@@ -49,3 +49,8 @@
 -refactor: consistent logging
 -perf(hasher): use streaming for full file hash. Read file in 1MB chunks instead of loading into memory
 -improve error handling in hasher
+
+### [2.5.4] 1 March 2026
+-NEW: hotkeys (del to delete file, ctrl+space to select file)
+-NEW: Status-bar
+-NEW: logging deleted files in ~/.onlyone/app.log
