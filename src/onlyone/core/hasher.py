@@ -83,7 +83,7 @@ class HasherImpl(Hasher):
             logger.warning(f"Permission denied (skipping): {file.path}")
             return None
         except OSError as e:
-            logger.error(f"Error reading {file.path}: {e}", exc_info=True)
+            logger.warning(f"Error reading {file.path}: {e}")
             return None
 
     def compute_front_hash(self, file: File) -> Optional[bytes]:
@@ -98,7 +98,7 @@ class HasherImpl(Hasher):
             file.hashes.front = result
             return result
         except Exception as e:
-            logger.error(f"Failed to compute front hash for {file.path}: {e}", exc_info=True)
+            logger.warning(f"Unexpected error computing front-chunk hash for {file.path}: {e}")
             return None
 
     def compute_middle_hash(self, file: File) -> Optional[bytes]:
@@ -114,7 +114,7 @@ class HasherImpl(Hasher):
             file.hashes.middle = result
             return result
         except Exception as e:
-            logger.error(f"Failed to compute middle hash for {file.path}: {e}", exc_info=True)
+            logger.warning(f"Unexpected error computing middle-chunk hash for {file.path}: {e}")
             return None
 
     def compute_end_hash(self, file: File) -> Optional[bytes]:
@@ -130,7 +130,7 @@ class HasherImpl(Hasher):
             file.hashes.end = result
             return result
         except Exception as e:
-            logger.error(f"Failed to compute end hash for {file.path}: {e}", exc_info=True)
+            logger.warning(f"Unexpected error computing end-chunk hash for {file.path}: {e}")
             return None
 
     @staticmethod
@@ -145,11 +145,11 @@ class HasherImpl(Hasher):
                 f.seek(offset)
                 return f.read(file.chunk_size)
         except FileNotFoundError:
-            logger.debug(f"File not found while reading chunk: {file.path}")
+            logger.warning(f"File not found while reading chunk: {file.path}")
             return None
         except PermissionError:
-            logger.debug(f"Permission denied while reading chunk: {file.path}")
+            logger.warning(f"Permission denied while reading chunk: {file.path}")
             return None
         except OSError as e:
-            logger.debug(f"Error reading {file.path} at offset {offset}: {e}")
+            logger.warning(f"Error reading {file.path} at offset {offset}: {e}")
             return None

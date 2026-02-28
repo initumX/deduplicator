@@ -89,7 +89,6 @@ class FileScanner:
             "skipped_size": 0,
             "skipped_ext": 0,
             "skipped_symlink": 0,
-            "skipped_error": 0
         }
 
         # Check for cancellation before starting
@@ -265,7 +264,7 @@ class FileScanner:
         try:
             return path.is_dir() and os.access(path, os.R_OK | os.X_OK)
         except (OSError, PermissionError):
-            logger.debug(f"Skipping inaccessible directory: {path}")
+            logger.warning(f"Skipping inaccessible directory: {path}")
             return False
 
     def _process_file(
@@ -291,16 +290,22 @@ class FileScanner:
             if path.is_symlink():
                 stats["skipped_symlink"] += 1
                 return None
-        except (OSError, PermissionError) as e:
-            logger.debug(f"Could not check symlink status for {path}: {e}")
+        except PermissionError:
+            logger.warning(f"Permission denied checking symlink: {path}")
+            return None
+        except OSError as e:
+            logger.warning(f"Error checking symlink status for {path}: {e}")
             return None
 
         try:
             # Get file size directly
             stat_result = path.stat()
             size = stat_result.st_size
-        except (OSError, PermissionError) as e:
-            logger.debug(f"Could not get size of {path}: {e}")
+        except PermissionError:
+            logger.warning(f"Permission denied getting file size: {path}")
+            return None
+        except OSError as e:
+            logger.warning(f"Error getting file size for {path}: {e}")
             return None
 
         # Skip zero-byte files

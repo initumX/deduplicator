@@ -439,7 +439,7 @@ class CLIApplication:
                     deleted_count += 1
                 except Exception as e:
                     failed_files.append((path, str(e)))
-                    self.logger.error(f"Failed to delete {path}: {e}")
+                    self.logger.warning(f"Error deleting file {path}: {e}")
                     continue  # Continue with next file
 
             if delete_bar:

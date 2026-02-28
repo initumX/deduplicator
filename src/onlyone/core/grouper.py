@@ -78,7 +78,7 @@ class FileGrouper:
                 if key is not None:
                     groups[key].append(file)
             except Exception as e:
-                logger.debug(f"Error processing {file.path}: {e}")
+                logger.warning(f"Error processing {file.path}: {e}")
                 skipped_files += 1
 
         if skipped_files > 0:
