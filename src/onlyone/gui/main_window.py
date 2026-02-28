@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication, QListWidgetItem,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
-from onlyone.core.models import DeduplicationParams
+from onlyone.core.models import DeduplicationParams, File
 from onlyone.core.sorter import Sorter
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
@@ -64,6 +64,7 @@ class MainWindow(QMainWindow):
     def setup_connections(self):
         """Connect UI signals to handler methods."""
         self.ui.groups_list.file_selected.connect(self.ui.image_preview.set_file)
+        self.ui.groups_list.file_selected.connect(self.on_file_selected_statusbar)
         self.ui.select_dir_button.clicked.connect(self.select_root_folder)
         self.ui.remove_dir_button.clicked.connect(self.remove_selected_folder)
         self.ui.favourite_dirs_button.clicked.connect(self.select_favourite_dirs)
@@ -203,7 +204,6 @@ class MainWindow(QMainWindow):
         self.progress_dialog.show()
 
         failed_files = []  # List of (path, error) for files that could not be deleted
-        successful_files = []
         deleted_count = 0
 
         try:
@@ -213,7 +213,6 @@ class MainWindow(QMainWindow):
                 try:
                     FileService.move_to_trash(path)
                     deleted_count += 1
-                    successful_files.append(os.path.basename(path))
 
                 except Exception as e:
                     # Continue deleting other files even if one fails
@@ -259,8 +258,8 @@ class MainWindow(QMainWindow):
                 self.ui.statusbar.clearMessage()
                 file_names = [os.path.basename(path) for path in successful_files[:4]]
                 status_msg = f"✅ Deleted {deleted_count} file: {', '.join(file_names)}. " \
-                    if len(file_names) <= 4 \
-                    else f"Deleted {deleted_count} files: ({', '.join(file_names)}) and {len(file_names) - 4} more."
+                    if len(successful_files) <= 4 \
+                    else f"Deleted {deleted_count} files: {', '.join(file_names)} and {deleted_count - 4} more."
 
                 if removed_group_count > 0:
                     status_msg += f" Removed {removed_group_count} group."
@@ -474,6 +473,11 @@ class MainWindow(QMainWindow):
 
         self.save_settings()
         super().closeEvent(event)
+
+    def on_file_selected_statusbar(self, file: File):
+        """Updates file selection status bar."""
+        if file and hasattr(file, 'path') and file.path:
+            self.ui.statusbar.showMessage(file.path)
 
     def save_settings(self):
         """Persist current UI state to settings."""
