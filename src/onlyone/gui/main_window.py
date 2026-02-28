@@ -6,6 +6,7 @@ OnlyOne GUI Application
 A PySide6-based graphical interface for finding and removing duplicate files.
 """
 import os
+import logging
 from typing import Any, List
 
 from PySide6.QtWidgets import (
@@ -55,6 +56,8 @@ class MainWindow(QMainWindow):
         self.worker = None  # Holds reference to current worker for cancellation
         self.progress_dialog = None
         self.original_image_preview_size = None
+
+        self.logger = logging.getLogger(__name__)
 
         self._ordering_connected = False
         self.setup_connections()
@@ -193,6 +196,11 @@ class MainWindow(QMainWindow):
             self.ui.statusbar.showMessage("Nothing to delete", 3000)
             return
 
+        file_sizes = {}
+        for group in self.duplicate_groups:
+            for f in group.files:
+                file_sizes[f.path] = f.size
+
         total = len(file_paths)
         self.progress_dialog = QProgressDialog(
             "Moving files to trash...",
@@ -213,6 +221,9 @@ class MainWindow(QMainWindow):
                 try:
                     FileService.move_to_trash(path)
                     deleted_count += 1
+
+                    file_size = file_sizes.get(path, 0)
+                    self._log_file_deletion(path, file_size)
 
                 except Exception as e:
                     # Continue deleting other files even if one fails
@@ -289,6 +300,21 @@ class MainWindow(QMainWindow):
             License: MIT License<br>
             '''
         )
+
+    def _log_file_deletion(self, file_path: str, file_size: int = 0) -> None:
+        """Log file deletion."""
+        try:
+            from onlyone.core.measurer import bytes_to_human
+            size_human = bytes_to_human(file_size)
+            self.logger.info(f"DELETED | {file_path} | {size_human}")
+        except (ValueError, OSError) as e:
+            self.logger.debug(f"Failed to log deletion of {file_path}: {e}", exc_info=True)
+        except Exception as e:
+            self.logger.warning(
+                f"Unexpected error logging deletion of {file_path}: {type(e).__name__}: {e}",
+                exc_info=True
+            )
+
 
     def _cleanup_progress_dialog(self):
         """
