@@ -4,7 +4,7 @@ Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 Updated to match new DeduplicationParams API (root_dirs list, boost parameter).
 """
 from pathlib import Path
-from onlyone.core import FileScanner, DeduplicatorImpl
+from onlyone.core import FileScanner, Deduplicator
 from onlyone.core import (
     DeduplicationParams, DeduplicationMode, SortOrder,
     File, FileHashes, BoostMode
@@ -30,7 +30,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=files,
             params=params,
@@ -63,7 +63,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=files,
             params=params,
@@ -90,7 +90,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=files,
             params=params,
@@ -129,7 +129,7 @@ class TestDeduplicatorIntegration:
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
 
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, _ = deduper.find_duplicates(
             files=files,
             params=params,
@@ -162,7 +162,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=files,
             params=params,
@@ -195,7 +195,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, _ = deduper.find_duplicates(
             files=files,
             params=params,
@@ -222,7 +222,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        groups, _ = DeduplicatorImpl().find_duplicates(
+        groups, _ = Deduplicator().find_duplicates(
             files=files,
             params=params,
             stopped_flag=lambda: False,
@@ -246,7 +246,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        groups, stats = DeduplicatorImpl().find_duplicates(
+        groups, stats = Deduplicator().find_duplicates(
             files=files,
             params=params,
             stopped_flag=lambda: False,
@@ -271,7 +271,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=[],
             params=params,
@@ -306,7 +306,7 @@ class TestDeduplicatorIntegration:
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, _ = deduper.find_duplicates(
             files=[file_obj1, file_obj2],
             params=params,
@@ -349,7 +349,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         groups, stats = deduper.find_duplicates(
             files=files,
             params=params,
@@ -377,7 +377,7 @@ class TestDeduplicatorIntegration:
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
-        deduper = DeduplicatorImpl()
+        deduper = Deduplicator()
         _, stats = deduper.find_duplicates(
             files=files,
             params=params,

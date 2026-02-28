@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # =============================
 # Main Deduplicator Class
 # =============================
-class DeduplicatorImpl:
+class Deduplicator:
     """
     Implements multi-stage duplicate detection using a pipeline architecture.
     Respects the DeduplicationMode enum and collects detailed statistics.
@@ -56,7 +56,7 @@ class DeduplicatorImpl:
             progress_callback=progress_callback
         )
         duration = time.time() - start_time
-        DeduplicatorImpl._update_stats(stats, "size", duration, groups, [])
+        Deduplicator._update_stats(stats, "size", duration, groups, [])
 
         confirmed_duplicates = []
 
@@ -77,7 +77,7 @@ class DeduplicatorImpl:
                 progress_callback=progress_callback
             )
             duration = time.time() - start_time
-            DeduplicatorImpl._update_stats(stats, stage_name, duration, groups, confirmed_duplicates)
+            Deduplicator._update_stats(stats, stage_name, duration, groups, confirmed_duplicates)
 
         # Combine confirmed duplicates and unprocessed groups
         all_duplicates = confirmed_duplicates + groups

@@ -14,7 +14,7 @@ All components are pure Python with no GUI dependencies — suitable for CLI and
 from .scanner import FileScanner
 from .grouper import FileGrouper
 from .hasher import HasherImpl, XXHashAlgorithmImpl
-from .deduplicator import DeduplicatorImpl
+from .deduplicator import Deduplicator
 from .sorter import Sorter
 from .demasker import demask_filename
 from .models import (
@@ -27,7 +27,7 @@ __all__ = [
     "FileGrouper",
     "HasherImpl",
     "XXHashAlgorithmImpl",
-    "DeduplicatorImpl",
+    "Deduplicator",
     "File",
     "DuplicateGroup",
     'BoostMode',

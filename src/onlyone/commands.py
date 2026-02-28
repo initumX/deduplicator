@@ -7,7 +7,7 @@ import time
 from typing import List, Optional, Callable, Tuple
 from onlyone.core.models import DuplicateGroup, DeduplicationStats, DeduplicationParams, File
 from onlyone.core.scanner import FileScanner
-from onlyone.core.deduplicator import DeduplicatorImpl
+from onlyone.core.deduplicator import Deduplicator
 
 import logging
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class DeduplicationCommand:
     """
 
     def __init__(self):
-        self._deduplicator = DeduplicatorImpl()
+        self._deduplicator = Deduplicator()
         self._files: List[File] = []  # Local state storage (not in app/api layer)
 
     def execute(
