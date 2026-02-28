@@ -37,6 +37,7 @@ class DuplicateGroupsList(QListWidget):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.itemClicked.connect(self.on_item_clicked)
+        self.currentItemChanged.connect(self._on_current_item_changed)
         self.current_groups = []
 
     def set_groups(self, groups: list[DuplicateGroup]):
@@ -76,6 +77,13 @@ class DuplicateGroupsList(QListWidget):
         file = item.data(Qt.ItemDataRole.UserRole)
         if file:
             self.file_selected.emit(file)
+
+    def _on_current_item_changed(self, current, previous):
+        """Handles current item changes (via mouse or keyboard)."""
+        if current:
+            file = current.data(Qt.ItemDataRole.UserRole)
+            if file:
+                self.file_selected.emit(file)
 
     def show_context_menu(self, point):
         """Shows context menu on right-click."""
