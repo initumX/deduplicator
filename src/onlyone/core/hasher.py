@@ -33,7 +33,6 @@ class HashAlgorithm(Protocol):
         ...
 
 
-# Use the same way to implement and use any other hashing algorithm
 class XXHashAlgorithmImpl(HashAlgorithm):
     @staticmethod
     def hash(data: bytes) -> bytes:
@@ -44,6 +43,7 @@ class HasherImpl(Hasher):
     """
     A hasher implementation that supports any algorithm via the HashAlgorithm interface.
     Computes and caches hashes for different parts of a file.
+    Returns None on errors to allow graceful degradation.
     """
 
     def __init__(self, algorithm: HashAlgorithm):
@@ -58,56 +58,80 @@ class HasherImpl(Hasher):
                 result = self.algorithm.hash(data)
                 file.hashes.full = result
                 return result
-        except Exception as e:
-            logger.error(f"Error reading full content of {file.path}: {e}", exc_info=True)
+        except FileNotFoundError:
+            logger.warning(f"File not found (skipping): {file.path}")
+            return None
+        except PermissionError:
+            logger.warning(f"Permission denied (skipping): {file.path}")
+            return None
+        except OSError as e:
+            logger.error(f"Error reading {file.path}: {e}", exc_info=True)
             return None
 
     def compute_front_hash(self, file: File) -> Optional[bytes]:
         """Computes and caches hash of the first N bytes of a file."""
         if file.hashes.front is not None:
             return file.hashes.front
-        data = self._read_chunk(file, offset=0)
-        if data is None:
-            logger.warning(f"Could not read front chunk from {file.path}")
+        try:
+            data = self._read_chunk(file, offset=0)
+            if data is None:
+                return None
+            result = self.algorithm.hash(data)
+            file.hashes.front = result
+            return result
+        except Exception as e:
+            logger.error(f"Failed to compute front hash for {file.path}: {e}", exc_info=True)
             return None
-        result = self.algorithm.hash(data)
-        file.hashes.front = result
-        return result
 
     def compute_middle_hash(self, file: File) -> Optional[bytes]:
         """Computes and caches hash of the central N bytes of a file."""
         if file.hashes.middle is not None:
             return file.hashes.middle
-        offset = max(0, file.size // 2)
-        data = self._read_chunk(file, offset)
-        if data is None:
-            logger.warning(f"Could not read middle chunk from {file.path}")
+        try:
+            offset = max(0, file.size // 2)
+            data = self._read_chunk(file, offset)
+            if data is None:
+                return None
+            result = self.algorithm.hash(data)
+            file.hashes.middle = result
+            return result
+        except Exception as e:
+            logger.error(f"Failed to compute middle hash for {file.path}: {e}", exc_info=True)
             return None
-        result = self.algorithm.hash(data)
-        file.hashes.middle = result
-        return result
 
     def compute_end_hash(self, file: File) -> Optional[bytes]:
         """Computes and caches hash of the last N bytes of a file."""
         if file.hashes.end is not None:
             return file.hashes.end
-        offset = max(0, file.size - file.chunk_size)
-        data = self._read_chunk(file, offset)
-        if data is None:
-            logger.warning(f"Could not read end chunk from {file.path}")
+        try:
+            offset = max(0, file.size - file.chunk_size)
+            data = self._read_chunk(file, offset)
+            if data is None:
+                return None
+            result = self.algorithm.hash(data)
+            file.hashes.end = result
+            return result
+        except Exception as e:
+            logger.error(f"Failed to compute end hash for {file.path}: {e}", exc_info=True)
             return None
-        result = self.algorithm.hash(data)
-        file.hashes.end = result
-        return result
 
     @staticmethod
     def _read_chunk(file: File, offset: int = 0) -> Optional[bytes]:
-        """Reads and returns a chunk of data from the specified offset in the file."""
+        """Reads and returns a chunk of data from the specified offset in the file.
+
+        Returns:
+            bytes if successful, None if any error occurs.
+        """
         try:
             with open(file.path, 'rb') as f:
                 f.seek(offset)
-                data = f.read(file.chunk_size)
-                return data if data is not None else b''
-        except Exception as e:
+                return f.read(file.chunk_size)
+        except FileNotFoundError:
+            logger.debug(f"File not found while reading chunk: {file.path}")
+            return None
+        except PermissionError:
+            logger.debug(f"Permission denied while reading chunk: {file.path}")
+            return None
+        except OSError as e:
             logger.debug(f"Error reading {file.path} at offset {offset}: {e}")
             return None
