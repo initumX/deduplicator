@@ -78,7 +78,7 @@ class DuplicateGroupsList(QListWidget):
         if file:
             self.file_selected.emit(file)
 
-    def _on_current_item_changed(self, current, previous):
+    def _on_current_item_changed(self, current, _previous):
         """Handles current item changes (via mouse or keyboard)."""
         if current:
             file = current.data(Qt.ItemDataRole.UserRole)
