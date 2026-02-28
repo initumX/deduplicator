@@ -44,3 +44,8 @@
 
 ### [2.5.2] 26 Feb 2026
 -fix(stats): show correct total scanning time, calculation/grouping time and total time
+
+# [2.5.3] 28 Feb 2026
+-refactor: consistent logging
+-perf(hasher): use streaming for full file hash. Read file in 1MB chunks instead of loading into memory
+-improve error handling in hasher
