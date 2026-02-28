@@ -182,9 +182,9 @@ class FileScanner:
         if any(stats.values()):
             logger.info(
                 f"Scan filters summary: "
-                f"size={stats["skipped_size"]},"
-                f"ext={stats["skipped_ext"]},"
-                f"symlink={stats["skipped_symlink"]},"
+                f"size={stats['skipped_size']},"
+                f"ext={stats['skipped_ext']},"
+                f"symlink={stats['skipped_symlink']},"
             )
 
         return found_files
