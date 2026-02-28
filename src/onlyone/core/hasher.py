@@ -12,7 +12,7 @@ caching results in the File object's Hashes container.
 import xxhash
 import logging
 from onlyone.core.models import File
-from typing import Protocol, Optional
+from typing import Protocol, BinaryIO, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +32,24 @@ class HashAlgorithm(Protocol):
         """Computes the hash of the provided byte data."""
         ...
 
+    @staticmethod
+    def hash_stream(file_obj: BinaryIO, chunk_size: int = 1 * 1024 * 1024) -> bytes:
+        """Computes hash by reading from a file-like object in chunks."""
+        ...
+
 
 class XXHashAlgorithmImpl(HashAlgorithm):
     @staticmethod
     def hash(data: bytes) -> bytes:
         return xxhash.xxh64(data).digest()
+
+    @staticmethod
+    def hash_stream(file_obj: BinaryIO, chunk_size: int = 1 * 1024 * 1024) -> bytes:
+        """Stream hash a file-like object using xxhash."""
+        hasher = xxhash.xxh64()
+        while chunk := file_obj.read(chunk_size):
+            hasher.update(chunk)
+        return hasher.digest()
 
 
 class HasherImpl(Hasher):
@@ -54,10 +67,15 @@ class HasherImpl(Hasher):
             return file.hashes.full
         try:
             with open(file.path, 'rb') as f:
-                data = f.read()
-                result = self.algorithm.hash(data)
-                file.hashes.full = result
-                return result
+                if hasattr(self.algorithm, 'hash_stream'):
+                    result = self.algorithm.hash_stream(f, chunk_size=file.chunk_size)
+                else:
+                    data = f.read()
+                    result = self.algorithm.hash(data)
+
+            file.hashes.full = result
+            return result
+
         except FileNotFoundError:
             logger.warning(f"File not found (skipping): {file.path}")
             return None
