@@ -153,7 +153,6 @@ class Ui_MainWindow:
         self.mode_label = QLabel(central_widget)
         self.dedupe_mode_combo = QComboBox(central_widget)
         self.dedupe_mode_combo.setToolTip(
-            "FAST    = Boost + checksum from the first few KB (may produce false positives)\n"
             "NORMAL  = Boost + checksums from 3 parts of the file (generally reliable)\n"
             "FULL    = Boost + checksums from 2 parts + entire file (very slow for large files)"
         )
