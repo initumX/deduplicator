@@ -3,7 +3,8 @@ from __future__ import annotations
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QLineEdit, QComboBox, QSpinBox,
-    QListWidget, QGroupBox, QSizePolicy, QSplitter, QAbstractItemView, QMainWindow
+    QListWidget, QGroupBox, QSizePolicy, QSplitter, QAbstractItemView, QMainWindow,
+    QStatusBar
 )
 from PySide6.QtCore import Qt
 from onlyone.gui.custom_widgets.duplicate_groups_list import DuplicateGroupsList
@@ -209,6 +210,19 @@ class Ui_MainWindow:
 
         # Apply all UI texts
         self.retranslateUi(MainWindow)
+
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.statusbar.setStyleSheet("""
+                    QStatusBar {
+                        background-color: #f5f5f5;
+                        border-top: 1px solid #cccccc;
+                        color: #333333;
+                        padding: 2px;
+                    }
+                """)
 
     @staticmethod
     def create_size_input(default_value: int = 100, parent: QWidget | None = None) -> tuple[QSpinBox, QComboBox]:

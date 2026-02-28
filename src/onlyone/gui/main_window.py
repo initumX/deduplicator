@@ -189,6 +189,7 @@ class MainWindow(QMainWindow):
     def handle_delete_files(self, file_paths):
         """Execute file deletion with progress tracking and error handling."""
         if not file_paths:
+            self.ui.statusbar.showMessage("Nothing to delete", 3000)
             return
 
         total = len(file_paths)
@@ -202,16 +203,18 @@ class MainWindow(QMainWindow):
         self.progress_dialog.show()
 
         failed_files = []  # List of (path, error) for files that could not be deleted
+        successful_files = []
         deleted_count = 0
 
         try:
             for i, path in enumerate(file_paths):
                 if self.progress_dialog.wasCanceled():
                     raise Exception("Operation was cancelled by the user.")
-
                 try:
                     FileService.move_to_trash(path)
                     deleted_count += 1
+                    successful_files.append(os.path.basename(path))
+
                 except Exception as e:
                     # Continue deleting other files even if one fails
                     failed_files.append((path, str(e)))
@@ -233,12 +236,6 @@ class MainWindow(QMainWindow):
             self.duplicate_groups = updated_groups
             self.ui.groups_list.set_groups(updated_groups)
 
-            # Build informative message for the user
-            messages = []
-            if removed_group_count > 0:
-                messages.append(
-                    f"{removed_group_count} groups had no duplicates left and were therefore removed from the list"
-                )
 
             if failed_files:
                 # Show first 5 errors + count of remaining failures
@@ -249,20 +246,27 @@ class MainWindow(QMainWindow):
                 if len(failed_files) > 5:
                     error_list += f"\n• ...and {len(failed_files) - 5} more files"
 
-                messages.append(
-                    f"⚠️ Could not delete {len(failed_files)} file(s):\n{error_list}\n\n"
-                    "These files may be in use, protected by the system, or require administrator privileges."
-                )
-                title = "Partial Success"
-            else:
-                messages.append(f"{deleted_count} files moved to trash.")
-                title = "Success"
+                msg = f"⚠️ Could not delete {len(failed_files)} file(s):\n{error_list}"
+                if removed_group_count > 0:
+                    msg += f"\n{removed_group_count} groups removed successfully."
 
-            QMessageBox.information(
-                self,
-                title,
-                "\n\n".join(messages)
-            )
+                QMessageBox.warning(
+                    self,
+                    "Partial Success",
+                    msg
+                )
+            else:
+                self.ui.statusbar.clearMessage()
+                file_names = [os.path.basename(path) for path in successful_files[:4]]
+                status_msg = f"✅ Deleted {deleted_count} file: {', '.join(file_names)}. " \
+                    if len(file_names) <= 4 \
+                    else f"Deleted {deleted_count} files: ({', '.join(file_names)}) and {len(file_names) - 4} more."
+
+                if removed_group_count > 0:
+                    status_msg += f" Removed {removed_group_count} group."
+
+                self.ui.statusbar.showMessage(status_msg)
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error occurred:\n{e}")
         finally:
