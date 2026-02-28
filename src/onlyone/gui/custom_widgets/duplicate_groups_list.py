@@ -11,7 +11,7 @@ Emits signals instead of handling deletion directly, which keeps this widget reu
 and decoupled from business logic.
 """
 from __future__ import annotations
-
+import sys
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAbstractItemView, QWidget
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt, Signal
@@ -112,3 +112,52 @@ class DuplicateGroupsList(QListWidget):
         """Emits signal with file paths to be moved to trash."""
         file_paths = [item.data(Qt.ItemDataRole.UserRole).path for item in selected_items]
         self.delete_requested.emit(file_paths)
+
+    def keyPressEvent(self, event):
+        """
+        Handles key press events for deleting selected files.
+        Supports:
+        - Delete / Backspace on all platforms
+        - Cmd+Backspace on macOS (user expectation)
+        """
+
+        # --- 1. Handle Ctrl+Space for toggling selection ---
+        # This allows keyboard-only users to select/deselect items without mouse
+        if event.key() == Qt.Key.Key_Space and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            current = self.currentItem()
+            # Ensure we don't select header items (which have no UserRole data)
+            if current and current.data(Qt.ItemDataRole.UserRole) is not None:
+                # Toggle selection state
+                current.setSelected(not current.isSelected())
+                event.accept()
+                return
+
+        # --- 2. Handle Delete / Backspace for deletion ---
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            # macOS: Cmd+Backspace should also trigger deletion
+            is_macos_cmd_backspace = (
+                    sys.platform == 'darwin' and
+                    event.key() == Qt.Key.Key_Backspace and
+                    event.modifiers() & Qt.KeyboardModifier.MetaModifier
+            )
+
+            # Windows/Linux: standard Delete/Backspace behavior
+            is_standard_delete = (
+                    sys.platform != 'darwin' and
+                    event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace)
+            )
+
+            if is_standard_delete or is_macos_cmd_backspace:
+                selected_items = self.selectedItems()
+                # Filter only items that contain file data (exclude group headers)
+                file_items = [
+                    item for item in selected_items
+                    if item.data(Qt.ItemDataRole.UserRole) is not None
+                ]
+                if file_items:
+                    self.delete_selected_files(file_items)
+                    event.accept()
+                    return
+
+        # Pass all other key events to the parent class for default handling
+        super().keyPressEvent(event)
