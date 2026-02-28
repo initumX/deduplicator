@@ -340,8 +340,6 @@ class CLIApplication:
     def run_deduplication(self, params: DeduplicationParams) -> List[DuplicateGroup]:
         """Execute deduplication workflow."""
         command = DeduplicationCommand()
-        mode_display = params.mode.value.capitalize()
-        print(f"Finding duplicates (mode: {mode_display})...")
 
         # Reset progress bars for new run
         self._progress_bars = {}
