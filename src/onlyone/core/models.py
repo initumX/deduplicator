@@ -22,7 +22,6 @@ class DeduplicationMode(Enum):
     """
     Deduplication mode controlling the depth of duplicate detection.
     """
-    FAST = "fast"
     NORMAL = "normal"
     FULL = "full"
 
@@ -30,7 +29,6 @@ class DeduplicationMode(Enum):
     def display_name(self) -> str:
         """Human-readable name for UI display."""
         mapping = {
-            DeduplicationMode.FAST: "Fast",
             DeduplicationMode.NORMAL: "Normal",
             DeduplicationMode.FULL: "Full",
         }
@@ -40,8 +38,6 @@ class DeduplicationMode(Enum):
     def description(self) -> str:
         """Detailed description for help text."""
         mapping = {
-            DeduplicationMode.FAST:
-                "Size → Front Hash (fastest, may miss some duplicates)",
             DeduplicationMode.NORMAL:
                 "Size → Front → Middle → End Hash (balanced speed/accuracy)",
             DeduplicationMode.FULL:

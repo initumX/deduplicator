@@ -247,7 +247,7 @@ class CLIApplication:
         if args.mode not in DEDUP_MODE_ALIASES:
             self.error_exit(
                 f"Invalid deduplication mode: '{args.mode}'.\n"
-                f"Valid options: {', '.join({'fast', 'normal', 'full'})}"
+                f"Valid options: {', '.join({'normal', 'full'})}"
             )
 
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:

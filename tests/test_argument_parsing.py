@@ -76,7 +76,7 @@ class TestArgumentParsing:
         """Test --mode flag with valid values."""
         app = CLIApplication()
 
-        for mode in ["fast", "normal", "full"]:
+        for mode in ["normal", "full"]:
             with mock.patch.object(sys, 'argv', ['onlyone', '-i', '/tmp', '--mode', mode]):
                 args = app.parse_args()
             assert args.mode == mode

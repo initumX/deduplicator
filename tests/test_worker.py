@@ -4,9 +4,8 @@ Verifies thread-safe cancellation, signal emission, and error handling.
 Updated to match new DeduplicationParams API (root_dirs list).
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from pathlib import Path
-import tempfile
 import pytest
 from onlyone.core import (
     DeduplicationParams, DeduplicationMode,
@@ -22,13 +21,13 @@ class TestDeduplicateWorker:
     def valid_params(self, tmp_path):
         """Fixture providing valid DeduplicationParams for tests."""
         return DeduplicationParams(
-            root_dirs=[str(tmp_path)],  # ← FIXED: root_dirs as list
+            root_dirs=[str(tmp_path)],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
             excluded_dirs=[],
-            mode=DeduplicationMode.FAST,
+            mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE
         )

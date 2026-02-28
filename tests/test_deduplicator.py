@@ -14,19 +14,19 @@ from onlyone.core import (
 class TestDeduplicatorIntegration:
     """Test full deduplication pipeline with real file operations."""
 
-    def test_fast_mode_finds_duplicates(self, test_files):
+    def test_normal_mode_finds_duplicates(self, test_files):
         """FAST mode should detect duplicates using size → front hash."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED: root_dirs as list
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
             excluded_dirs=[],
-            mode=DeduplicationMode.FAST,
+            mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED: required parameter
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -51,7 +51,7 @@ class TestDeduplicatorIntegration:
         """NORMAL mode should execute size → front → middle → end stages."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -59,7 +59,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -78,7 +78,7 @@ class TestDeduplicatorIntegration:
         """FULL mode must execute size → front → middle → full_hash stages."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -86,7 +86,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -116,7 +116,7 @@ class TestDeduplicatorIntegration:
         file2.write_bytes(file2_content)
 
         params = DeduplicationParams(
-            root_dirs=[str(temp_dir)],  # ← FIXED
+            root_dirs=[str(temp_dir)],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024 * 1024,
             extensions=[".bin"],
@@ -124,7 +124,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -150,7 +150,7 @@ class TestDeduplicatorIntegration:
 
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -158,7 +158,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -183,7 +183,7 @@ class TestDeduplicatorIntegration:
 
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -191,7 +191,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -210,15 +210,15 @@ class TestDeduplicatorIntegration:
         """Final groups should be sorted by size descending."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
             excluded_dirs=[],
-            mode=DeduplicationMode.FAST,
+            mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -234,15 +234,15 @@ class TestDeduplicatorIntegration:
     def test_empty_directory_returns_empty_result(self, temp_dir):
         """Deduplication on empty directory should return zero groups."""
         params = DeduplicationParams(
-            root_dirs=[str(temp_dir)],  # ← FIXED
+            root_dirs=[str(temp_dir)],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
             favourite_dirs=[],
             excluded_dirs=[],
-            mode=DeduplicationMode.FAST,
+            mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -267,7 +267,7 @@ class TestDeduplicatorIntegration:
             extensions=[".txt"],
             favourite_dirs=[],
             excluded_dirs=[],
-            mode=DeduplicationMode.FAST,
+            mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
             boost=BoostMode.SAME_SIZE  # ← ADDED
         )
@@ -337,7 +337,7 @@ class TestDeduplicatorIntegration:
         file3.write_bytes(unique_content)
 
         params = DeduplicationParams(
-            root_dirs=[str(temp_dir)],  # ← FIXED
+            root_dirs=[str(temp_dir)],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -345,7 +345,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.NORMAL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
@@ -365,7 +365,7 @@ class TestDeduplicatorIntegration:
         """FULL mode stats must contain entries for all stages including 'full'."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
-            root_dirs=[root_dir],  # ← FIXED
+            root_dirs=[root_dir],
             min_size_bytes=0,
             max_size_bytes=1024 * 1024,
             extensions=[".txt"],
@@ -373,7 +373,7 @@ class TestDeduplicatorIntegration:
             excluded_dirs=[],
             mode=DeduplicationMode.FULL,
             sort_order=SortOrder.SHORTEST_PATH,
-            boost=BoostMode.SAME_SIZE  # ← ADDED
+            boost=BoostMode.SAME_SIZE
         )
         scanner = FileScanner(params=params)
         files = scanner.scan(stopped_flag=lambda: False)
