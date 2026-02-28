@@ -5,6 +5,8 @@ Accepts DeduplicationParams for unified configuration.
 from PySide6.QtCore import QRunnable, QObject, Signal, QMutex, QMutexLocker
 from onlyone.core.models import DeduplicationParams
 from onlyone.commands import DeduplicationCommand
+import logging
+logger = logging.getLogger(__name__)
 
 
 class WorkerSignals(QObject):
@@ -62,5 +64,6 @@ class DeduplicateWorker(QRunnable):
             if not self.is_stopped():
                 self.signals.finished.emit(groups, stats)
         except Exception as e:
+            logger.exception(f"Worker failed: {e}")
             if not self.is_stopped():
                 self.signals.error.emit(f"{type(e).__name__}: {str(e)}")

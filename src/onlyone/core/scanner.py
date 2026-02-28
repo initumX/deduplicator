@@ -14,7 +14,7 @@ Features:
 """
 import os
 import sys
-from typing import List, Optional, Callable, Set
+from typing import List, Optional, Callable, Set, Dict
 from pathlib import Path
 import time
 import logging
@@ -85,6 +85,13 @@ class FileScanner:
 
         processed_files = 0
 
+        stats = {
+            "skipped_size": 0,
+            "skipped_ext": 0,
+            "skipped_symlink": 0,
+            "skipped_error": 0
+        }
+
         # Check for cancellation before starting
         if stopped_flag and stopped_flag():
             logger.debug("Scan cancelled before start")
@@ -146,7 +153,7 @@ class FileScanner:
 
                         seen_paths.add(resolved_path)
 
-                        file_info = self._process_file(path, stopped_flag=stopped_flag)
+                        file_info = self._process_file(path, stopped_flag=stopped_flag, stats=stats)
                         if file_info:
                             found_files.append(file_info)
                             processed_files += 1
@@ -171,6 +178,14 @@ class FileScanner:
         except Exception:
             logger.exception("Unexpected error during scanning")
             raise
+
+        if any(stats.values()):
+            logger.info(
+                f"Scan filters summary: "
+                f"size={stats["skipped_size"]},"
+                f"ext={stats["skipped_ext"]},"
+                f"symlink={stats["skipped_symlink"]},"
+            )
 
         return found_files
 
@@ -241,11 +256,9 @@ class FileScanner:
         """
         # Skip system trash directories to avoid rescanning deleted files
         if FileScanner._is_system_trash(path):
-            logger.debug(f"Skipping system trash directory: {path}")
             return False
 
         if self.excluded_dirs and self._is_excluded_directory(path, self.excluded_dirs):
-            logger.debug(f"Skipping excluded directory: {path}")
             return False
 
         # Skip inaccessible directories
@@ -258,7 +271,8 @@ class FileScanner:
     def _process_file(
         self,
         path: Path,
-        stopped_flag: Optional[Callable[[], bool]] = None
+        stopped_flag: Optional[Callable[[], bool]] = None,
+        stats: Optional[Dict[str, int]] = None,
     ) -> Optional[File]:
         """
         Process an individual file path and return a File if it passes all filters.
@@ -275,7 +289,7 @@ class FileScanner:
 
         try:
             if path.is_symlink():
-                logger.debug(f"Skipping symbolic link: {path}")
+                stats["skipped_symlink"] += 1
                 return None
         except (OSError, PermissionError) as e:
             logger.debug(f"Could not check symlink status for {path}: {e}")
@@ -291,17 +305,16 @@ class FileScanner:
 
         # Skip zero-byte files
         if size == 0:
-            logger.debug(f"Skipping zero-byte file: {path}")
             return None
 
         # Apply size filter
         if not self._size_passes(size):
-            logger.debug(f"Skipping {path} (size {size} bytes outside range)")
+            stats["skipped_size"] += 1
             return None
 
         # Apply extension filter
         if not self._extension_passes(path):
-            logger.debug(f"Skipping {path} (extension not allowed)")
+            stats["skipped_ext"] += 1
             return None
 
         try:
@@ -322,7 +335,6 @@ class FileScanner:
                 logger.debug(f"Error setting favourite status for {path}: {e}")
                 # Continue processing — favourite status is optional metadata
 
-        logger.debug(f"Accepted file: {path.name} ({size} bytes)")
         return file
 
     def _size_passes(self, size: int) -> bool:

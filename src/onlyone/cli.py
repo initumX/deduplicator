@@ -13,11 +13,6 @@ from pathlib import Path
 from typing import List, Optional, NoReturn
 import logging
 
-logging.basicConfig(
-    level=logging.ERROR,
-    format="%(levelname)-8s | %(name)-25s | %(message)s"
-)
-
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
 try:
@@ -61,6 +56,7 @@ class CLIApplication:
     def __init__(self):
         self.start_time: float = time.time()
         self.show_stats: bool = False
+        self.logger = logging.getLogger("onlyone.cli")
         self._progress_bars: dict = {}
         self._args_ascii: bool = False
 
@@ -197,6 +193,12 @@ class CLIApplication:
             "--ascii",
             action="store_true",
             help="Use ASCII characters instead of emojis (for old terminals)"
+        )
+
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help="Enable debug logging (shows skipped files, hash errors, etc.)"
         )
 
         return parser.parse_args(args)
@@ -395,7 +397,7 @@ class CLIApplication:
 
         # Confirmation (orchestration - stays in CLI)
         if force:
-            print("️  WARNING: --force flag skips confirmation. Proceeding with deletion...")
+            self.logger.warning("--force flag skips confirmation. Proceeding with deletion...")
         else:
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 self.error_exit(
@@ -439,7 +441,7 @@ class CLIApplication:
                     deleted_count += 1
                 except Exception as e:
                     failed_files.append((path, str(e)))
-                    self.warning(f"Failed to delete {path}: {e}")
+                    self.logger.error(f"Failed to delete {path}: {e}")
                     continue  # Continue with next file
 
             if delete_bar:
@@ -487,33 +489,29 @@ class CLIApplication:
         # Final notice
         print("ℹ️  This was a dry run. Use --keep-one to actually delete files.")
 
-    @staticmethod
-    def warning(message: str) -> None:
-        """Print a warning message to stderr."""
-        print(f"  {message}", file=sys.stderr)
+    def warning(self, message: str) -> None:
+        self.logger.warning(message)
 
-    @staticmethod
-    def error_exit(message: str, code: int = 1) -> NoReturn:
-        """Print error and exit."""
-        print(f" Error: {message}", file=sys.stderr)
+    def error_exit(self, message: str, code: int = 1) -> NoReturn:
+        self.logger.critical(message)
         raise SystemExit(code)
 
     def run(self) -> None:
         """Main entry point with conditional output behavior."""
         args = self.parse_args()
+
+        log_level = logging.DEBUG if args.verbose else logging.WARNING
+        logging.basicConfig(
+            level=log_level,
+            format="%(levelname)-8s | %(name)-25s | %(message)s",
+            force=True,
+            stream=sys.stdout,
+        )
+
         self.show_stats = args.stats
         self._args_ascii = args.ascii  # Store for progress_callback
-
         self.validate_args(args)
         params = self.create_params(args)
-
-        # Show all scanned directories
-        if len(params.normalized_root_dirs) == 1:
-            print(f"Scanning directory: {params.normalized_root_dirs[0]}")
-        else:
-            print(f"Scanning {len(params.normalized_root_dirs)} directories:")
-            for dir_path in params.normalized_root_dirs:
-                print(f"  - {dir_path}")
 
         groups = self.run_deduplication(params)
 

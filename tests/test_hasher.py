@@ -8,6 +8,7 @@ from onlyone.core import HasherImpl, XXHashAlgorithmImpl
 from onlyone.core import File
 
 
+
 class TestHasherImpl:
     """Test xxHash64 computation with chunk-based reading."""
 
@@ -122,33 +123,104 @@ class TestHasherImpl:
             finally:
                 Path(f.name).unlink()
 
-    def test_hasher_handles_deleted_file(self, tmp_path):
-        """
-        Hasher must NOT crash when attempting to hash a deleted file.
-        The exact return value is implementation-specific (may be b'' or hash of empty content),
-        but the critical requirement is graceful error handling without exceptions.
-        """
-        # Create and immediately delete a file
-        temp_file = tmp_path / "deleted.txt"
-        temp_file.write_bytes(b"content")
-        file = File(path=str(temp_file), size=7)
-        file.chunk_size = 1024
-        temp_file.unlink()  # Delete BEFORE hashing
 
-        hasher = HasherImpl(XXHashAlgorithmImpl())
 
-        # CRITICAL: None of these should raise exceptions
-        full_hash = hasher.compute_full_hash(file)
-        front_hash = hasher.compute_front_hash(file)
-        middle_hash = hasher.compute_middle_hash(file)
-        end_hash = hasher.compute_end_hash(file)
 
-        # All methods must return bytes (any bytes - empty or valid hash)
-        assert isinstance(full_hash, bytes), "compute_full_hash must return bytes"
-        assert isinstance(front_hash, bytes), "compute_front_hash must return bytes"
-        assert isinstance(middle_hash, bytes), "compute_middle_hash must return bytes"
-        assert isinstance(end_hash, bytes), "compute_end_hash must return bytes"
 
-        # Verify error messages were printed (optional but useful for debugging)
-        # Note: We don't check exact message content to avoid fragile tests
-        # The key is that the application didn't crash
+    class TestHasherErrorHandling:
+        """Tests for hasher graceful error handling with Optional[bytes] return type."""
+
+        def test_hasher_returns_none_on_deleted_file(self, tmp_path):
+            """
+            If file is deleted after stat but before hash computation,
+            hasher must return None without raising exceptions.
+            This allows the grouper to skip the file safely.
+            """
+            # Create file and immediately delete it before hashing
+            temp_file = tmp_path / "volatile.txt"
+            temp_file.write_bytes(b"content that will disappear")
+            file_obj = File(path=str(temp_file), size=30)
+            file_obj.chunk_size = 32
+
+            # Delete BEFORE hashing (simulate race condition)
+            temp_file.unlink()
+
+            hasher = HasherImpl(XXHashAlgorithmImpl())
+
+            # CRITICAL: None of these should raise exceptions
+            # Application must degrade gracefully, not crash
+            full_hash = hasher.compute_full_hash(file_obj)
+            front_hash = hasher.compute_front_hash(file_obj)
+            middle_hash = hasher.compute_middle_hash(file_obj)
+            end_hash = hasher.compute_end_hash(file_obj)
+
+            # UPDATED: All methods must return None on error (not b'')
+            assert full_hash is None, "compute_full_hash must return None for missing files"
+            assert front_hash is None, "compute_front_hash must return None for missing files"
+            assert middle_hash is None, "compute_middle_hash must return None for missing files"
+            assert end_hash is None, "compute_end_hash must return None for missing files"
+
+        def test_hasher_returns_none_on_permission_error(self, tmp_path):
+            """
+            Hasher must return None when file cannot be read due to permissions.
+            """
+            temp_file = tmp_path / "protected.txt"
+            temp_file.write_bytes(b"secret content")
+            file_obj = File(path=str(temp_file), size=14)
+            file_obj.chunk_size = 32
+
+            # Remove read permissions (Unix-like systems)
+            temp_file.chmod(0o000)
+
+            hasher = HasherImpl(XXHashAlgorithmImpl())
+
+            # Should not raise, should return None
+            result = hasher.compute_full_hash(file_obj)
+            assert result is None, "compute_full_hash must return None on permission error"
+
+            # Cleanup
+            temp_file.chmod(0o644)
+            temp_file.unlink()
+
+        def test_grouper_skips_none_hashes(self, tmp_path):
+            """
+            Integration test: verify that FileGrouper correctly skips files
+            when hasher returns None.
+            """
+            from onlyone.core.grouper import FileGrouper
+
+            # Create TWO valid files with identical content (to form a duplicate group)
+            valid_file1 = tmp_path / "valid1.txt"
+            valid_file1.write_bytes(b"identical content")
+            valid_file_obj1 = File(path=str(valid_file1), size=17)
+            valid_file_obj1.chunk_size = 32
+
+            valid_file2 = tmp_path / "valid2.txt"
+            valid_file2.write_bytes(b"identical content")  # Same content → same hash
+            valid_file_obj2 = File(path=str(valid_file2), size=17)
+            valid_file_obj2.chunk_size = 32
+
+            # Create one "deleted" file (will return None hash)
+            deleted_file = tmp_path / "deleted.txt"
+            deleted_file.write_bytes(b"deleted content")
+            deleted_file_obj = File(path=str(deleted_file), size=15)
+            deleted_file_obj.chunk_size = 32
+            deleted_file.unlink()  # Delete before hashing
+
+            files = [valid_file_obj1, valid_file_obj2, deleted_file_obj]
+            grouper = FileGrouper()
+
+            # Group by front hash - should not crash
+            groups = grouper.group_by_front_hash(files)
+
+            # Verify: only the two valid files should be in groups (as a pair)
+            # The deleted file (None hash) should be skipped
+            total_files_in_groups = sum(len(file_list) for file_list in groups.values())
+
+            assert total_files_in_groups == 2, "Only valid files should be grouped, and they should form a duplicate pair"
+
+            # Verify the group contains both valid files
+            assert len(groups) == 1, "Should have exactly one duplicate group"
+            group_files = next(iter(groups.values()))
+            group_paths = {f.path for f in group_files}
+            assert group_paths == {str(valid_file1), str(valid_file2)}, "Group should contain both valid files"

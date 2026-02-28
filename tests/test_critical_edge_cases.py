@@ -264,14 +264,14 @@ class TestFilesDeletedDuringOperation:
         end_hash = hasher.compute_end_hash(file_obj)
 
         # All methods must return bytes (empty or valid)
-        assert isinstance(full_hash, bytes), "compute_full_hash must return bytes even for missing files"
-        assert isinstance(front_hash, bytes), "compute_front_hash must return bytes even for missing files"
-        assert isinstance(middle_hash, bytes), "compute_middle_hash must return bytes even for missing files"
-        assert isinstance(end_hash, bytes), "compute_end_hash must return bytes even for missing files"
+        assert full_hash is None, "compute_full_hash must return None for missing files"
+        assert front_hash is None, "compute_front_hash must return None for missing files"
+        assert middle_hash is None, "compute_middle_hash must return None for missing files"
+        assert end_hash is None, "compute_end_hash must return None for missing files"
 
-        # Optional: verify hashes are empty (implementation detail)
-        # Main requirement is NO EXCEPTIONS raised
-        assert len(full_hash) in (0, 8), "Hash should be empty or valid 8-byte xxHash"
+        # Optional: if hash is computed successfully, verify it's valid xxHash64 (8 bytes)
+        if full_hash is not None:
+            assert len(full_hash) == 8, "Valid xxHash64 should be 8 bytes"
 
     def test_scanner_continues_after_file_deleted_during_walk(self, tmp_path):
         """

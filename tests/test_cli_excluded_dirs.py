@@ -3,7 +3,7 @@ Unit tests for CLI --excluded-dirs argument parsing and validation.
 """
 from pathlib import Path
 from onlyone.cli import CLIApplication
-
+import logging
 
 
 class TestCLIExcludedDirs:
@@ -56,7 +56,7 @@ class TestCLIExcludedDirs:
         assert len(args.excluded_dirs) == 1
         assert f"{dir1},{dir2}" in args.excluded_dirs
 
-    def test_excluded_dirs_warning_nonexistent(self, temp_dir, capsys):
+    def test_excluded_dirs_warning_nonexistent(self, temp_dir, caplog):
         """CLI must warn when excluded directory does not exist."""
         nonexistent = temp_dir / "does_not_exist"
 
@@ -68,10 +68,13 @@ class TestCLIExcludedDirs:
 
         app.validate_args(args)
 
-        captured = capsys.readouterr()
-        assert "Excluded directory not found" in captured.err
+        with caplog.at_level(logging.WARNING):
+            app.validate_args(args)
+        assert any("Excluded directory not found" in record.message
+                   for record in caplog.records), \
+            f"Expected warning not found in: {[r.message for r in caplog.records]}"
 
-    def test_excluded_dirs_warning_not_a_directory(self, temp_dir, capsys):
+    def test_excluded_dirs_warning_not_a_directory(self, temp_dir, caplog):
         """CLI must warn when excluded path is a file, not directory."""
         file_path = temp_dir / "not_a_dir.txt"
         file_path.write_bytes(b"content")
@@ -84,8 +87,12 @@ class TestCLIExcludedDirs:
 
         app.validate_args(args)
 
-        captured = capsys.readouterr()
-        assert "Excluded path is not a directory" in captured.err
+        with caplog.at_level(logging.WARNING):
+            app.validate_args(args)
+
+        assert any("Excluded path is not a directory" in record.message
+                   for record in caplog.records), \
+            f"Expected warning not found in: {[r.message for r in caplog.records]}"
 
     def test_create_params_normalizes_excluded_dirs(self, temp_dir):
         """create_params must normalize excluded_dirs to absolute paths."""

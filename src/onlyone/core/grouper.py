@@ -6,12 +6,14 @@ core/grouper.py
 Implements file grouping strategies using File objects and Hasher.
 Replaces multiple standalone groupers with a single class implementing FileGrouper.
 """
-
+import logging
 from typing import List, Dict, Tuple, Any, Callable
 from collections import defaultdict
 from onlyone.core.models import File
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
 from onlyone.core.demasker import demask_filename
+
+logger = logging.getLogger(__name__)
 
 
 class FileGrouper:
@@ -76,11 +78,11 @@ class FileGrouper:
                 if key is not None:
                     groups[key].append(file)
             except Exception as e:
-                print(f"Error processing {file.path}: {e}")
+                logger.debug(f"Error processing {file.path}: {e}")
                 skipped_files += 1
 
         if skipped_files > 0:
-            print(f"Skipped {skipped_files} files due to hash computation errors")
+            logger.warning(f"Skipped {skipped_files} files due to hash computation errors")
 
         result = {}
         for key, group in groups.items():

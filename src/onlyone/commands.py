@@ -9,6 +9,9 @@ from onlyone.core.models import DuplicateGroup, DeduplicationStats, Deduplicatio
 from onlyone.core.scanner import FileScanner
 from onlyone.core.deduplicator import DeduplicatorImpl
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DeduplicationCommand:
     """
     Orchestrates the entire deduplication workflow:
@@ -71,6 +74,7 @@ class DeduplicationCommand:
         scan_duration = time.time() - scan_start
 
         if not self._files:
+            logger.warning("No files found matching filters")
             raise RuntimeError("No files found matching filters")
 
         # Step 2: Find duplicates using core onlyone directly

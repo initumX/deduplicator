@@ -5,13 +5,14 @@ Licensed under the MIT License
 core/models.py
 Data models and domain logic for file scanning and deduplication.
 """
-
+import logging
 from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional, Union, Callable
 import os
 from enum import Enum
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
 
 # =============================
 # Enums
@@ -230,7 +231,7 @@ class DeduplicationStats:
             try:
                 listener(stage_name, self.stage_stats[stage_name])
             except Exception as e:
-                print(f"Error in stats event handler: {e}")
+                logger.error(f"Error in stats event handler: {e}", exc_info=True)
 
     def notify_stage_start(self, stage_name: str):
         """Optional: notifies listeners that a new stage has started."""
@@ -238,7 +239,7 @@ class DeduplicationStats:
             try:
                 listener(stage_name, {"status": "started"})
             except Exception as e:
-                print(f"Error in stats event handler: {e}")
+                logger.error(f"Error in stats event handler: {e}", exc_info=True)
 
 
     def print_summary(self) -> str:

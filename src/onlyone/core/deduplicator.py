@@ -22,6 +22,9 @@ from onlyone.core.stages import (
 )
 from onlyone.core.sorter import Sorter
 
+import logging
+logger = logging.getLogger(__name__)
+
 # =============================
 # Main Deduplicator Class
 # =============================
@@ -59,9 +62,13 @@ class DeduplicatorImpl:
 
         # Build pipeline
         pipeline = self._build_pipeline(params.mode)
+        logger.debug(f"Pipeline stages: {[name for name, _ in pipeline]}")
 
         # Run all stages in sequence
         for stage_name, stage in pipeline:
+            if stopped_flag and stopped_flag():
+                logger.warning("Pipeline interrupted by user")
+                break
             start_time = time.time()
             groups = stage.process(
                 groups,
@@ -84,6 +91,7 @@ class DeduplicatorImpl:
         # Finalize stats
         stats.grouping_time = time.time() - total_start_time
 
+        logger.info(f"Pipeline finished | Total groups: {len(all_duplicates)}")
         return all_duplicates, stats
 
     def _build_pipeline(self, mode: DeduplicationMode) -> List[Tuple[str, Union[PartialHashStageBase, FullHashStage]]]:

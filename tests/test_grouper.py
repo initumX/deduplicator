@@ -5,6 +5,7 @@ Verifies grouping logic for size and hash-based grouping with proper filtering.
 from onlyone.core import FileGrouper
 from onlyone.core import HasherImpl, XXHashAlgorithmImpl
 from onlyone.core import File, FileHashes
+import logging
 
 
 class TestFileGrouperImpl:
@@ -125,7 +126,7 @@ class TestFileGrouperImpl:
         assert grouper.group_by_size([]) == {}
         assert grouper.group_by_front_hash([]) == {}
 
-    def test_group_by_error_handling(self, capsys):
+    def test_group_by_error_handling(self, caplog):
         """Exceptions in key_func should be caught and logged, not crash the whole process."""
         files = [
             File(path="/good1.txt", size=100),
@@ -139,11 +140,11 @@ class TestFileGrouperImpl:
             return f.size
 
         grouper = FileGrouper()
-        groups = grouper._group_by(files, flaky_key_func)
+        with caplog.at_level(logging.DEBUG, logger="onlyone.core.grouper"):
+            groups = grouper._group_by(files, flaky_key_func)
 
         # Verify error was logged
-        captured = capsys.readouterr()
-        assert "Error processing /bad.txt" in captured.out
+        assert any("Error processing /bad.txt" in record.message for record in caplog.records)
 
         # Good files should still be grouped correctly
         assert len(groups) == 1
