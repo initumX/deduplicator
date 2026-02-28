@@ -21,7 +21,6 @@ BOOST_HELP_TEXT = (
 )
 
 DEDUP_MODE_ALIASES = {
-    "fast": DeduplicationMode.FAST,
     "normal": DeduplicationMode.NORMAL,
     "full": DeduplicationMode.FULL,
 }
@@ -30,7 +29,6 @@ DEDUP_MODE_CHOICES = list(DEDUP_MODE_ALIASES.keys())
 
 DEDUP_MODE_HELP_TEXT = (
     "Deduplication mode (depth of analysis):\n"
-    "  fast               : Size → Front Hash (fastest, may miss some duplicates)\n"
     "  normal             : Size → Front → Middle → End Hash (balanced)\n"
     "  full               : Size → Front → Middle → Full Hash\n"
     "Example:\n"

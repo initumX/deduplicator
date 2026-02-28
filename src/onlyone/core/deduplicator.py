@@ -97,9 +97,7 @@ class Deduplicator:
     def _build_pipeline(self, mode: DeduplicationMode) -> List[Tuple[str, Union[PartialHashStageBase, FullHashStage]]]:
         """Builds the appropriate pipeline based on deduplication mode."""
         pipeline = []
-        if mode == DeduplicationMode.FAST:
-            pipeline.append(("front", FrontHashStage(self.grouper)))
-        elif mode == DeduplicationMode.NORMAL:
+        if mode == DeduplicationMode.NORMAL:
             pipeline.append(("front", FrontHashStage(self.grouper)))
             pipeline.append(("middle", MiddleHashStage(self.grouper)))
             pipeline.append(("end", EndHashStage(self.grouper)))

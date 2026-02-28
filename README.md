@@ -49,7 +49,6 @@ If path contains space, just backslash space inside path:
 1. Recursively scans folder using filters (min/max size, extension)
 2. Applies one of the initial grouping ways from "boosting" option (size, size+extension, etc)
 3. Further checking depends on mode:
-   * "fast": checks hash-sum of first 128+ KB (false positives very possible)
    * "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
    * "full": checks hash-sum of front -> middle -> entire file (very slow for large files)  
 4. Shows the list of groups sorted in descending order (groups with larger files come first).   
@@ -103,7 +102,6 @@ Options:
 `**Groups formed above will be checked (hash-checking) in further stages`  
 
 `--mode {fast, normal, full}` checking mode (normal by default)
-* `fast`    check only by hashsum from the front part of file  
 * `normal`  check by hashsum from 3 parts of file  
 * `full`    check by hashsum from 2 part + whole file hashsum  
 
