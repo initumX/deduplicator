@@ -18,7 +18,7 @@ class Ui_MainWindow:
 
     def setupUi(self, MainWindow: QMainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(900, 600)
+        MainWindow.resize(900, 700)
 
         central_widget = QWidget(MainWindow)
         MainWindow.setCentralWidget(central_widget)
