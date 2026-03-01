@@ -5,9 +5,9 @@ Licensed under the MIT License
 core/deduplicator.py
 Implements a pipeline-based deduplication system using File objects.
 Supports three modes:
-    - fast: size → front
-    - normal: size → front → middle → end
-    - full: size → front → middle → full_hash
+    - fast: size -> front
+    - normal: size -> front -> middle -> end
+    - full: size -> front -> middle -> full_hash
 """
 import time
 from typing import List, Tuple, Union, Optional, Callable
@@ -104,6 +104,7 @@ class Deduplicator:
         elif mode == DeduplicationMode.FULL:
             pipeline.append(("front", FrontHashStage(self.grouper)))
             pipeline.append(("middle", MiddleHashStage(self.grouper)))
+            pipeline.append(("end", EndHashStage(self.grouper)))
             pipeline.append(("full", FullHashStage(self.grouper)))
         return pipeline
 

@@ -62,13 +62,15 @@ class HasherImpl(Hasher):
     def __init__(self, algorithm: HashAlgorithm):
         self.algorithm = algorithm
 
+    FULL_HASH_CHUNK_SIZE = 256 * 1024
+
     def compute_full_hash(self, file: File) -> Optional[bytes]:
         if file.hashes.full is not None:
             return file.hashes.full
         try:
             with open(file.path, 'rb') as f:
                 if hasattr(self.algorithm, 'hash_stream'):
-                    result = self.algorithm.hash_stream(f, chunk_size=file.chunk_size)
+                    result = self.algorithm.hash_stream(f, chunk_size=self.FULL_HASH_CHUNK_SIZE)
                 else:
                     data = f.read()
                     result = self.algorithm.hash(data)

@@ -103,7 +103,7 @@ Options:
 
 `--mode {fast, normal, full}` checking mode (normal by default)
 * `normal`  check by hashsum from 3 parts of file  
-* `full`    check by hashsum from 2 part + whole file hashsum  
+* `full`    same as "normal mode" but with whole file hashsum at final stage
 
 `--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)  
 `--dry-run`             Test running  

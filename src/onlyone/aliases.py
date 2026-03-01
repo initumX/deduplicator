@@ -11,7 +11,7 @@ BOOST_ALIASES = {
 BOOST_CHOICES = list(BOOST_ALIASES.keys())
 
 BOOST_HELP_TEXT = (
-    "Boost mode for initial file grouping:\n"
+    "Initial file grouping criteria:\n"
     "  size       : Compare only files of the same size\n"
     "  extension  : Compare files of the same size and extension\n"
     "  filename   : Compare files of the same size and filename\n"
@@ -29,8 +29,8 @@ DEDUP_MODE_CHOICES = list(DEDUP_MODE_ALIASES.keys())
 
 DEDUP_MODE_HELP_TEXT = (
     "Deduplication mode (depth of analysis):\n"
-    "  normal             : Size → Front → Middle → End Hash (balanced)\n"
-    "  full               : Size → Front → Middle → Full Hash\n"
+    "  normal             : Initial -> Front -> Middle -> End Hash (balanced)\n"
+    "  full               : Initial -> Front -> Middle -> End -> Full Hash\n"
     "Example:\n"
     "  %(prog)s -i ~/Downloads --mode fast -m 500K -M 10M"
 )
