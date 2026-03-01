@@ -59,6 +59,12 @@ class MainWindow(QMainWindow):
 
         self.logger = logging.getLogger(__name__)
 
+        self._block_statusbar_from_file_selected = False
+        self._statusbar_unlock_timer = QTimer(self)
+        self._statusbar_unlock_timer.setSingleShot(True)
+        self._statusbar_unlock_timer.timeout.connect(self._unlock_statusbar)
+
+
         self._ordering_connected = False
         self.setup_connections()
         # Defer settings restore to ensure UI is fully initialized
@@ -196,6 +202,8 @@ class MainWindow(QMainWindow):
             self.ui.statusbar.showMessage("Nothing to delete", 3000)
             return
 
+        self._block_statusbar_from_file_selected = True
+
         file_sizes = {}
         for group in self.duplicate_groups:
             for f in group.files:
@@ -276,13 +284,21 @@ class MainWindow(QMainWindow):
                     status_msg += f" Removed {removed_group_count} group."
 
                 self.ui.statusbar.showMessage(status_msg)
+            self._statusbar_unlock_timer.start(500)
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error occurred:\n{e}")
+            self._statusbar_unlock_timer.start(500)
         finally:
             if self.progress_dialog:
                 self.progress_dialog.close()
                 self.progress_dialog = None
+
+        self._statusbar_unlock_timer.start(500)
+
+    def _unlock_statusbar(self):
+        """Unblock statusbar."""
+        self._block_statusbar_from_file_selected = False
 
     def show_about_dialog(self):
         """Display application information dialog."""
@@ -502,6 +518,8 @@ class MainWindow(QMainWindow):
 
     def on_file_selected_statusbar(self, file: File):
         """Updates file selection status bar."""
+        if self._block_statusbar_from_file_selected:
+            return
         if file and hasattr(file, 'path') and file.path:
             self.ui.statusbar.showMessage(file.path)
 
