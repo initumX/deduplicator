@@ -267,10 +267,10 @@ class MainWindow(QMainWindow):
                 )
             else:
                 self.ui.statusbar.clearMessage()
-                file_names = [os.path.basename(path) for path in successful_files[:4]]
+                file_names = [os.path.basename(path) for path in successful_files[:3]]
                 status_msg = f"✅ Deleted {deleted_count} file: {', '.join(file_names)}. " \
-                    if len(successful_files) <= 4 \
-                    else f"Deleted {deleted_count} files: {', '.join(file_names)} and {deleted_count - 4} more."
+                    if len(successful_files) <= 3 \
+                    else f"Deleted {deleted_count} files: {', '.join(file_names)} and {deleted_count - 3} more."
 
                 if removed_group_count > 0:
                     status_msg += f" Removed {removed_group_count} group."
