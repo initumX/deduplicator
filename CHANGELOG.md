@@ -54,3 +54,6 @@
 -NEW: hotkeys (del to delete file, ctrl+space to select file)
 -NEW: Status-bar
 -NEW: logging deleted files in ~/.onlyone/app.log
+
+### [2.5.5] 2 March 2026 
+-fix validation

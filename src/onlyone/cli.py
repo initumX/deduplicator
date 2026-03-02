@@ -57,7 +57,8 @@ class CLIApplication:
         self.start_time: float = time.time()
         self.show_stats: bool = False
         self.logger = logging.getLogger("onlyone.cli")
-        self._progress_bars: dict = {}
+        self._progress: Optional[ProgressBar] = None
+        self._current_stage: str = ""
         self._args_ascii: bool = False
 
         # Fix encoding for Windows/Linux consoles to prevent UnicodeEncodeError
@@ -291,35 +292,19 @@ class CLIApplication:
 
     def progress_callback(self, stage: str, current: int, total: Optional[int]) -> None:
         """CLI progress callback - shows progress in console."""
+        if stage  != self._current_stage:
+            self._current_stage = stage
+            if self._progress:
+                self._progress.finish()  # Close previous stage cleanly
 
-        # Format suffix: show actual count when total is unknown
-        suffix = f"{current:,} files" if total is None else 'files'
-
-        # Create new bar for this stage if needed
-        if stage not in self._progress_bars:
-            self._progress_bars[stage] = ProgressBar(
-                total=total,
-                prefix=f'  [{stage}]',
-                suffix=suffix,
-                length=40,
-                fill='█',
-                empty='-',
-                enable=True,
-                indeterminate=(total is None),
-                min_interval=0.1,
-                ascii_only=self._get_ascii_flag()
+            self._progress = ProgressBar(
+                prefix=f"[{stage}]",
+                total=total,  # None = indeterminate (scanning phase)
+                ascii_only=self._args_ascii,
+                min_interval=0.1
             )
-            self._progress_bars[stage].update(0)
-        else:
-            # Update suffix dynamically for indeterminate mode
-            if total is None:
-                self._progress_bars[stage].suffix = f"{current:,} files"
-
-        self._progress_bars[stage].update(iteration=current)
-
-    def _get_ascii_flag(self) -> bool:
-        """Helper to get ascii flag from args if available."""
-        return getattr(self, '_args_ascii', False)
+        if self._progress:
+            self._progress.update(current)
 
     @staticmethod
     def stopped_flag() -> bool:
@@ -341,9 +326,6 @@ class CLIApplication:
         """Execute deduplication workflow."""
         command = DeduplicationCommand()
 
-        # Reset progress bars for new run
-        self._progress_bars = {}
-
         try:
             groups, stats = command.execute(
                 params,
@@ -357,6 +339,9 @@ class CLIApplication:
 
             return groups
         except Exception as e:
+            if self._progress:
+                self._progress.finish()
+                self._progress = None
             self.error_exit(f"Deduplication failed: {e}")
 
     @staticmethod
@@ -417,17 +402,11 @@ class CLIApplication:
         delete_bar = None
         if len(files_to_delete) > 0:
             delete_bar = ProgressBar(
-                total=len(files_to_delete),
                 prefix='  [Deleting]',
-                suffix='files',
-                length=40,
-                fill='█',
-                empty='-',
-                enable=True,
-                min_interval=0.1,
-                ascii_only=ascii_only
+                total=len(files_to_delete),
+                ascii_only=ascii_only,
+                min_interval=0.1
             )
-            delete_bar.update(0)
 
         try:
             for i, path in enumerate(files_to_delete, 1):

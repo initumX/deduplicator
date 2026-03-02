@@ -23,7 +23,7 @@ from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File
 from onlyone.core.measurer import bytes_to_human, human_to_bytes
 from onlyone.services import DuplicateService
 from onlyone.services.file_service import FileService
-from onlyone.progress_bar import ProgressBar, ProgressContext
+from onlyone.progress_bar import ProgressBar
 from onlyone.reporter import (
     format_groups_output,
     format_deletion_preview,
@@ -37,7 +37,6 @@ __all__ = [
     "SortOrder",
     "File",
     "ProgressBar",
-    "ProgressContext",
     "format_groups_output",
     "format_deletion_preview",
     "format_deletion_result",
