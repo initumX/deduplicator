@@ -58,3 +58,6 @@
 ### [2.5.5] 2 March 2026 
 -fix validation  
 -simplify progress indication
+
+### [2.5.6] 3 March 2026
+- fix early confirmation bug. Files from 321 KB to 384 KB confirmed as dupes only by first 320 KB.

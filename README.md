@@ -33,6 +33,7 @@ If path contains space, just backslash space inside path:
 * Now you can use multiple directories(space separated) for input:  
 `onlyone -i ~/Downloads ~/Documents ~/Videos` 
 * A lot of changing in OnlyOne 2.5.0 cli (see changelog file)  
+* critical bug fixed in OnlyOne 2.5.6 (see changelog), don't use previous versions
 
 ### Features
 * Filtering by file size and extension
