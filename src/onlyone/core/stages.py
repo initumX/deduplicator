@@ -70,7 +70,7 @@ class DeduplicationConfig:
         limit = DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
         if file_size <= limit:
             return file_size
-        elif file_size <= limit * 3:
+        elif file_size < limit * 3:
             return limit
         elif file_size <= 10 * 1024 * 1024:
             return 64 * 1024
@@ -261,7 +261,7 @@ class MiddleHashStage(PartialHashStageBase):
 
 class EndHashStage(PartialHashStageBase):
     def get_threshold(self) -> int:
-        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 3)
+        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2.5)
 
     def get_stage_name(self) -> str:
         return "End-chunk Hash"
