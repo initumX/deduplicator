@@ -9,7 +9,6 @@ from onlyone.core.validator import (
     ExtensionValidator,
     SizeValidator,
     DeduplicationParamsValidator,
-    ValidationError,
     FilterMode,
     validate_deduplication_params
 )
@@ -28,16 +27,16 @@ class TestPathValidator:
         assert Path(result) == temp_dir.resolve()
 
     def test_normalize_nonexistent_path_raises(self, temp_dir):
-        """Non-existent path should raise ValidationError."""
+        """Non-existent path should raise ValueError."""
         fake_path = temp_dir / "does_not_exist"
-        with pytest.raises(ValidationError, match="does not exist"):
+        with pytest.raises(ValueError, match="does not exist"):
             PathValidator.normalize_path(str(fake_path))
 
     def test_normalize_file_as_dir_raises(self, temp_dir):
-        """File path should raise ValidationError when require_dir=True."""
+        """File path should raise ValueError when require_dir=True."""
         file_path = temp_dir / "file.txt"
         file_path.write_bytes(b"content")
-        with pytest.raises(ValidationError, match="not a directory"):
+        with pytest.raises(ValueError, match="not a directory"):
             PathValidator.normalize_path(str(file_path), require_dir=True)
 
     def test_normalize_path_list_deduplicates(self, temp_dir):
@@ -131,13 +130,13 @@ class TestSizeValidator:
         SizeValidator.validate_size_range(100, 1000)  # Should pass
 
     def test_negative_min_raises(self):
-        """Negative min_size should raise ValidationError."""
-        with pytest.raises(ValidationError, match="Minimum size cannot be negative"):
+        """Negative min_size should raise ValueError."""
+        with pytest.raises(ValueError, match="Minimum size cannot be negative"):
             SizeValidator.validate_size_range(-1, 1000)
 
     def test_max_less_than_min_raises(self):
-        """max_size < min_size should raise ValidationError."""
-        with pytest.raises(ValidationError, match="cannot be less than minimum size"):
+        """max_size < min_size should raise ValueError."""
+        with pytest.raises(ValueError, match="cannot be less than minimum size"):
             SizeValidator.validate_size_range(1000, 100)
 
     def test_equal_min_max_allowed(self):
@@ -169,7 +168,7 @@ class TestDeduplicationParamsValidator:
             max_size_bytes=1000000,
             excluded_dirs=[str(temp_dir)]
         )
-        with pytest.raises(ValidationError, match="identical to root"):
+        with pytest.raises(ValueError, match="identical to root"):
             validator.validate_all()
 
     def test_validate_root_excluded_parent(self, temp_dir):
@@ -182,7 +181,7 @@ class TestDeduplicationParamsValidator:
             max_size_bytes=1000000,
             excluded_dirs=[str(temp_dir)]
         )
-        with pytest.raises(ValidationError, match="contains root"):
+        with pytest.raises(ValueError, match="contains root"):
             validator.validate_all()
 
     def test_validate_favourite_excluded_conflict(self, temp_dir):
@@ -196,7 +195,7 @@ class TestDeduplicationParamsValidator:
             favourite_dirs=[str(special_dir)],
             excluded_dirs=[str(special_dir)]
         )
-        with pytest.raises(ValidationError, match="conflict with excluded"):
+        with pytest.raises(ValueError, match="conflict with excluded"):
             validator.validate_all()
 
     def test_validate_favourite_outside_root_warning(self, temp_dir, caplog):
@@ -256,8 +255,8 @@ class TestValidateDeduplicationParamsFunction:
         assert len(result["root_dirs"]) == 1
 
     def test_function_raises_on_error(self, temp_dir):
-        """Function should raise ValidationError on invalid params."""
-        with pytest.raises(ValidationError):
+        """Function should raise ValueError on invalid params."""
+        with pytest.raises(ValueError):
             validate_deduplication_params(
                 root_dirs=[],  # Invalid
                 min_size_bytes=0,

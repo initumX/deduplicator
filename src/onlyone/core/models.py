@@ -270,8 +270,7 @@ Interface-agnostic — used by both GUI and CLI.
 from dataclasses import dataclass, field
 from onlyone.core.measurer import human_to_bytes
 from onlyone.core.validator import (
-    validate_deduplication_params,
-    ValidationError
+    validate_deduplication_params
 )
 
 
@@ -301,24 +300,15 @@ class DeduplicationParams:
     _normalized_excluded_dirs: List[str] = field(default_factory=list, init=False)
 
     def __post_init__(self):
-        """
-        Validate and normalize parameters using the centralized validator.
-
-        Raises:
-            ValueError: If any validation check fails (wraps ValidationError).
-        """
-        try:
-            validated = validate_deduplication_params(
-                root_dirs=self.root_dirs,
-                min_size_bytes=self.min_size_bytes,
-                max_size_bytes=self.max_size_bytes,
-                extensions=self.extensions,
-                favourite_dirs=self.favourite_dirs,
-                excluded_dirs=self.excluded_dirs,
-            )
-        except ValidationError as e:
-            # Re-raise as ValueError to maintain backward compatibility
-            raise ValueError(f"{e.field or 'Validation'} error: {e}") from e
+        """Validate and normalize parameters using the centralized validator."""
+        validated = validate_deduplication_params(
+            root_dirs=self.root_dirs,
+            min_size_bytes=self.min_size_bytes,
+            max_size_bytes=self.max_size_bytes,
+            extensions=self.extensions,
+            favourite_dirs=self.favourite_dirs,
+            excluded_dirs=self.excluded_dirs,
+        )
 
         # Store validated and normalized values in private fields
         self._normalized_root_dirs = validated["root_dirs"]

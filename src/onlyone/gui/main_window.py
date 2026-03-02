@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
 from onlyone.core.models import DeduplicationParams, File
 from onlyone.core.sorter import Sorter
-from onlyone.core.validator import ValidationError
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
@@ -421,13 +420,6 @@ class MainWindow(QMainWindow):
                 sort_order=sort_order,
                 boost=boost_mode
             )
-        except ValidationError as e:
-            QMessageBox.critical(
-                self,
-                "Configuration Error",
-                f"Invalid parameters:\n{str(e)}"
-            )
-            return
         except ValueError as e:
             QMessageBox.critical(
                 self,

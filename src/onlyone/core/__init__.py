@@ -23,7 +23,7 @@ from .models import (
 from onlyone.core.measurer import bytes_to_human, human_to_bytes, is_valid_size_format
 from onlyone.core.validator import (
     PathValidator, SizeValidator, ExtensionValidator,
-    DeduplicationParamsValidator, validate_deduplication_params, ValidationError
+    DeduplicationParamsValidator, validate_deduplication_params
 )
 
 __all__ = [
@@ -50,5 +50,4 @@ __all__ = [
     "ExtensionValidator",
     "DeduplicationParamsValidator",
     "validate_deduplication_params",
-    "ValidationError",
 ]

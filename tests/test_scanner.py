@@ -9,7 +9,7 @@ from onlyone.core.scanner import FileScanner
 from onlyone.core.grouper import FileGrouper
 from onlyone.core.models import DeduplicationParams, File
 # NEW: Import validators for direct testing of normalization logic
-from onlyone.core.validator import ExtensionValidator, PathValidator, FilterMode, ValidationError
+from onlyone.core.validator import ExtensionValidator, PathValidator, FilterMode
 
 
 # =============================================================================
@@ -102,16 +102,16 @@ class TestRootDirNormalization:
         assert len(result) == 1
 
     def test_nonexistent_directory_raises_error(self, temp_dir):
-        """Non-existent directory should raise ValidationError."""
+        """Non-existent directory should raise ValueError."""
         nonexistent = temp_dir / "does_not_exist"
-        with pytest.raises(ValidationError, match="does not exist"):
+        with pytest.raises(ValueError, match="does not exist"):
             PathValidator.normalize_path_list([str(nonexistent)])
 
     def test_file_as_directory_raises_error(self, temp_dir):
-        """File path should raise ValidationError."""
+        """File path should raise ValueError."""
         file_path = temp_dir / "file.txt"
         file_path.write_bytes(b"content")
-        with pytest.raises(ValidationError, match="not a directory"):
+        with pytest.raises(ValueError, match="not a directory"):
             PathValidator.normalize_path_list([str(file_path)])
 
     def test_empty_list_returns_empty(self):

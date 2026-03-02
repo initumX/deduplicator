@@ -9,16 +9,8 @@ import logging
 from pathlib import Path
 from typing import List, Tuple, Optional
 from enum import Enum
-from onlyone.core.measurer import bytes_to_human
 
 logger = logging.getLogger(__name__)
-
-
-class ValidationError(Exception):
-    """Raised when parameter validation fails."""
-    def __init__(self, message: str, field: Optional[str] = None):
-        self.field = field
-        super().__init__(message)
 
 
 class FilterMode(str, Enum):
@@ -34,15 +26,15 @@ class PathValidator:
     def normalize_path(path_str: str, *, require_exists: bool = True, require_dir: bool = True) -> str:
         """Normalize a single path string."""
         if not path_str or not isinstance(path_str, str):
-            raise ValidationError("Path must be a non-empty string")
+            raise ValueError("Path must be a non-empty string")
 
         path = Path(path_str).expanduser().resolve()
 
         if require_exists and not path.exists():
-            raise ValidationError(f"Path does not exist: {path_str}", field="path")
+            raise ValueError(f"Path does not exist: {path_str}")
 
         if require_dir and not path.is_dir():
-            raise ValidationError(f"Path is not a directory: {path_str}", field="path")
+            raise ValueError(f"Path is not a directory: {path_str}")
 
         return str(path)
 
@@ -59,7 +51,7 @@ class PathValidator:
             return []
 
         if not isinstance(paths, list):
-            raise ValidationError(f"{field_name} must be a list of strings", field=field_name)
+            raise ValueError(f"{field_name} must be a list of strings")
 
         normalized = []
         for i, path_str in enumerate(paths):
@@ -70,8 +62,8 @@ class PathValidator:
                     require_dir=require_dir
                 )
                 normalized.append(norm_path)
-            except ValidationError as e:
-                raise ValidationError(f"{field_name}[{i}]: {e}", field=field_name)
+            except ValueError as e:
+                raise ValueError(f"{field_name}[{i}]: {e}")
 
         # Remove duplicates while preserving order
         seen = set()
@@ -93,6 +85,7 @@ class PathValidator:
             child_resolved = Path(child).resolve()
             parent_resolved = Path(parent).resolve()
 
+            # Identical paths are NOT subpaths
             if child_resolved == parent_resolved:
                 return False
 
@@ -107,7 +100,16 @@ class ExtensionValidator:
 
     @staticmethod
     def normalize_extensions(extensions: List[str]) -> Tuple[List[str], FilterMode]:
-        """Normalize extension list with forgiving input handling."""
+        """
+        Normalize extension list with support for blacklist mode via '^' prefix.
+
+        Blacklist mode is triggered by:
+        - "^" as a separate element in the list
+        - "^" prefix attached to an extension (e.g., "^tmp")
+
+        Returns:
+            Tuple of (normalized_extensions, filter_mode)
+        """
         if not extensions:
             return [], FilterMode.WHITELIST
 
@@ -123,19 +125,23 @@ class ExtensionValidator:
             if not ext_clean:
                 continue
 
+            # Case 1: "^" as separate element → set blacklist mode
             if ext_clean == "^":
                 filter_mode = FilterMode.BLACKLIST
                 continue
 
+            # Case 2: "^" attached to extension (e.g., "^tmp", "^ .tmp")
             if ext_clean.startswith("^"):
                 filter_mode = FilterMode.BLACKLIST
                 ext_clean = ext_clean[1:].strip()
                 if not ext_clean:
                     continue
 
+            # Normalize extension (add dot if missing)
             if not ext_clean.startswith('.'):
                 ext_clean = f".{ext_clean}"
 
+            # Remove duplicates
             if ext_clean not in seen:
                 seen.add(ext_clean)
                 normalized.append(ext_clean)
@@ -150,13 +156,13 @@ class SizeValidator:
     def validate_size_range(min_bytes: int, max_bytes: int) -> None:
         """Validate that size range is logical."""
         if min_bytes < 0:
-            raise ValidationError("Minimum size cannot be negative", field="min_size")
+            raise ValueError("Minimum size cannot be negative")
 
         if max_bytes < min_bytes:
-            raise ValidationError(
+            from onlyone.core.measurer import bytes_to_human
+            raise ValueError(
                 f"Maximum size ({bytes_to_human(max_bytes)}) "
-                f"cannot be less than minimum size ({bytes_to_human(min_bytes)})",
-                field="max_size"
+                f"cannot be less than minimum size ({bytes_to_human(min_bytes)})"
             )
 
 
@@ -208,14 +214,13 @@ class DeduplicationParamsValidator:
             field_name="root_dirs"
         )
         if not self.root_dirs:
-            raise ValidationError("At least one valid root directory is required", field="root_dirs")
+            raise ValueError("At least one valid root directory is required")
 
         # Excluded directories: optional, validate if provided
-        # require_exists=False allows excluding paths that might be created later
         if self.excluded_dirs_raw:
             self.excluded_dirs = PathValidator.normalize_path_list(
                 self.excluded_dirs_raw,
-                require_exists=False,
+                require_exists=False,  # Allow excluding paths that don't exist yet
                 require_dir=True,
                 field_name="excluded_dirs"
             )
@@ -235,7 +240,7 @@ class DeduplicationParamsValidator:
 
     def _validate_root_vs_excluded(self) -> None:
         """
-        CRITICAL: Validate relationship between root_dirs and excluded_dirs.
+        Validate relationship between root_dirs and excluded_dirs.
 
         Logic:
         - excluded_dirs SHOULD typically be subpaths of root_dirs (to skip subfolders).
@@ -259,7 +264,6 @@ class DeduplicationParamsValidator:
                     )
 
                 # Case 2: Excluded is a parent of root (e.g., root=/data/a, excluded=/data)
-                # This means the excluded folder contains the root, effectively disabling the root.
                 elif PathValidator.is_subpath(root, excluded):
                     errors.append(
                         f"Excluded directory '{excluded}' contains root directory '{root}'. "
@@ -267,9 +271,8 @@ class DeduplicationParamsValidator:
                     )
 
         if errors:
-            raise ValidationError(
-                "Invalid configuration between root and excluded directories:\n" + "\n".join(f"  - {e}" for e in errors),
-                field="root_dirs/excluded_dirs"
+            raise ValueError(
+                "Invalid configuration between root and excluded directories:\n" + "\n".join(f"  - {e}" for e in errors)
             )
 
     def _validate_favourite_vs_excluded(self) -> None:
@@ -280,18 +283,19 @@ class DeduplicationParamsValidator:
         conflicts = []
         for fav in self.favourite_dirs:
             for exc in self.excluded_dirs:
-                # If favourite is inside excluded, it's a logic error
                 if PathValidator.is_subpath(fav, exc) or Path(fav) == Path(exc):
                     conflicts.append(f"Favourite '{fav}' is inside excluded directory '{exc}'")
 
         if conflicts:
-            raise ValidationError(
-                "Favourite directories conflict with excluded directories:\n" + "\n".join(f"  - {c}" for c in conflicts),
-                field="favourite_dirs/excluded_dirs"
+            raise ValueError(
+                "Favourite directories conflict with excluded directories:\n" + "\n".join(f"  - {c}" for c in conflicts)
             )
 
     def _validate_favourite_within_roots(self) -> None:
-        """Warn if favourite directories are outside root directories."""
+        """
+        Log warning if favourite directories are outside root directories.
+        This is not an error — files simply won't be scanned there.
+        """
         if not self.favourite_dirs:
             return
 
@@ -324,9 +328,7 @@ def validate_deduplication_params(
         favourite_dirs: Optional[List[str]] = None,
         excluded_dirs: Optional[List[str]] = None,
 ) -> dict:
-    """
-    One-stop function to validate and normalize deduplication parameters.
-    """
+    """One-stop function to validate and normalize deduplication parameters."""
     validator = DeduplicationParamsValidator(
         root_dirs=root_dirs,
         min_size_bytes=min_size_bytes,
