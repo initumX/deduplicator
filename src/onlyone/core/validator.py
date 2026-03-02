@@ -33,7 +33,7 @@ class PathValidator:
         if require_exists and not path.exists():
             raise ValueError(f"Path does not exist: {path_str}")
 
-        if require_dir and not path.is_dir():
+        if require_dir and path.exists() and not path.is_dir():
             raise ValueError(f"Path is not a directory: {path_str}")
 
         return str(path)
