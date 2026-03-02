@@ -33,10 +33,9 @@ class HashAlgorithm(Protocol):
         ...
 
     @staticmethod
-    def hash_stream(file_obj: BinaryIO, chunk_size: int = 1 * 1024 * 1024) -> bytes:
+    def hash_stream(file_obj: BinaryIO, chunk_size: int = 256 * 1024) -> bytes:
         """Computes hash by reading from a file-like object in chunks."""
         ...
-
 
 class XXHashAlgorithmImpl(HashAlgorithm):
     @staticmethod
@@ -44,7 +43,7 @@ class XXHashAlgorithmImpl(HashAlgorithm):
         return xxhash.xxh64(data).digest()
 
     @staticmethod
-    def hash_stream(file_obj: BinaryIO, chunk_size: int = 1 * 1024 * 1024) -> bytes:
+    def hash_stream(file_obj: BinaryIO, chunk_size: int = 256 * 1024) -> bytes:
         """Stream hash a file-like object using xxhash."""
         hasher = xxhash.xxh64()
         while chunk := file_obj.read(chunk_size):
