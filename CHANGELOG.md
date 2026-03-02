@@ -57,3 +57,4 @@
 
 ### [2.5.5] 2 March 2026 
 -fix validation
+-simplify progress indication
