@@ -131,6 +131,8 @@ Options:
  * [GitHub Page](https://github.com/initumX/onlyone)
  * [Releases](https://github.com/initumX/onlyone/releases)
  * [PyPI](https://pypi.org/project/onlyone/)
- * email (initum.x@gmail.com)
+ * email (initum.x@gmail.com)  
+
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/onlyone?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/onlyone)
 
 © 2026 initumX
