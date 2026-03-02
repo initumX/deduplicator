@@ -421,9 +421,9 @@ class TestMiddleAndEndHashStages:
         assert "middle" in stage.get_stage_name().lower()
 
     def test_end_hash_stage_confirmation_threshold(self):
-        """End hash stage must use 384KB threshold (3x base limit)."""
+        """End hash stage must use 320KB threshold (2.5x base limit)."""
         stage = EndHashStage(FileGrouper())
-        assert stage.get_threshold() == 384 * 1024
+        assert stage.get_threshold() == 320 * 1024
         assert "end" in stage.get_stage_name().lower()
 
     def test_middle_hash_early_confirmation(self, tmp_path):
