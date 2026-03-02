@@ -103,7 +103,10 @@ class HasherImpl(Hasher):
             return None
 
     def compute_middle_hash(self, file: File) -> Optional[bytes]:
-        """Computes and caches hash of the central N bytes of a file."""
+        """
+        Computes and caches hash of the central N bytes of a file.
+        Do not align chunk by center, it will break early confirmation logic. Use just file.size // 2
+        """
         if file.hashes.middle is not None:
             return file.hashes.middle
         try:

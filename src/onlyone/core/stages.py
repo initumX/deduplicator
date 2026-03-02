@@ -249,6 +249,7 @@ class FrontHashStage(PartialHashStageBase):
 
 
 class MiddleHashStage(PartialHashStageBase):
+    # Don't change multiplier, it should be 2 here (greater number lead to false positives)
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
@@ -260,6 +261,7 @@ class MiddleHashStage(PartialHashStageBase):
 
 
 class EndHashStage(PartialHashStageBase):
+    # Don't change multiplier, it should be 2.5 here (greater number lead to false positives)
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2.5)
 
