@@ -21,6 +21,10 @@ from .models import (
     File, DuplicateGroup, DeduplicationMode, DeduplicationParams, DeduplicationStats,
     SortOrder, FileHashes, BoostMode)
 from onlyone.core.measurer import bytes_to_human, human_to_bytes, is_valid_size_format
+from onlyone.core.validator import (
+    PathValidator, SizeValidator, ExtensionValidator,
+    DeduplicationParamsValidator, validate_deduplication_params, ValidationError
+)
 
 __all__ = [
     "FileScanner",
@@ -40,5 +44,11 @@ __all__ = [
     "Sorter",
     "bytes_to_human",
     "human_to_bytes",
-    "is_valid_size_format"
+    "is_valid_size_format",
+    "PathValidator",
+    "SizeValidator",
+    "ExtensionValidator",
+    "DeduplicationParamsValidator",
+    "validate_deduplication_params",
+    "ValidationError",
 ]

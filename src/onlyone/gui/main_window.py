@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
 from onlyone.core.models import DeduplicationParams, File
 from onlyone.core.sorter import Sorter
+from onlyone.core.validator import ValidationError
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
@@ -407,6 +408,34 @@ class MainWindow(QMainWindow):
         dedupe_mode = self.ui.dedupe_mode_combo.currentData()
         sort_order = self.ui.ordering_combo.currentData()
 
+        # Create unified parameters object with multiple root directories
+        try:
+            params = DeduplicationParams.from_human_readable(
+                root_dirs=root_dirs,
+                min_size_str=min_size_str,
+                max_size_str=max_size_str,
+                extensions=extensions,
+                favourite_dirs=self.favourite_dirs,
+                excluded_dirs=self.excluded_dirs,
+                mode=dedupe_mode,
+                sort_order=sort_order,
+                boost=boost_mode
+            )
+        except ValidationError as e:
+            QMessageBox.critical(
+                self,
+                "Configuration Error",
+                f"Invalid parameters:\n{str(e)}"
+            )
+            return
+        except ValueError as e:
+            QMessageBox.critical(
+                self,
+                "Parameter Error",
+                f"{str(e)}"
+            )
+            return
+
         # Setup progress dialog
         self.progress_dialog = QProgressDialog(
             "Scanning...",
@@ -420,19 +449,6 @@ class MainWindow(QMainWindow):
 
         # Connect cancel action
         self.progress_dialog.canceled.connect(self._cancel_worker)
-
-        # Create unified parameters object with multiple root directories
-        params = DeduplicationParams.from_human_readable(
-            root_dirs=root_dirs,
-            min_size_str=min_size_str,
-            max_size_str=max_size_str,
-            extensions=extensions,
-            favourite_dirs=self.favourite_dirs,
-            excluded_dirs=self.excluded_dirs,
-            mode=dedupe_mode,
-            sort_order=sort_order,
-            boost=boost_mode
-        )
 
         # Launch worker via thread pool
         self.worker = DeduplicateWorker(params)

@@ -8,70 +8,72 @@ import pytest
 from onlyone.core.scanner import FileScanner
 from onlyone.core.grouper import FileGrouper
 from onlyone.core.models import DeduplicationParams, File
+# NEW: Import validators for direct testing of normalization logic
+from onlyone.core.validator import ExtensionValidator, PathValidator, FilterMode, ValidationError
 
 
 # =============================================================================
 # 1. EXTENSION NORMALIZATION TESTS
 # =============================================================================
 class TestExtensionNormalization:
-    """Tests for DeduplicationParams._normalize_extensions static method."""
+    """Tests for ExtensionValidator.normalize_extensions static method."""
 
     def test_whitelist_basic_normalization(self):
         """Whitelist: raw extensions should be normalized with dots."""
-        exts, mode = DeduplicationParams._normalize_extensions(["txt", "md"])
-        assert mode == "whitelist"
+        exts, mode = ExtensionValidator.normalize_extensions(["txt", "md"])
+        assert mode == FilterMode.WHITELIST
         assert exts == [".txt", ".md"]
 
     def test_whitelist_with_dots(self):
         """Whitelist: extensions with dots should remain unchanged."""
-        exts, mode = DeduplicationParams._normalize_extensions([".txt", ".pdf"])
-        assert mode == "whitelist"
+        exts, mode = ExtensionValidator.normalize_extensions([".txt", ".pdf"])
+        assert mode == FilterMode.WHITELIST
         assert exts == [".txt", ".pdf"]
 
     def test_whitelist_mixed_case(self):
         """Whitelist: extensions should be lowercased."""
-        exts, mode = DeduplicationParams._normalize_extensions(["TXT", "PdF"])
-        assert mode == "whitelist"
+        exts, mode = ExtensionValidator.normalize_extensions(["TXT", "PdF"])
+        assert mode == FilterMode.WHITELIST
         assert exts == [".txt", ".pdf"]
 
     def test_blacklist_mode_separate_marker(self):
         """Blacklist: '^' marker should set mode and be excluded from list."""
-        exts, mode = DeduplicationParams._normalize_extensions(["^", "tmp", "log"])
-        assert mode == "blacklist"
+        exts, mode = ExtensionValidator.normalize_extensions(["^", "tmp", "log"])
+        assert mode == FilterMode.BLACKLIST
         assert exts == [".tmp", ".log"]
 
     def test_blacklist_attached_marker(self):
         """Blacklist: '^' attached to extension (e.g., '^tmp')."""
-        exts, mode = DeduplicationParams._normalize_extensions(["^tmp", "^log"])
-        assert mode == "blacklist"
+        exts, mode = ExtensionValidator.normalize_extensions(["^tmp", "^log"])
+        assert mode == FilterMode.BLACKLIST
         assert exts == [".tmp", ".log"]
 
     def test_blacklist_with_dots(self):
         """Blacklist: extensions with dots should be normalized."""
-        exts, mode = DeduplicationParams._normalize_extensions(["^", ".tmp", ".log"])
-        assert mode == "blacklist"
+        exts, mode = ExtensionValidator.normalize_extensions(["^", ".tmp", ".log"])
+        assert mode == FilterMode.BLACKLIST
         assert exts == [".tmp", ".log"]
 
     def test_empty_list(self):
         """Empty list: should default to whitelist with empty extensions."""
-        exts, mode = DeduplicationParams._normalize_extensions([])
-        assert mode == "whitelist"
+        exts, mode = ExtensionValidator.normalize_extensions([])
+        assert mode == FilterMode.WHITELIST
         assert exts == []
 
     def test_whitespace_handling(self):
         """Whitespace: should be stripped from extensions."""
-        exts, mode = DeduplicationParams._normalize_extensions(["  txt  ", "  md  "])
+        exts, mode = ExtensionValidator.normalize_extensions(["  txt  ", "  md  "])
         assert exts == [".txt", ".md"]
 
     def test_mixed_blacklist_markers(self):
         """Mixed '^' positions should all result in blacklist mode."""
-        exts, mode = DeduplicationParams._normalize_extensions(["txt", "^", "tmp"])
-        assert mode == "blacklist"
+        exts, mode = ExtensionValidator.normalize_extensions(["txt", "^", "tmp"])
+        assert mode == FilterMode.BLACKLIST
         assert exts == [".txt", ".tmp"]
 
     def test_empty_strings_filtered(self):
         """Empty strings should be filtered out."""
-        exts, mode = DeduplicationParams._normalize_extensions(["txt", "", "  ", "md"])
+        exts, mode = ExtensionValidator.normalize_extensions(["txt", "", "  ", "md"])
         assert exts == [".txt", ".md"]
 
 
@@ -79,11 +81,11 @@ class TestExtensionNormalization:
 # 2. ROOT DIRECTORY NORMALIZATION TESTS
 # =============================================================================
 class TestRootDirNormalization:
-    """Tests for DeduplicationParams._normalize_root_dirs static method."""
+    """Tests for PathValidator.normalize_path_list static method."""
 
     def test_single_valid_directory(self, temp_dir):
         """Single valid directory should be normalized to absolute path."""
-        result = DeduplicationParams._normalize_root_dirs([str(temp_dir)])
+        result = PathValidator.normalize_path_list([str(temp_dir)])
         assert len(result) == 1
         assert Path(result[0]).is_absolute()
 
@@ -91,30 +93,30 @@ class TestRootDirNormalization:
         """Multiple directories should all be normalized."""
         subdir = temp_dir / "subdir"
         subdir.mkdir()
-        result = DeduplicationParams._normalize_root_dirs([str(temp_dir), str(subdir)])
+        result = PathValidator.normalize_path_list([str(temp_dir), str(subdir)])
         assert len(result) == 2
 
     def test_duplicate_directories_removed(self, temp_dir):
         """Duplicate directories should be removed while preserving order."""
-        result = DeduplicationParams._normalize_root_dirs([str(temp_dir), str(temp_dir)])
+        result = PathValidator.normalize_path_list([str(temp_dir), str(temp_dir)])
         assert len(result) == 1
 
-    def test_nonexistent_directory_returns_empty(self, temp_dir):
-        """Non-existent directory should raise ValueError."""
+    def test_nonexistent_directory_raises_error(self, temp_dir):
+        """Non-existent directory should raise ValidationError."""
         nonexistent = temp_dir / "does_not_exist"
-        with pytest.raises(ValueError, match="does not exist"):
-            DeduplicationParams._normalize_root_dirs([str(nonexistent)])
+        with pytest.raises(ValidationError, match="does not exist"):
+            PathValidator.normalize_path_list([str(nonexistent)])
 
     def test_file_as_directory_raises_error(self, temp_dir):
-        """File path should raise ValueError."""
+        """File path should raise ValidationError."""
         file_path = temp_dir / "file.txt"
         file_path.write_bytes(b"content")
-        with pytest.raises(ValueError, match="not a directory"):
-            DeduplicationParams._normalize_root_dirs([str(file_path)])
+        with pytest.raises(ValidationError, match="not a directory"):
+            PathValidator.normalize_path_list([str(file_path)])
 
     def test_empty_list_returns_empty(self):
         """Empty list should return empty list."""
-        result = DeduplicationParams._normalize_root_dirs([])
+        result = PathValidator.normalize_path_list([])
         assert result == []
 
     def test_relative_paths_resolved(self, temp_dir, monkeypatch):
@@ -122,7 +124,7 @@ class TestRootDirNormalization:
         monkeypatch.chdir(temp_dir)
         subdir = temp_dir / "subdir"
         subdir.mkdir()
-        result = DeduplicationParams._normalize_root_dirs(["subdir"])
+        result = PathValidator.normalize_path_list(["subdir"])
         assert len(result) == 1
         assert Path(result[0]).is_absolute()
 
@@ -567,22 +569,24 @@ class TestExcludedDirectories:
         assert "excluded" not in files[0].path
 
     def test_excluded_dirs_takes_precedence_over_favourite_dirs(self, temp_dir):
-        """If a directory is both excluded and favourite, excluded must win."""
+        """
+        If a directory is both excluded and favourite, validation should fail.
+        This conflict is now caught at parameter creation time, not runtime.
+        """
         special_dir = temp_dir / "special"
         special_dir.mkdir()
         (special_dir / "file.txt").write_bytes(b"content")
 
-        params = DeduplicationParams(
-            root_dirs=[str(temp_dir)],
-            min_size_bytes=0,
-            max_size_bytes=1024 * 1024,
-            extensions=[".txt"],
-            favourite_dirs=[str(special_dir)],
-            excluded_dirs=[str(special_dir)]
-        )
-        scanner = FileScanner(params=params)
-        files = scanner.scan(stopped_flag=lambda: False)
-        assert len(files) == 0
+        # This should now raise ValueError due to validation
+        with pytest.raises(ValueError, match="Favourite directories conflict with excluded"):
+            DeduplicationParams(
+                root_dirs=[str(temp_dir)],
+                min_size_bytes=0,
+                max_size_bytes=1024 * 1024,
+                extensions=[".txt"],
+                favourite_dirs=[str(special_dir)],
+                excluded_dirs=[str(special_dir)]
+            )
 
 
 # =============================================================================
@@ -686,7 +690,7 @@ class TestCancellationAndProgress:
             excluded_dirs=[]
         )
         scanner = FileScanner(params=params)
-        scanner.scan(progress_callback=progress_callback)  # ← FIXED: removed unused 'files ='
+        scanner.scan(progress_callback=progress_callback)
 
         assert len(progress_calls) > 0
         assert any(call[0] == 'scanning' for call in progress_calls)
@@ -696,11 +700,11 @@ class TestCancellationAndProgress:
 # 9. DEDUPLICATION PARAMS VALIDATION TESTS
 # =============================================================================
 class TestDeduplicationParamsValidation:
-    """Tests for DeduplicationParams validation logic."""
+    """Tests for DeduplicationParams validation logic via integration."""
 
     def test_params_validation_empty_root(self):
         """Should raise ValueError for empty root directory list."""
-        with pytest.raises(ValueError, match="No valid root directories"):
+        with pytest.raises(ValueError, match="At least one valid root directory is required"):
             DeduplicationParams(
                 root_dirs=[],
                 min_size_bytes=0,
@@ -708,43 +712,58 @@ class TestDeduplicationParamsValidation:
             )
 
     def test_params_validation_negative_min_size(self, temp_dir):
-        """
-        Should raise ValueError for negative min_size.
-        FIX: Use valid temp_dir for root_dirs so validation reaches min_size check.
-        """
-        # root_dirs must exist, otherwise validation fails at root_dirs check first
+        """Should raise ValueError for negative min_size."""
         with pytest.raises(ValueError, match="Minimum size cannot be negative"):
             DeduplicationParams(
-                root_dirs=[str(temp_dir)],  # Use valid directory
+                root_dirs=[str(temp_dir)],
                 min_size_bytes=-1,
                 max_size_bytes=1000000
             )
 
     def test_params_validation_max_less_than_min(self, temp_dir):
-        """
-        Should raise ValueError when max_size < min_size.
-        FIX: Use valid temp_dir for root_dirs so validation reaches max_size check.
-        """
-        # root_dirs must exist, otherwise validation fails at root_dirs check first
-        with pytest.raises(ValueError, match="Maximum size cannot be less than minimum size"):
+        """Should raise ValueError when max_size < min_size."""
+        with pytest.raises(ValueError, match="Maximum size .* cannot be less than minimum size"):
             DeduplicationParams(
-                root_dirs=[str(temp_dir)],  # Use valid directory
+                root_dirs=[str(temp_dir)],
                 min_size_bytes=1000,
                 max_size_bytes=500
             )
 
     def test_params_normalized_properties(self, temp_dir):
-        """Normalized properties should return processed values."""
+        """Normalized properties should return processed values via public API."""
         params = DeduplicationParams(
             root_dirs=[str(temp_dir)],
             min_size_bytes=0,
             max_size_bytes=1000000,
             extensions=["TXT", "md"]
         )
+        # Test via public properties, not private methods
         assert params.normalized_extensions == [".txt", ".md"]
         assert params.extension_filter_mode == "whitelist"
         assert len(params.normalized_root_dirs) == 1
         assert Path(params.normalized_root_dirs[0]).is_absolute()
+
+    def test_params_validation_root_excluded_conflict(self, temp_dir):
+        """Should raise error if excluded dir is identical to root."""
+        with pytest.raises(ValueError, match="identical to root"):
+            DeduplicationParams(
+                root_dirs=[str(temp_dir)],
+                min_size_bytes=0,
+                max_size_bytes=1000000,
+                excluded_dirs=[str(temp_dir)]  # Conflict!
+            )
+
+    def test_params_validation_root_excluded_parent_conflict(self, temp_dir):
+        """Should raise error if excluded dir contains root."""
+        subdir = temp_dir / "subdir"
+        subdir.mkdir()
+        with pytest.raises(ValueError, match="contains root"):
+            DeduplicationParams(
+                root_dirs=[str(subdir)],
+                min_size_bytes=0,
+                max_size_bytes=1000000,
+                excluded_dirs=[str(temp_dir)]  # Excluding parent of root!
+            )
 
 
 # =============================================================================

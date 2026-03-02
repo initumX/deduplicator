@@ -11,6 +11,7 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional, NoReturn
+from onlyone.core.validator import ValidationError
 import logging
 
 # === EARLY DEPENDENCY VALIDATION ===
@@ -286,6 +287,8 @@ class CLIApplication:
                 boost=boost_mode,
                 mode=mode
             )
+        except ValidationError as e:
+            self.error_exit(f"Configuration error: {e}")
         except ValueError as e:
             self.error_exit(f"Parameter error: {e}")
 
