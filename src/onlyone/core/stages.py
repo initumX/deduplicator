@@ -70,7 +70,7 @@ class DeduplicationConfig:
         limit = DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
         if file_size <= limit:
             return file_size
-        elif file_size < limit * 3:
+        elif file_size <= limit * 2.5:
             return limit
         elif file_size <= 10 * 1024 * 1024:
             return 64 * 1024
