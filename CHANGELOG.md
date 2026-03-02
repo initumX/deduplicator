@@ -56,5 +56,5 @@
 -NEW: logging deleted files in ~/.onlyone/app.log
 
 ### [2.5.5] 2 March 2026 
--fix validation
+-fix validation  
 -simplify progress indication
