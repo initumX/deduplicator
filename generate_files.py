@@ -134,7 +134,7 @@ def main():
 
     Path(OUTPUT_DIRECTORY).mkdir(parents=True, exist_ok=True)
 
-    print("\n⏳ Starting generation...\n")
+    print("\nStarting generation...\n")
     start_time = time.perf_counter()
 
     total_bytes_written = 0
@@ -159,7 +159,7 @@ def main():
             if is_base_file:
                 # --- CREATE BASE TEMPLATE ---
                 file_size = random.randint(MIN_FILE_SIZE, MAX_FILE_SIZE)
-                print(f"[{i}/{FILE_COUNT}] 🆔 Base: {file_name} ({format_size(file_size)})", end=" ")
+                print(f"[{i}/{FILE_COUNT}] Base: {file_name} ({format_size(file_size)})", end=" ")
 
                 t_start = time.perf_counter()
                 create_file_fresh(file_path, file_size, USE_RANDOM_DATA)
