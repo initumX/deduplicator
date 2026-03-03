@@ -25,7 +25,8 @@ FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS RELIABLE.
 Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file.  
 Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).  
 Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).  
-It's ok in the most cases, but sometimes it can lead to false positives.
+It's ok in the most cases, but sometimes it can lead to false positives.  
+Don't use versions older than 2.5.7, they are not reliable.
 
 ## [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
 Important notes:  
