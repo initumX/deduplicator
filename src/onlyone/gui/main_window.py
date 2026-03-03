@@ -459,6 +459,7 @@ class MainWindow(QMainWindow):
         boost_mode = self.ui.boost_combo.currentData()
         dedupe_mode = self.ui.dedupe_mode_combo.currentData()
         sort_order = self.ui.ordering_combo.currentData()
+        max_groups = self.ui.max_groups_combo.currentData()
 
         # Create unified parameters object with multiple root directories
         try:
@@ -472,7 +473,7 @@ class MainWindow(QMainWindow):
                 mode=dedupe_mode,
                 sort_order=sort_order,
                 boost=boost_mode,
-                max_groups=3000
+                max_groups=max_groups
             )
         except ValueError as e:
             QMessageBox.critical(
@@ -605,6 +606,7 @@ class MainWindow(QMainWindow):
         self.settings_manager.save_settings("boost_mode", self.ui.boost_combo.currentIndex())
         self.settings_manager.save_settings("dedupe_mode", self.ui.dedupe_mode_combo.currentIndex())
         self.settings_manager.save_settings("extensions", self.ui.extension_filter_input.text())
+        self.settings_manager.save_settings("max_groups_index", self.ui.max_groups_combo.currentIndex())
         self.settings_manager.save_settings("splitter_sizes", list(self.ui.splitter.sizes()))
         self.settings_manager.save_settings("favourite_dirs", self.favourite_dirs)
         self.settings_manager.save_settings("excluded_dirs", self.excluded_dirs)
@@ -648,6 +650,9 @@ class MainWindow(QMainWindow):
         self.ui.boost_combo.setCurrentIndex(int(self.settings_manager.load_settings("boost_mode", 0)))
         self.ui.dedupe_mode_combo.setCurrentIndex(int(self.settings_manager.load_settings("dedupe_mode", 1)))
         self.ui.extension_filter_input.setText(self.settings_manager.load_settings("extensions", ""))
+
+        max_groups_index = int(self.settings_manager.load_settings("max_groups_index", 4))
+        self.ui.max_groups_combo.setCurrentIndex(max_groups_index)
 
         splitter_sizes = self.settings_manager.load_settings("splitter_sizes", None)
         if splitter_sizes and isinstance(splitter_sizes, (list, tuple)):

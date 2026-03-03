@@ -82,12 +82,37 @@ class Ui_MainWindow:
         )
         self.extension_layout_inside.addWidget(self.extension_filter_input)
 
+        # === Max Groups Limit ===
+        self.max_groups_layout = QHBoxLayout()
+        self.label_max_groups = QLabel(central_widget)
+        self.label_max_groups.setText("Max groups:")
+        self.max_groups_layout.addWidget(self.label_max_groups)
+
+        self.max_groups_combo = QComboBox(central_widget)
+        self.max_groups_combo.setToolTip(
+            "Limit the number of duplicate groups shown in GUI.\n"
+            "Higher values may slow down the interface.\n"
+            "CLI remains unlimited."
+        )
+        self.max_groups_combo.addItem("100", userData=100)
+        self.max_groups_combo.addItem("300", userData=300)
+        self.max_groups_combo.addItem("600", userData=600)
+        self.max_groups_combo.addItem("1,000", userData=1000)
+        self.max_groups_combo.addItem("3,000 (Default)", userData=3000)
+        self.max_groups_combo.addItem("6,000", userData=6000)
+        self.max_groups_combo.addItem("9,000", userData=9000)
+        self.max_groups_combo.addItem("12,000 (Slow)", userData=12000)
+        self.max_groups_combo.addItem("Unlimit (Not recommended)", userData=None)
+        self.max_groups_combo.setCurrentIndex(4)  # 3000 by default
+        self.max_groups_layout.addWidget(self.max_groups_combo)
+
         # Filters group
         self.filters_group = QGroupBox(central_widget)
         filters_group_layout = QVBoxLayout()
         filters_group_layout.addLayout(self.min_size_layout)
         filters_group_layout.addLayout(self.max_size_layout)
         filters_group_layout.addLayout(self.extension_layout_inside)
+        filters_group_layout.addLayout(self.max_groups_layout)
         self.filters_group.setLayout(filters_group_layout)
         self.filters_group.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
