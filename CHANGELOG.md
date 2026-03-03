@@ -61,3 +61,6 @@
 
 ### [2.5.6] 3 March 2026
 - fix early confirmation bug. Files from 321 KB to 384 KB confirmed as dupes only by first 320 KB.
+
+### [2.5.7] 3 March 2026
+- fix bugs appeared during testing
