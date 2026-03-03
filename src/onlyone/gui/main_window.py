@@ -7,6 +7,7 @@ A PySide6-based graphical interface for finding and removing duplicate files.
 """
 import os
 import logging
+import time
 from typing import Any, List
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from PySide6.QtWidgets import (
     QProgressDialog, QApplication, QListWidgetItem,
 )
 from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
-from onlyone.core.models import DeduplicationParams, File
+from onlyone.core.models import DeduplicationParams, File, DuplicateGroup
 from onlyone.core.sorter import Sorter
 from onlyone.core.measurer import bytes_to_human
 from onlyone.services.file_service import FileService
@@ -26,6 +27,7 @@ from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
 from onlyone.reporter import format_deletion_preview, format_deletion_result
 from onlyone.gui.custom_widgets.deletion_confirm_dialog import DeletionConfirmDialog
+from onlyone.gui.keep_one_worker import KeepOneWorker
 from onlyone import __version__
 
 
@@ -48,6 +50,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.keep_one_worker = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -183,7 +186,32 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Information", "No duplicate groups found")
             return
 
-        files_to_delete, updated_groups = DuplicateService.keep_only_one_file_per_group(self.duplicate_groups)
+        # Show a small "Calculating..." dialog
+        self.progress_dialog = QProgressDialog(
+            "Calculating files to delete...",
+            "Cancel",
+            0, 0,  # Indeterminate mode
+            self
+        )
+        self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        self.progress_dialog.setWindowTitle("Preparing")
+        self.progress_dialog.setMinimumDuration(500)  # Show only if takes > 500ms
+        self.progress_dialog.show()
+
+        # Start background worker
+        self.keep_one_worker = KeepOneWorker(self.duplicate_groups)
+        self.keep_one_worker.signals.finished.connect(self._on_keep_one_calculated)
+        self.keep_one_worker.signals.error.connect(self._on_keep_one_error)
+        self.progress_dialog.canceled.connect(self.keep_one_worker.stop)
+
+        QThreadPool.globalInstance().start(self.keep_one_worker)
+
+    def _on_keep_one_calculated(self, files_to_delete: List[str], updated_groups: List[DuplicateGroup]):
+        """Called when background calculation completes."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+
         if not files_to_delete:
             QMessageBox.information(self, "Information", "Nothing to delete")
             return
@@ -201,7 +229,19 @@ class MainWindow(QMainWindow):
         if reply != QDialog.DialogCode.Accepted:
             return
 
+        # Store updated_groups for use after deletion
+        self._pending_updated_groups = updated_groups
+
+        # Proceed with deletion
         self.handle_delete_files(files_to_delete)
+
+    def _on_keep_one_error(self, error_message: str):
+        """Called when background calculation fails."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+
+        QMessageBox.critical(self, "Error", f"Error during calculation:\n{error_message}")
 
     def handle_delete_files(self, file_paths):
         """Execute file deletion with progress tracking and error handling."""
@@ -252,10 +292,21 @@ class MainWindow(QMainWindow):
                 )
                 QApplication.processEvents()
 
+                # Yield every 100 files for better responsiveness
+                if i % 100 == 0:
+                    time.sleep(0.001)
+
             # Update file lists ONLY for successfully deleted files
             successful_files = [path for path in file_paths if path not in [f[0] for f in failed_files]]
             self.files = DuplicateService.remove_files_from_file_list(self.files, successful_files)
-            updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, successful_files)
+
+            # Use pre-calculated updated_groups if available, otherwise recalculate
+            if hasattr(self, '_pending_updated_groups'):
+                updated_groups = self._pending_updated_groups
+                delattr(self, '_pending_updated_groups')
+            else:
+                updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, successful_files)
+
             removed_group_count = len(self.duplicate_groups) - len(updated_groups)
             self.duplicate_groups = updated_groups
             self.ui.groups_list.set_groups(updated_groups)
