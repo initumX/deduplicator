@@ -8,6 +8,7 @@ A PySide6-based graphical interface for finding and removing duplicate files.
 import os
 import logging
 from typing import Any, List
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QMainWindow, QFileDialog,
@@ -23,7 +24,7 @@ from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
 from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
-from onlyone.reporter import format_deletion_preview
+from onlyone.reporter import format_deletion_preview, format_deletion_result
 from onlyone.gui.custom_widgets.deletion_confirm_dialog import DeletionConfirmDialog
 from onlyone import __version__
 
@@ -215,7 +216,9 @@ class MainWindow(QMainWindow):
             for f in group.files:
                 file_sizes[f.path] = f.size
 
+        total_space_saved = sum(file_sizes.get(path, 0) for path in file_paths)
         total = len(file_paths)
+
         self.progress_dialog = QProgressDialog(
             "Moving files to trash...",
             "Cancel",
@@ -235,10 +238,8 @@ class MainWindow(QMainWindow):
                 try:
                     FileService.move_to_trash(path)
                     deleted_count += 1
-
                     file_size = file_sizes.get(path, 0)
                     self._log_file_deletion(path, file_size)
-
                 except Exception as e:
                     # Continue deleting other files even if one fails
                     failed_files.append((path, str(e)))
@@ -256,40 +257,36 @@ class MainWindow(QMainWindow):
             self.files = DuplicateService.remove_files_from_file_list(self.files, successful_files)
             updated_groups = DuplicateService.remove_files_from_groups(self.duplicate_groups, successful_files)
             removed_group_count = len(self.duplicate_groups) - len(updated_groups)
-
             self.duplicate_groups = updated_groups
             self.ui.groups_list.set_groups(updated_groups)
 
+            # === SHOW FINAL RESULT ===
+            result_text = format_deletion_result(
+                deleted_count,
+                total,
+                total_space_saved,
+                failed_files
+            )
+            # Add log location info
+            log_path = Path.home() / ".onlyone" / "logs" / "app.log"
+            result_text += f"\n\nℹ️  Deletion logs saved to:\n{log_path}"
 
-            if failed_files:
-                # Show first 5 errors + count of remaining failures
-                error_list = "\n".join([
-                    f"• {os.path.basename(path)}: {error.split(':')[-1].strip()}"
-                    for path, error in failed_files[:5]
-                ])
-                if len(failed_files) > 5:
-                    error_list += f"\n• ...and {len(failed_files) - 5} more files"
+            # Show result in QMessageBox
+            result_box = QMessageBox(self)
+            result_box.setWindowTitle("Deletion Complete")
+            result_box.setIcon(
+                QMessageBox.Icon.Warning if failed_files else QMessageBox.Icon.Information
+            )
+            result_box.setText(result_text)
+            result_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            result_box.exec()
 
-                msg = f"⚠️ Could not delete {len(failed_files)} file(s):\n{error_list}"
-                if removed_group_count > 0:
-                    msg += f"\n{removed_group_count} groups removed successfully."
-
-                QMessageBox.warning(
-                    self,
-                    "Partial Success",
-                    msg
-                )
-            else:
-                self.ui.statusbar.clearMessage()
-                file_names = [os.path.basename(path) for path in successful_files[:3]]
-                status_msg = f"✅ Deleted {deleted_count} file: {', '.join(file_names)}. " \
-                    if len(successful_files) <= 3 \
-                    else f"Deleted {deleted_count} files: {', '.join(file_names)} and {deleted_count - 3} more."
-
-                if removed_group_count > 0:
-                    status_msg += f" Removed {removed_group_count} group."
-
-                self.ui.statusbar.showMessage(status_msg)
+            # Also show brief status bar message
+            self.ui.statusbar.clearMessage()
+            status_msg = f"✅ Deleted {deleted_count}/{total} files ({bytes_to_human(total_space_saved)})"
+            if removed_group_count > 0:
+                status_msg += f" | {removed_group_count} groups removed"
+            self.ui.statusbar.showMessage(status_msg, 5000)
             self._statusbar_unlock_timer.start(500)
 
         except Exception as e:
@@ -299,8 +296,7 @@ class MainWindow(QMainWindow):
             if self.progress_dialog:
                 self.progress_dialog.close()
                 self.progress_dialog = None
-
-        self._statusbar_unlock_timer.start(500)
+            self._statusbar_unlock_timer.start(500)
 
     def _unlock_statusbar(self):
         """Unblock statusbar."""
