@@ -88,6 +88,13 @@ class Deduplicator:
         # Sort by descending size
         all_duplicates.sort(key=lambda g: -g.files[0].size if g.files else 0)
 
+        stats.total_groups_found = len(all_duplicates)
+
+        # === APPLY LIMIT FOR GUI ===
+        if params.max_groups is not None and len(all_duplicates) > params.max_groups:
+            all_duplicates = all_duplicates[:params.max_groups]
+            stats.groups_truncated = True
+
         # Finalize stats
         stats.grouping_time = time.time() - total_start_time
 

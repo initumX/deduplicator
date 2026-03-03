@@ -198,6 +198,8 @@ class DeduplicationStats:
         self.scan_time: float = 0.0
         self.grouping_time: float = 0.0
         self.stage_stats: Dict[str, Dict[str, Union[int, float]]] = {}
+        self.total_groups_found: int = 0  #  Before limiting
+        self.groups_truncated: bool = False  #  Was limit applied?
         self._listeners: List[Callable[[str, Dict], None]] = []
 
     def add_listener(self, listener: Callable[[str, Dict], None]):
@@ -291,6 +293,7 @@ class DeduplicationParams:
     mode: DeduplicationMode = DeduplicationMode.NORMAL
     sort_order: SortOrder = SortOrder.SHORTEST_PATH
     boost: BoostMode = field(default=BoostMode.SAME_SIZE)
+    max_groups: Optional[int] = None
 
     # === Read-only computed properties (set in __post_init__) ===
     _extension_filter_mode: str = field(default="whitelist", init=False)
@@ -359,6 +362,7 @@ class DeduplicationParams:
             sort_order: SortOrder = SortOrder.SHORTEST_PATH,
             mode: DeduplicationMode = DeduplicationMode.NORMAL,
             boost: BoostMode = BoostMode.SAME_SIZE,
+            max_groups: Optional[int] = None,
     ) -> "DeduplicationParams":
         """
         Factory method to create params from human-readable inputs.
@@ -376,6 +380,7 @@ class DeduplicationParams:
             mode=mode,
             sort_order=sort_order,
             boost=boost,
+            max_groups=max_groups
         )
 
     def __repr__(self) -> str:

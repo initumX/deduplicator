@@ -471,7 +471,8 @@ class MainWindow(QMainWindow):
                 excluded_dirs=self.excluded_dirs,
                 mode=dedupe_mode,
                 sort_order=sort_order,
-                boost=boost_mode
+                boost=boost_mode,
+                max_groups=3000
             )
         except ValueError as e:
             QMessageBox.critical(
@@ -542,6 +543,13 @@ class MainWindow(QMainWindow):
         # Show statistics AFTER event loop processes dialog cleanup
         def show_stats():
             stats_text = stats.print_summary()
+
+            # Add truncation warning
+            if stats.groups_truncated:
+                stats_text += f"\n\n⚠️  Results limited to {len(duplicate_groups)} groups (largest first).\n"
+                stats_text += f"Total groups found: {stats.total_groups_found}\n"
+                stats_text += f"Use CLI for full results: onlyone -i {' '.join(self._collect_root_dirs())}"
+
             stats_box = QMessageBox(self)
             stats_box.setWindowTitle("Deduplication Statistics")
             stats_box.setText(stats_text)
