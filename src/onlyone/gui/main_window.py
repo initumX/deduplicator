@@ -17,11 +17,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings, QThreadPool, QTimer
 from onlyone.core.models import DeduplicationParams, File
 from onlyone.core.sorter import Sorter
+from onlyone.core.measurer import bytes_to_human
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
 from onlyone.gui.custom_widgets.favourite_dirs_dialog import FavouriteDirsDialog
 from onlyone.gui.worker import DeduplicateWorker
 from onlyone.gui.main_window_ui import Ui_MainWindow
+from onlyone.reporter import format_deletion_preview
+from onlyone.gui.custom_widgets.deletion_confirm_dialog import DeletionConfirmDialog
 from onlyone import __version__
 
 
@@ -184,14 +187,17 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Information", "Nothing to delete")
             return
 
-        reply = QMessageBox.question(
-            self,
-            "Confirm Deletion",
-            f"Are you sure you want to move {len(files_to_delete)} files to trash?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+        space_saved = sum(f.size for g in self.duplicate_groups for f in g.files if f.path in files_to_delete)
+        preview_text = format_deletion_preview(self.duplicate_groups, files_to_delete, space_saved)
+        dialog = DeletionConfirmDialog(
+            parent=self,
+            files_count=len(files_to_delete),
+            space_saved=bytes_to_human(space_saved),
+            preview_text=preview_text
         )
-        if reply != QMessageBox.StandardButton.Yes:
+
+        reply = dialog.exec()
+        if reply != QDialog.DialogCode.Accepted:
             return
 
         self.handle_delete_files(files_to_delete)
