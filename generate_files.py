@@ -116,20 +116,20 @@ def create_similar_file(source_path: str, dest_path: str, similarity_ratio: floa
 
 def main():
     print("=" * 70)
-    print("🚀 TEST FILE GENERATOR (SIMILARITY MODE)")
+    print("TEST FILE GENERATOR (SIMILARITY MODE)")
     print("=" * 70)
-    print(f"📁 Output Directory:   {OUTPUT_DIRECTORY}")
-    print(f"🔢 Total Files:        {FILE_COUNT}")
-    print(f"🛠  Mode:               {GENERATION_MODE}")
+    print(f"Output Directory:   {OUTPUT_DIRECTORY}")
+    print(f"Total Files:        {FILE_COUNT}")
+    print(f"Mode:               {GENERATION_MODE}")
 
     if GENERATION_MODE == 'SIMILAR_FILES':
-        print(f"🧬 Similarity:        {SIMILARITY_PERCENT}%")
-        print(f"📐 Base Templates:    {BASE_TEMPLATES_COUNT}")
+        print(f"Similarity:        {SIMILARITY_PERCENT}%")
+        print(f"Base Templates:    {BASE_TEMPLATES_COUNT}")
     elif GENERATION_MODE == 'EXACT_DUPLICATES':
-        print(f"📐 Unique Files:      {BASE_TEMPLATES_COUNT}")
+        print(f"Unique Files:      {BASE_TEMPLATES_COUNT}")
 
-    print(f"🎲 Content:            {'Random Data' if USE_RANDOM_DATA else 'Zeros'}")
-    print(f"📏 Size Range:         {format_size(MIN_FILE_SIZE)} - {format_size(MAX_FILE_SIZE)}")
+    print(f"Content:            {'Random Data' if USE_RANDOM_DATA else 'Zeros'}")
+    print(f"Size Range:         {format_size(MIN_FILE_SIZE)} - {format_size(MAX_FILE_SIZE)}")
     print("=" * 70)
 
     Path(OUTPUT_DIRECTORY).mkdir(parents=True, exist_ok=True)
@@ -175,19 +175,19 @@ def main():
                 file_size = os.path.getsize(source_path)  # Match base size exactly
 
                 if GENERATION_MODE == 'SIMILAR_FILES':
-                    print(f"[{i}/{FILE_COUNT}] 🧬 Sim:  {file_name} ({format_size(file_size)})", end=" ")
+                    print(f"[{i}/{FILE_COUNT}] Sim:  {file_name} ({format_size(file_size)})", end=" ")
                     t_start = time.perf_counter()
                     create_similar_file(source_path, file_path, SIMILARITY_PERCENT / 100.0)
                     t_elapsed = time.perf_counter() - t_start
                 elif GENERATION_MODE == 'EXACT_DUPLICATES':
-                    print(f"[{i}/{FILE_COUNT}] 🔄 Dup:  {file_name} ({format_size(file_size)})", end=" ")
+                    print(f"[{i}/{FILE_COUNT}] Dup:  {file_name} ({format_size(file_size)})", end=" ")
                     t_start = time.perf_counter()
                     shutil.copy2(source_path, file_path)
                     t_elapsed = time.perf_counter() - t_start
                 else:
                     # UNIQUE_ONLY mode (should not happen given logic above, but for safety)
                     file_size = random.randint(MIN_FILE_SIZE, MAX_FILE_SIZE)
-                    print(f"[{i}/{FILE_COUNT}] 🆔 Unq:  {file_name} ({format_size(file_size)})", end=" ")
+                    print(f"[{i}/{FILE_COUNT}] Unq:  {file_name} ({format_size(file_size)})", end=" ")
                     t_start = time.perf_counter()
                     create_file_fresh(file_path, file_size, USE_RANDOM_DATA)
                     t_elapsed = time.perf_counter() - t_start
@@ -196,32 +196,32 @@ def main():
 
             successful_files += 1
             speed = file_size / t_elapsed / 1024 / 1024
-            print(f"✅ ({speed:.0f} MB/s)")
+            print(f"({speed:.0f} MB/s)")
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Process interrupted by user.")
+        print("\n\nProcess interrupted by user.")
         return
     except Exception as e:
-        print(f"\n\n❌ Error occurred: {e}")
+        print(f"\n\nError occurred: {e}")
         raise
 
     total_elapsed = time.perf_counter() - start_time
 
     # Summary Statistics
     print("\n" + "=" * 70)
-    print("📊 GENERATION SUMMARY")
+    print("GENERATION SUMMARY")
     print("=" * 70)
-    print(f"✅ Files Created:      {successful_files}/{FILE_COUNT}")
-    print(f"📦 Total Data Size:    {format_size(total_bytes_written)}")
-    print(f"⏱  Total Time:         {total_elapsed:.2f} seconds")
+    print(f"Files Created:      {successful_files}/{FILE_COUNT}")
+    print(f"Total Data Size:    {format_size(total_bytes_written)}")
+    print(f"Total Time:         {total_elapsed:.2f} seconds")
 
     if total_elapsed > 0:
         avg_throughput = total_bytes_written / total_elapsed / 1024 / 1024
-        print(f"🚀 Avg Throughput:    {avg_throughput:.2f} MB/s")
+        print(f"Avg Throughput:    {avg_throughput:.2f} MB/s")
 
     print("=" * 70)
     if GENERATION_MODE == 'SIMILAR_FILES':
-        print(f"💡 Files are {SIMILARITY_PERCENT}% similar (Delta Compression Ready)")
+        print(f"Files are {SIMILARITY_PERCENT}% similar (Delta Compression Ready)")
     print("=" * 70)
 
 
