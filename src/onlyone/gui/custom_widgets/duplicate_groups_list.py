@@ -48,19 +48,34 @@ class DuplicateGroupsList(QListWidget):
     def _populate_list(self):
         """Internal method to populate the list with current groups"""
         self.clear()
+
+        # Global DEL file counter — does not reset between groups
+        del_counter = 1
+
         for idx, group in enumerate(self.current_groups):
+            # Sort: favorite directory files first (they will be "KEEP")
             group.files.sort(key=lambda f: not f.is_from_fav_dir)
             size_str = bytes_to_human(group.size)
 
-            folder_title = f"📁 Group {idx+1} | Size: {size_str}"
+            # Group header
+            folder_title = f"📁 Group {idx + 1} | Size: {size_str}"
             folder_title_item = QListWidgetItem(folder_title)
             folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(folder_title_item)
 
             for file_idx, file in enumerate(group.files):
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
+
+                # First file = KEEP, others = DEL with global number
                 is_keep = (file_idx == 0)
-                status_marker = " [KEEP]" if is_keep else " [DEL]"
+
+                if is_keep:
+                    status_marker = " [KEEP]"
+                    foreground_color = Qt.GlobalColor.darkGreen
+                else:
+                    status_marker = f" [DEL #{del_counter}]"
+                    foreground_color = Qt.GlobalColor.darkRed
+                    del_counter += 1  # Increment global counter
 
                 item_text = f"     {file.name}{fav_marker}{status_marker}"
                 tooltip_text = f"Path: {file.path}"
@@ -68,13 +83,10 @@ class DuplicateGroupsList(QListWidget):
                 item = QListWidgetItem(item_text)
                 item.setToolTip(tooltip_text)
                 item.setData(Qt.ItemDataRole.UserRole, file)
-
-                if is_keep:
-                    item.setForeground(Qt.GlobalColor.darkGreen)
-                else:
-                    item.setForeground(Qt.GlobalColor.darkRed)
+                item.setForeground(foreground_color)
                 self.addItem(item)
 
+            # Empty line between groups
             empty_item = QListWidgetItem("")
             empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(empty_item)
