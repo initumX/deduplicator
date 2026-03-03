@@ -57,15 +57,22 @@ class DuplicateGroupsList(QListWidget):
             folder_title_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self.addItem(folder_title_item)
 
-            for file in group.files:
+            for file_idx, file in enumerate(group.files):
                 fav_marker = " ✅" if file.is_from_fav_dir else ""
-                item_text = f"     {file.name}{fav_marker}"
+                is_keep = (file_idx == 0)
+                status_marker = " [KEEP]" if is_keep else " [DEL]"
 
+                item_text = f"     {file.name}{fav_marker}{status_marker}"
                 tooltip_text = f"Path: {file.path}"
 
                 item = QListWidgetItem(item_text)
                 item.setToolTip(tooltip_text)
                 item.setData(Qt.ItemDataRole.UserRole, file)
+
+                if is_keep:
+                    item.setForeground(Qt.GlobalColor.darkGreen)
+                else:
+                    item.setForeground(Qt.GlobalColor.darkRed)
                 self.addItem(item)
 
             empty_item = QListWidgetItem("")
