@@ -70,7 +70,7 @@ class DeduplicationConfig:
         limit = DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT
         if file_size <= limit:
             return file_size
-        elif file_size <= limit * 2.5:
+        elif file_size <= limit * 2:
             return limit
         elif file_size <= 10 * 1024 * 1024:
             return 64 * 1024
@@ -128,6 +128,14 @@ class PartialHashStageBase(HashStageBase):
         """
         raise NotImplementedError
 
+    def _should_confirm_early(self, file: File) -> bool:
+        """
+        Hook method: determines if a file should be confirmed as duplicate at this stage.
+        Default implementation uses the size threshold.
+        Subclasses can override to disable or customize this logic.
+        """
+        return file.size <= self.get_threshold()
+
     def process(
         self,
         groups: List[DuplicateGroup],
@@ -153,14 +161,12 @@ class PartialHashStageBase(HashStageBase):
 
             # Assign chunk sizes before hashing
             HashStageBase.assign_chunk_sizes(group.files)
-
             hash_groups = self._group_files(group.files)
-            threshold = self.get_threshold()
 
             for hkey, files_in_group in hash_groups.items():
 
-                small_files = [f for f in files_in_group if f.size <= threshold]
-                large_files = [f for f in files_in_group if f.size > threshold]
+                small_files = [f for f in files_in_group if self._should_confirm_early(f)]
+                large_files = [f for f in files_in_group if not self._should_confirm_early(f)]
 
                 if small_files:
                     confirmed_duplicates.append(DuplicateGroup(size=group.size, files=small_files))
@@ -249,7 +255,7 @@ class FrontHashStage(PartialHashStageBase):
 
 
 class MiddleHashStage(PartialHashStageBase):
-    # Don't change multiplier, it should be 2 here (greater number lead to false positives)
+    # Don't change multiplier, it should be 2 here (greater number lead to hashing gaps and false positives)
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
@@ -261,15 +267,19 @@ class MiddleHashStage(PartialHashStageBase):
 
 
 class EndHashStage(PartialHashStageBase):
-    # Don't change multiplier, it should be 2.5 here (greater number lead to false positives)
     def get_threshold(self) -> int:
-        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2.5)
+        # isn't used anymore on this stage
+        return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
     def get_stage_name(self) -> str:
         return "End-chunk Hash"
 
     def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
         return self.grouper.group_by_end_hash(files)
+
+    def _should_confirm_early(self, file: File) -> bool:
+        # Don't use early confirmation
+        return False
 
 
 class FullHashStage:

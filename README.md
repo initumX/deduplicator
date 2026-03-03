@@ -20,6 +20,13 @@ Note: Newest OnlyOne requires at least **python 3.8** (but higher version is rec
 * You can download binary for linux and windows from [github release](https://github.com/initumX/onlyone/releases)  
 * If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
 
+## NOTE!
+FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS RELIABLE.  
+Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file.  
+Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).  
+Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).  
+It's ok in the most cases, but sometimes it can lead to false positives.
+
 ## [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
 Important notes:  
 * List elements, separated by comma don't work anymore. Use space as separator:  
@@ -41,17 +48,18 @@ If path contains space, just backslash space inside path:
 * Supporting various deduplication modes
 * Preview images/pdf directly in the interface
 * Context menu(open/delete/reveal in explorer)
-* Progress tracking (in gui-version)
+* Progress tracking
 * One click deletion (delete all duplicates at once)
 * Priority and excluded directories functionality
 * Statistics/report
+* XXHASH hashing algorithm (30% faster than BLAKE3, and 3-3.5x faster than MD5)
 
 ### How does it work?
-1. Recursively scans folder using filters (min/max size, extension)
-2. Applies one of the initial grouping ways from "boosting" option (size, size+extension, etc)
-3. Further checking depends on mode:
-   * "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)
-   * "full": checks hash-sum of front -> middle -> entire file (very slow for large files)  
+1. Recursively scans folder using filters (min/max size, extension)  
+2. Applies one of the initial grouping ways from "boosting" option (size, size+extension, etc)  
+3. Further checking depends on mode:  
+   * "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)  
+   * "full": checks hash-sum of front -> middle -> end -> entire file (very slow for large files)  
 4. Shows the list of groups sorted in descending order (groups with larger files come first).   
    **Files inside a group are sorted by path/filename length (you can regulate this).
 
