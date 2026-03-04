@@ -19,6 +19,7 @@ Note: Newest OnlyOne requires at least **python 3.8** (but higher version is rec
 ##  [GitHub](https://github.com/initumX/onlyone)   
 * You can download binary for linux and windows from [github release](https://github.com/initumX/onlyone/releases)  
 * If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
+* See [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md) to see what's new you can find here
 
 ## NOTE!
 FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS RELIABLE.  
@@ -27,21 +28,6 @@ Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for 
 Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).  
 It's ok in the most cases, but sometimes it can lead to false positives.  
 Don't use versions older than 2.5.7, they are not reliable.
-
-## [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md)
-Important notes:  
-* List elements, separated by comma don't work anymore. Use space as separator:  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg .png` <- Ok  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x .jpg,.png` <- Wrong!  
-The same thing with priority dirs and excluded dirs (for cli).  
-If path contains space, just backslash space inside path:  
-`onlyone -i .~/Downloads -x .jpg .png --excluded-dirs ~/Downloads/spaced\ folder\ one`
-* Now extensions can work also in a blacklist mode (just use ^ as the first element of list for that):  
-`onlyone -i .~/Downloads -m 500KB -M 10MB -x ^ .jpg .png` <- Any extension except of jpg and png  
-* Now you can use multiple directories(space separated) for input:  
-`onlyone -i ~/Downloads ~/Documents ~/Videos` 
-* A lot of changing in OnlyOne 2.5.0 cli (see changelog file)  
-* critical bug fixed in OnlyOne 2.5.6 (see changelog), don't use previous versions
 
 ### Features
 * Filtering by file size and extension
