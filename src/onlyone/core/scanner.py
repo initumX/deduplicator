@@ -17,9 +17,8 @@ import sys
 from typing import List, Optional, Callable, Set, Dict
 from pathlib import Path
 import time
-import logging
-
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.core.scanner")
 
 # Local imports
 from onlyone.core.models import File, DeduplicationParams

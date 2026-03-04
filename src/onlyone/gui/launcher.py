@@ -7,20 +7,22 @@ from pathlib import Path
 import sys
 from PySide6.QtWidgets import QApplication
 from onlyone.gui.main_window import MainWindow
+from onlyone.logging_config import setup_logging, cleanup_logging
 
 def main():
-    log_dir = Path.home() / ".onlyone" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
+    # === UNIFIED LOGGING SETUP ===
+    setup_logging(
+        mode="gui",
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_dir / "app.log", encoding='utf-8')]
+        verbose=False
     )
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())
+
+    exit_code = app.exec()
+    cleanup_logging()
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

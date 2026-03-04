@@ -5,12 +5,12 @@ Licensed under the MIT License
 core/validator.py
 Centralized validation logic for deduplication parameters.
 """
-import logging
 from pathlib import Path
 from typing import List, Tuple, Optional
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.core.validator")
 
 
 class FilterMode(str, Enum):

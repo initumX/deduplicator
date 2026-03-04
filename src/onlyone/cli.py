@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 from typing import List, Optional, NoReturn
 import logging
+from onlyone.logging_config import setup_logging, cleanup_logging
 
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
@@ -37,6 +38,7 @@ from onlyone.core.models import DeduplicationMode, DeduplicationParams, Duplicat
 from onlyone.commands import DeduplicationCommand
 from onlyone.services.file_service import FileService
 from onlyone.services.duplicate_service import DuplicateService
+from onlyone.core.measurer import bytes_to_human
 from onlyone.aliases import (
     BOOST_ALIASES, BOOST_CHOICES, BOOST_HELP_TEXT,
     DEDUP_MODE_ALIASES, DEDUP_MODE_CHOICES, DEDUP_MODE_HELP_TEXT,
@@ -398,6 +400,9 @@ class CLIApplication:
         deleted_count = 0
         failed_files = []
 
+        # Create a map of paths to sizes for logging purposes
+        file_sizes = {f.path: f.size for g in groups for f in g.files}
+
         # Initialize progress bar for deletion
         delete_bar = None
         if len(files_to_delete) > 0:
@@ -416,6 +421,11 @@ class CLIApplication:
                 try:
                     FileService.move_to_trash(path)
                     deleted_count += 1
+
+                    # Log successful deletion (matching GUI behavior)
+                    size = file_sizes.get(path, 0)
+                    self.logger.info(f"DELETED | {path} | {bytes_to_human(size)}")
+
                 except Exception as e:
                     failed_files.append((path, str(e)))
                     self.logger.warning(f"Error deleting file {path}: {e}")
@@ -432,7 +442,7 @@ class CLIApplication:
         except KeyboardInterrupt:
             if delete_bar:
                 delete_bar.finish()  # Clean finish on interrupt
-            print("\n️  Operation cancelled by user (Ctrl+C)")
+            print("\nOperation cancelled by user (Ctrl+C)")
             sys.exit(130)
         except Exception as e:
             if delete_bar:
@@ -477,12 +487,12 @@ class CLIApplication:
         """Main entry point with conditional output behavior."""
         args = self.parse_args()
 
-        log_level = logging.DEBUG if args.verbose else logging.WARNING
-        logging.basicConfig(
+        # === UNIFIED LOGGING SETUP ===
+        log_level = logging.DEBUG if args.verbose else logging.INFO
+        setup_logging(
+            mode="cli",
             level=log_level,
-            format="%(levelname)-8s | %(name)-25s | %(message)s",
-            force=True,
-            stream=sys.stdout,
+            verbose=args.verbose
         )
 
         self.show_stats = args.stats
@@ -521,6 +531,8 @@ def main() -> None:
             raise
         print(f" Unexpected error: {e}", file=sys.stderr)
         sys.exit(1)
+    finally:
+        cleanup_logging()
 
 
 if __name__ == "__main__":

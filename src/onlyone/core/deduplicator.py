@@ -22,8 +22,8 @@ from onlyone.core.stages import (
 )
 from onlyone.core.sorter import Sorter
 
-import logging
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.core.deduplicator")
 
 # =============================
 # Main Deduplicator Class

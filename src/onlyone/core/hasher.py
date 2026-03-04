@@ -10,11 +10,11 @@ caching results in the File object's Hashes container.
 """
 
 import xxhash
-import logging
 from onlyone.core.models import File
 from typing import Protocol, BinaryIO, Optional
 
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.core.hasher")
 
 class Hasher(Protocol):
     """Interface for hashing different parts of a file."""

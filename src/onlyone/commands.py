@@ -9,8 +9,8 @@ from onlyone.core.models import DuplicateGroup, DeduplicationStats, Deduplicatio
 from onlyone.core.scanner import FileScanner
 from onlyone.core.deduplicator import Deduplicator
 
-import logging
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.commands")
 
 class DeduplicationCommand:
     """

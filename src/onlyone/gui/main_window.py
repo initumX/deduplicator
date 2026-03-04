@@ -6,7 +6,6 @@ OnlyOne GUI Application
 A PySide6-based graphical interface for finding and removing duplicate files.
 """
 import os
-import logging
 import time
 from typing import Any, List
 from pathlib import Path
@@ -28,6 +27,7 @@ from onlyone.gui.main_window_ui import Ui_MainWindow
 from onlyone.reporter import format_deletion_preview, format_deletion_result
 from onlyone.gui.custom_widgets.deletion_confirm_dialog import DeletionConfirmDialog
 from onlyone.gui.keep_one_worker import KeepOneWorker
+from onlyone.logging_config import get_logger, cleanup_logging
 from onlyone import __version__
 
 
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         self.progress_dialog = None
         self.original_image_preview_size = None
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger("onlyone.gui.main_window")
 
         self._block_statusbar_from_file_selected = False
         self._statusbar_unlock_timer = QTimer(self)
@@ -584,6 +584,8 @@ class MainWindow(QMainWindow):
         self._cleanup_progress_dialog()
 
         self.save_settings()
+
+        cleanup_logging()
         super().closeEvent(event)
 
     def on_file_selected_statusbar(self, file: File):

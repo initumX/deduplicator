@@ -6,14 +6,14 @@ core/grouper.py
 Implements file grouping strategies using File objects and Hasher.
 Replaces multiple standalone groupers with a single class implementing FileGrouper.
 """
-import logging
 from typing import List, Dict, Tuple, Any, Callable
 from collections import defaultdict
 from onlyone.core.models import File
 from onlyone.core.hasher import HasherImpl, XXHashAlgorithmImpl, Hasher
 from onlyone.core.demasker import demask_filename
 
-logger = logging.getLogger(__name__)
+from onlyone.logging_config import get_logger
+logger = get_logger("onlyone.core.grouper")
 
 
 class FileGrouper:
