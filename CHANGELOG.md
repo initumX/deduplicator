@@ -64,3 +64,12 @@
 
 ### [2.5.7] 3 March 2026
 - fix bugs appeared during testing
+
+### [2.5.8] March 2026  
+- GUI: add KEEP/DEL markers and color coding to duplicate list
+- GUI: add global sequential numbering to DEL markers
+- GUI: add detailed deletion preview to confirmation dialog
+- GUI: show deletion result summary with log location info
+- GUI: prevent UI freeze during 'Keep One File Per Group' with large datasets
+- GUI: add max_groups limit for GUI to prevent performance issues
+- GUI: add max_groups limit control with preset values
