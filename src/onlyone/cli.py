@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 OnlyOne CLI — Command line interface for duplicate file detection and removal.
 Implements the same core engine as GUI but with console-based interaction.
@@ -69,6 +68,8 @@ class CLIApplication:
             sys.stdout.reconfigure(encoding='utf-8', errors='surrogateescape')
         if hasattr(sys.stderr, 'reconfigure'):
             sys.stderr.reconfigure(encoding='utf-8', errors='surrogateescape')
+        if hasattr(sys.stdin, 'reconfigure'):
+            sys.stdin.reconfigure(encoding='utf-8', errors='replace')
 
     @staticmethod
     def parse_args(args=None) -> argparse.Namespace:
