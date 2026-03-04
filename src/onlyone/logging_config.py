@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
