@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from typing import List, Optional, NoReturn
 import logging
-from onlyone.logging_config import setup_logging, cleanup_logging
+from onlyone.logging_config import setup_logging, cleanup_logging, LOG_FILE
 
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
@@ -423,6 +423,7 @@ class CLIApplication:
                     deleted_count += 1
 
                     # Log successful deletion (matching GUI behavior)
+                    # NOTE: This log goes to FILE ONLY due to DeletionLogFilter in logging_config
                     size = file_sizes.get(path, 0)
                     self.logger.info(f"DELETED | {path} | {bytes_to_human(size)}")
 
@@ -438,6 +439,7 @@ class CLIApplication:
                 deleted_count, len(files_to_delete), space_saved, failed_files, ascii_only=ascii_only
             )
             print(result)
+            print(f"\nℹ️  Detailed deletion log saved to: {LOG_FILE}")
 
         except KeyboardInterrupt:
             if delete_bar:

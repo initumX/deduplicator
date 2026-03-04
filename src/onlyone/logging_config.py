@@ -1,7 +1,7 @@
+#!/usr/bin/env python3
 """
-Copyright (c) 2025 initumX (initum.x@gmail.com)
+Copyright (c)2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
-
 logging_config.py
 Unified logging configuration for CLI and GUI modes.
 """
@@ -20,21 +20,26 @@ LOG_FILE = LOG_DIR / "app.log"
 MAX_LOG_SIZE = 10 * 1024 * 1024
 BACKUP_COUNT = 5  # Number of backup log files
 
+# --- NEW: Filter to hide verbose deletion logs from console ---
+class DeletionLogFilter(logging.Filter):
+    """Filters out verbose deletion logs from console output to keep it clean."""
+    def filter(self, record):
+        # Block messages containing the specific deletion marker
+        return "DELETED |" not in record.getMessage()
+# --------------------------------------------------------------
 
 def ensure_log_directory() -> Path:
     """Create the log directory if it does not exist."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     return LOG_DIR
 
-
 def setup_logging(
-        mode: Literal["cli", "gui", "library"] = "library",
-        level: int = DEFAULT_LOG_LEVEL,
-        verbose: bool = False,
+    mode: Literal["cli", "gui", "library"] = "library",
+    level: int = DEFAULT_LOG_LEVEL,
+    verbose: bool = False,
 ) -> logging.Logger:
     """
     Configure logging for the specified operation mode.
-
     Args:
         mode: Operation mode:
             - "cli": Output to stdout (console)
@@ -42,7 +47,6 @@ def setup_logging(
             - "library": Output to file only (for library usage)
         level: Logging level (logging.INFO, logging.DEBUG, etc.)
         verbose: If True, set level to DEBUG regardless of mode
-
     Returns:
         Configured logger for the application
     """
@@ -87,30 +91,28 @@ def setup_logging(
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
         console_handler.setFormatter(console_formatter)
+        # --- NEW: Apply filter to console handler ---
+        console_handler.addFilter(DeletionLogFilter())
+        # --------------------------------------------
         logger.addHandler(console_handler)
 
     # === Exception Handling ===
     # For GUI and library modes, log exceptions to file
     if mode in ("gui", "library"):
         logging.captureWarnings(True)
-
-    logger.info(f"Logging initialized | Mode: {mode} | Level: {logging.getLevelName(level)}")
+        logger.info(f"Logging initialized | Mode: {mode} | Level: {logging.getLevelName(level)}")
 
     return logger
-
 
 def get_logger(name: str = "onlyone") -> logging.Logger:
     """
     Get a logger with the specified name.
-
     Args:
         name: Logger name (default "onlyone")
-
     Returns:
         Logger instance
     """
     return logging.getLogger(name)
-
 
 def cleanup_logging() -> None:
     """
