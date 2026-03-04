@@ -65,7 +65,7 @@
 ### [2.5.7] 3 March 2026
 - fix bugs appeared during testing
 
-### [2.5.8] March 2026  
+### [2.5.8] 4 March 2026  
 - GUI: add KEEP/DEL markers and color coding to duplicate list
 - GUI: add global sequential numbering to DEL markers
 - GUI: add detailed deletion preview to confirmation dialog
