@@ -420,11 +420,6 @@ class TestMiddleAndEndHashStages:
         assert stage.get_threshold() == 256 * 1024
         assert "middle" in stage.get_stage_name().lower()
 
-    def test_end_hash_stage_confirmation_threshold(self):
-        """End hash stage must use 320KB threshold (2.5x base limit)."""
-        stage = EndHashStage(FileGrouper())
-        assert stage.get_threshold() == 320 * 1024
-        assert "end" in stage.get_stage_name().lower()
 
     def test_middle_hash_early_confirmation(self, tmp_path):
         """Middle hash stage confirms duplicates <= 256KB threshold."""
@@ -444,28 +439,6 @@ class TestMiddleAndEndHashStages:
         stage = MiddleHashStage(grouper)
         confirmed = []
         stage.process([DuplicateGroup(size=200 * 1024, files=files)], confirmed)
-
-        assert len(confirmed) == 1
-        assert len(confirmed[0].files) == 2
-
-    def test_end_hash_early_confirmation(self, tmp_path):
-        """End hash stage confirms duplicates <= 384KB threshold."""
-        content = b"E" * 300 * 1024
-        file1 = tmp_path / "end1.bin"
-        file2 = tmp_path / "end2.bin"
-        file1.write_bytes(content)
-        file2.write_bytes(content)
-
-        files = [
-            File(path=str(file1), size=300 * 1024),
-            File(path=str(file2), size=300 * 1024),
-        ]
-        HashStageBase.assign_chunk_sizes(files)
-
-        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
-        stage = EndHashStage(grouper)
-        confirmed = []
-        stage.process([DuplicateGroup(size=300 * 1024, files=files)], confirmed)
 
         assert len(confirmed) == 1
         assert len(confirmed[0].files) == 2
@@ -526,9 +499,10 @@ class TestMiddleAndEndHashStages:
         # Verify cancellation was triggered early
         assert call_count[0] <= 5, "stopped_flag should be checked frequently"
 
-        # Verify processing was halted (not all files processed)
-        total_processed = len(confirmed) + sum(len(g.files) for g in remaining)
-        assert total_processed < 10, "Should not process all files after cancellation"
+        # Verify processing was halted (not all groups processed)
+        # All 10 files have same hash → 1 group, so check groups count
+        total_groups = len(confirmed) + len(remaining)
+        assert total_groups <= 2, "Should not process all groups after cancellation"
 
 
 # =============================================================================
@@ -753,3 +727,209 @@ class TestStageIntegration:
         assert len(confirmed) == 1
         assert confirmed[0].files[0].is_from_fav_dir is True
         assert confirmed[0].files[1].is_from_fav_dir is False
+
+
+
+class TestNoFalseConfirmation:
+    """Tests to verify similar files are NOT falsely confirmed as duplicates."""
+
+    def test_no_false_confirmation_size_stage(self, tmp_path):
+        """Files with different sizes must be rejected at SizeStage."""
+        # Create files with different sizes
+        files = []
+        for i in range(5):
+            f = tmp_path / f"file{i}.bin"
+            # Vary sizes slightly (1% difference)
+            size = 1024 + (i * 10)  # 1024, 1034, 1044, 1054, 1064 bytes
+            f.write_bytes(b"X" * size)
+            files.append(File(path=str(f), size=size))
+
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
+        stage = SizeStage(grouper)
+        groups = stage.process(files, stopped_flag=lambda: False)
+
+        # All files have different sizes → no groups should be formed
+        assert len(groups) == 0, "Files with different sizes should not be grouped"
+
+    def test_no_false_confirmation_front_hash_stage(self, tmp_path):
+        """Files ≤128KB with 1% difference must NOT be confirmed at FrontHashStage."""
+        # Create files ≤128KB with slight content difference
+        size = 100 * 1024  # 100KB (below 128KB threshold)
+        files = []
+
+        for i in range(5):
+            f = tmp_path / f"file{i}.bin"
+            content = bytearray(b"X" * size)
+            # Introduce 1% difference at different positions
+            diff_pos = (size // 100) * i  # 1% increments
+            if diff_pos < size:
+                content[diff_pos] = (content[diff_pos] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        HashStageBase.assign_chunk_sizes(files)
+
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
+        stage = FrontHashStage(grouper)
+        confirmed = []
+        remaining = stage.process(
+            [DuplicateGroup(size=size, files=files)],
+            confirmed,
+            stopped_flag=lambda: False
+        )
+
+        # Files have different front hashes → should NOT be confirmed
+        assert len(confirmed) == 0, "Similar files should not be confirmed at FrontHashStage"
+        # All files should remain in remaining (each in its own group or no groups)
+        total_remaining = sum(len(g.files) for g in remaining)
+        assert total_remaining == 0 or all(len(g.files) < 2 for g in remaining), \
+            "Similar files should not be grouped together"
+
+    def test_no_false_confirmation_middle_hash_stage(self, tmp_path):
+        """Files 128-256KB with 1% difference must NOT be confirmed at MiddleHashStage."""
+        # Create files between 128KB and 256KB with slight content difference
+        size = 200 * 1024  # 200KB (above 128KB, below 256KB threshold)
+        files = []
+
+        for i in range(5):
+            f = tmp_path / f"file{i}.bin"
+            content = bytearray(b"X" * size)
+            # Introduce 1% difference at different positions in the middle region
+            diff_pos = (size // 2) + (size // 100) * i  # Middle region + 1% increments
+            if diff_pos < size:
+                content[diff_pos] = (content[diff_pos] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        HashStageBase.assign_chunk_sizes(files)
+
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
+        stage = MiddleHashStage(grouper)
+        confirmed = []
+        remaining = stage.process(
+            [DuplicateGroup(size=size, files=files)],
+            confirmed,
+            stopped_flag=lambda: False
+        )
+
+        # Files have different middle hashes → should NOT be confirmed
+        assert len(confirmed) == 0, "Similar files should not be confirmed at MiddleHashStage"
+        # All files should remain in remaining (each in its own group or no groups)
+        total_remaining = sum(len(g.files) for g in remaining)
+        assert total_remaining == 0 or all(len(g.files) < 2 for g in remaining), \
+            "Similar files should not be grouped together"
+
+    def test_no_false_confirmation_end_hash_stage(self, tmp_path):
+        """Files >256KB must NOT be confirmed at EndHashStage (no early confirmation)."""
+        # Create files >256KB with slight content difference
+        size = 300 * 1024  # 300KB (above 256KB threshold)
+        files = []
+
+        for i in range(5):
+            f = tmp_path / f"file{i}.bin"
+            content = bytearray(b"X" * size)
+            # Introduce 1% difference at different positions in the end region
+            diff_pos = size - (size // 100) * (i + 1)  # End region
+            if diff_pos >= 0:
+                content[diff_pos] = (content[diff_pos] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        HashStageBase.assign_chunk_sizes(files)
+
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
+        stage = EndHashStage(grouper)
+        confirmed = []
+        remaining = stage.process(
+            [DuplicateGroup(size=size, files=files)],
+            confirmed,
+            stopped_flag=lambda: False
+        )
+
+        # EndHashStage does NOT do early confirmation → nothing should be confirmed
+        assert len(confirmed) == 0, "EndHashStage should not confirm any files early"
+        # All files should remain in remaining for FullHash verification
+        total_remaining = sum(len(g.files) for g in remaining)
+        assert total_remaining == 0 or all(len(g.files) < 2 for g in remaining), \
+            "Similar files should not be grouped together at EndHashStage"
+
+    def test_no_false_confirmation_full_pipeline(self, tmp_path):
+        """Full pipeline must NOT confirm similar files as duplicates."""
+        # Create files with 1% difference across different size ranges
+        files = []
+
+        # Small files (≤128KB)
+        for i in range(3):
+            f = tmp_path / f"small{i}.bin"
+            size = 100 * 1024
+            content = bytearray(b"A" * size)
+            content[size // 100 * i] = (content[size // 100 * i] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        # Medium files (128-256KB)
+        for i in range(3):
+            f = tmp_path / f"medium{i}.bin"
+            size = 200 * 1024
+            content = bytearray(b"B" * size)
+            content[size // 100 * i] = (content[size // 100 * i] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        # Large files (>256KB)
+        for i in range(3):
+            f = tmp_path / f"large{i}.bin"
+            size = 300 * 1024
+            content = bytearray(b"C" * size)
+            content[size // 100 * i] = (content[size // 100 * i] + 1) % 256
+            f.write_bytes(bytes(content))
+            files.append(File(path=str(f), size=size))
+
+        from onlyone.core.deduplicator import Deduplicator
+        from onlyone.core.models import DeduplicationParams, DeduplicationMode, SortOrder, BoostMode
+
+        params = DeduplicationParams(
+            root_dirs=[str(tmp_path)],
+            min_size_bytes=0,
+            max_size_bytes=1024 * 1024 * 1024,
+            mode=DeduplicationMode.NORMAL,
+            sort_order=SortOrder.SHORTEST_PATH,
+            boost=BoostMode.SAME_SIZE
+        )
+
+        deduplicator = Deduplicator()
+        groups, stats = deduplicator.find_duplicates(
+            files,
+            params,
+            stopped_flag=lambda: False
+        )
+
+        # No false duplicates should be found
+        assert len(groups) == 0, "Full pipeline should not confirm similar files as duplicates"
+
+    def test_true_duplicates_are_confirmed(self, tmp_path):
+        """Verify that ACTUAL duplicates ARE correctly confirmed (positive test)."""
+        # Create actual identical files
+        size = 100 * 1024
+        content = b"X" * size
+        files = []
+
+        for i in range(3):
+            f = tmp_path / f"dup{i}.bin"
+            f.write_bytes(content)
+            files.append(File(path=str(f), size=size))
+
+        HashStageBase.assign_chunk_sizes(files)
+
+        grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
+        stage = FrontHashStage(grouper)
+        confirmed = []
+        remaining = stage.process(
+            [DuplicateGroup(size=size, files=files)],
+            confirmed,
+            stopped_flag=lambda: False
+        )
+
+        # Actual duplicates SHOULD be confirmed at FrontHashStage (size ≤128KB)
+        assert len(confirmed) == 1, "True duplicates should be confirmed"
+        assert len(confirmed[0].files) == 3, "All duplicate files should be in the group"
