@@ -33,8 +33,10 @@ class Deduplicator:
     Implements multi-stage duplicate detection using a pipeline architecture.
     Respects the DeduplicationMode enum and collects detailed statistics.
     """
-    def __init__(self, grouper=None):
-        self.grouper = grouper or FileGrouper()
+
+    def __init__(self, grouper=None, max_workers: int = 4):
+        self.grouper = grouper or FileGrouper(max_workers=max_workers)
+        self.max_workers = max_workers
 
     def find_duplicates(
         self,

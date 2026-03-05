@@ -1,46 +1,11 @@
+#!/usr/bin/env python3
 """
 Copyright (c) 2025 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
 core/stages.py
 Deduplication pipeline stages implementation for OnlyOne's multi-stage duplicate detection engine.
-
-CLASS HIERARCHY
----------------
-HashStageBase          : Assigns chunk sizes before hashing operations
-PartialHashStageBase   : Abstract base for front/middle/end hash stages (shared grouping logic)
-SizeStageImpl          : Implements initial size-based grouping (SizeStage interface)
-Front/Middle/EndHash   : Concrete partial hash stages with increasing confirmation thresholds
-FullHashStage          : Final verification stage (no inheritance from PartialHashStageBase)
-
-CONFIGURATION
--------------
-DeduplicationConfig centralizes all size thresholds and chunk-sizing policies:
-  • EARLY_CONFIRMATION_SIZE_LIMIT: Base threshold (128KB) for front-hash confirmation
-  • get_chunk_size(): File-size-aware chunk sizing strategy (128KB–2MB range)
-  • Stage-specific thresholds scale linearly (1×, 2×, 3× base limit)
-
-STAGE CONTRACTS
----------------
-Each stage implements a consistent `process()` interface that:
-  • Accepts candidate groups from previous stage
-  • Returns refined groups for next stage
-  • Appends confirmed duplicates to shared list
-  • Reports progress via callback (stage name, processed count, total count)
-  • Respects cancellation via stopped_flag callback
-
-OPTIMIZATIONS
------------------
-• Progressive refinement: Each stage splits groups into smaller candidate sets using
-  different file regions, reducing false positives, etc
-• Early confirmation: Files below size thresholds are immediately confirmed as duplicates
-  after partial hash matches (avoids redundant I/O for small files)
-• Adaptive chunk sizing: Chunk sizes dynamically scale with file size (128KB–2MB) to
-  balance discrimination power with I/O efficiency
-• Cancellation support: All stages honor stopped_flag for responsive UI cancellation
-• Progress tracking: Uniform progress_callback interface for UI integration
 """
-
 from typing import List, Dict, Optional, Callable
 from onlyone.core.models import File, DuplicateGroup, BoostMode
 from onlyone.core.grouper import FileGrouper
@@ -55,9 +20,7 @@ class HashStageBase:
     """
     @staticmethod
     def assign_chunk_sizes(files: List[File]) -> None:
-        """
-        Assigns appropriate chunk size to each file before hashing.
-        """
+        """Assigns appropriate chunk size to each file before hashing."""
         for file in files:
             file.chunk_size = DeduplicationConfig.get_chunk_size(file.size)
 
@@ -94,46 +57,23 @@ class PartialHashStageBase(HashStageBase):
     Abstract base class for stages that perform partial hashing.
     Encapsulates common logic for front/middle/end hash stages.
     """
-
     def __init__(self, grouper: FileGrouper):
         self.grouper = grouper
 
     def get_threshold(self) -> int:
-        """
-        Returns the file size threshold for early confirmation.
-        Must be implemented by subclasses.
-        """
+        """Returns the file size threshold for early confirmation."""
         raise NotImplementedError
 
     def get_stage_name(self) -> str:
-        """
-        Returns the name of the current stage.
-        Used for statistics and logging.
-        """
+        """Returns the name of the current stage."""
         raise NotImplementedError
 
     def _group_files(self, files: List[File]) -> Dict[bytes, List[File]]:
-        """
-        Groups files by their hash values.
-
-        This method must be implemented by subclasses to define how files are grouped,
-        typically using a specific hash (e.g., front, middle, or end hash).
-
-        Args:
-            files (List[File]): A list of files to group.
-
-        Returns:
-            Dict[bytes, List[File]]: A dictionary mapping hash values to lists of files
-                                     that match that hash.
-        """
+        """Groups files by their hash values."""
         raise NotImplementedError
 
     def _should_confirm_early(self, file: File) -> bool:
-        """
-        Hook method: determines if a file should be confirmed as duplicate at this stage.
-        Default implementation uses the size threshold.
-        Subclasses can override to disable or customize this logic.
-        """
+        """Determines if a file should be confirmed as duplicate at this stage."""
         return file.size <= self.get_threshold()
 
     def process(
@@ -164,13 +104,11 @@ class PartialHashStageBase(HashStageBase):
             hash_groups = self._group_files(group.files)
 
             for hkey, files_in_group in hash_groups.items():
-
                 small_files = [f for f in files_in_group if self._should_confirm_early(f)]
                 large_files = [f for f in files_in_group if not self._should_confirm_early(f)]
 
                 if small_files:
                     confirmed_duplicates.append(DuplicateGroup(size=group.size, files=small_files))
-
                 if large_files:
                     new_potential_groups.append(DuplicateGroup(size=group.size, files=large_files))
 
@@ -181,7 +119,7 @@ class PartialHashStageBase(HashStageBase):
         return new_potential_groups
 
 
-# =============================
+# ==============================
 # Individual Stages
 # =============================
 class SizeStage:
@@ -195,10 +133,7 @@ class SizeStage:
             stopped_flag: Optional[Callable[[], bool]] = None,
             progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
-        """
-        Group by file size.
-        Returns list of DuplicateGroups with 2+ files of same size.
-        """
+        """Group by file size. Returns list of DuplicateGroups with 2+ files of same size."""
         if stopped_flag and stopped_flag():
             return []
 
@@ -238,7 +173,7 @@ class SizeStage:
 
         if progress_callback:
             total_files = len(files)
-            progress_callback("Size grouping", total_files, total_files)  # Fake instant progress
+            progress_callback("Size grouping", total_files, total_files)
 
         return groups
 
@@ -255,7 +190,6 @@ class FrontHashStage(PartialHashStageBase):
 
 
 class MiddleHashStage(PartialHashStageBase):
-    # Don't change multiplier, it should be 2 here (greater number lead to hashing gaps and false positives)
     def get_threshold(self) -> int:
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
@@ -268,7 +202,6 @@ class MiddleHashStage(PartialHashStageBase):
 
 class EndHashStage(PartialHashStageBase):
     def get_threshold(self) -> int:
-        # isn't used anymore on this stage
         return int(DeduplicationConfig.EARLY_CONFIRMATION_SIZE_LIMIT * 2)
 
     def get_stage_name(self) -> str:
@@ -287,12 +220,13 @@ class FullHashStage:
         self.grouper = grouper
 
     def process(
-            self,
-            groups: List[DuplicateGroup],
-            confirmed_duplicates: List[DuplicateGroup],
-            stopped_flag: Optional[Callable[[], bool]] = None,
-            progress_callback: Optional[Callable[[str, int, object], None]] = None
+        self,
+        groups: List[DuplicateGroup],
+        confirmed_duplicates: List[DuplicateGroup],
+        stopped_flag: Optional[Callable[[], bool]] = None,
+        progress_callback: Optional[Callable[[str, int, object], None]] = None
     ) -> List[DuplicateGroup]:
+        """Processes duplicate groups through full hash stage (PARALLELIZED)."""
         if stopped_flag and stopped_flag():
             return []
 
@@ -303,7 +237,12 @@ class FullHashStage:
             if stopped_flag and stopped_flag():
                 return []
 
-            hash_groups = self.grouper.group_by_full_hash(group.files)
+            # PARALLEL: Pass stopped_flag to grouper for cancellation support
+            hash_groups = self.grouper.group_by_full_hash(
+                group.files,
+                stopped_flag=stopped_flag
+            )
+
             for hkey, files in hash_groups.items():
                 if stopped_flag and stopped_flag():
                     return []
