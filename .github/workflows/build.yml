@@ -48,20 +48,23 @@ jobs:
           pip install -e .[gui]
 
       - name: Build GUI Executable
+        shell: bash
         run: |
           pyinstaller --clean --noconfirm onlyone-gui.spec
-          mv dist/OnlyOne${{ matrix.ext }} dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }}
+          mv "dist/OnlyOne${{ matrix.ext }}" "dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }}"
 
       - name: Build CLI Executable
+        shell: bash
         run: |
           pyinstaller --clean --noconfirm onlyone-cli.spec
-          mv dist/onlyone-cli${{ matrix.ext }} dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }}
+          mv "dist/onlyone-cli${{ matrix.ext }}" "dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }}"
 
       - name: Prepare Artifacts
+        shell: bash
         run: |
-          mkdir release-artifacts
-          cp dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }} release-artifacts/
-          cp dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }} release-artifacts/
+          mkdir -p release-artifacts
+          cp "dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }}" "release-artifacts/"
+          cp "dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }}" "release-artifacts/"
           cp README.md LICENSE release-artifacts/ 2>/dev/null || true
 
       - name: Create Release
