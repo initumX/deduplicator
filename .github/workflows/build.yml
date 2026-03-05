@@ -39,7 +39,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxcb-cursor0 libxkbcommon-x11-0 libxcb-shape0 libxcb-keysyms1 libxcb-image0 libxcb-xkb1 libxcb-render-util0 libxcb-icccm4 libxcb-util1 libegl1 libopengl0
+          sudo apt-get install -y upx-ucl libxcb-cursor0 libxkbcommon-x11-0 libxcb-shape0 libxcb-keysyms1 libxcb-image0 libxcb-xkb1 libxcb-render-util0 libxcb-icccm4 libxcb-util1 libegl1 libopengl0
 
       - name: Install dependencies
         run: |
