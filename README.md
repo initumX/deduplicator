@@ -25,7 +25,13 @@ Note: Newest OnlyOne requires at least **python 3.8** (but higher version is rec
 No files are deleted until you click "Keep OnlyOne File Per Group" 
 or manually delete a file via the context menu. Even then, files are 
 safely moved to the system trash (not permanently erased) and all 
-deletion operations are recorded in the log file ~/.onlyone/logs/app.log
+deletion operations are recorded in the log file ~/.onlyone/logs/app.log  
+
+The red/green highlighting and "KEEP"/"DEL" labels shown after scanning 
+are **preview indicators** only - they help you understand which files would 
+be preserved or removed if you click "Keep OnlyOne File Per Group". 
+No files are actually deleted at this stage. Deletion occurs only after 
+you explicitly confirm the action.
 
 ## NOTE for cautious people
 FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS 100% RELIABLE.  
