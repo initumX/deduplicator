@@ -17,17 +17,23 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 Note: Newest OnlyOne requires at least **python 3.8** (but higher version is recommended)
 
 ##  [GitHub](https://github.com/initumX/onlyone)   
-* You can download binary for linux and windows from [github release](https://github.com/initumX/onlyone/releases)  
+* You can download binary from [github release](https://github.com/initumX/onlyone/releases)  
 * If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
 * See [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md) to see what's new you can find here
 
-## NOTE!
+## NOTE for anxious people
+No files are deleted until you click "Keep OnlyOne File Per Group" 
+or manually delete a file via the context menu. Even then, files are 
+safely moved to the system trash (not permanently erased) and all 
+deletion operations are recorded in the log file ~/.onlyone/logs/app.log
+
+# NOTE for cautious people
 FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS RELIABLE.  
 Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file.  
 Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).  
 Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).  
 It's ok in the most cases, but sometimes it can lead to false positives.  
-Don't use versions older than 2.5.7, they are not reliable.
+Don't use versions older than 2.5.7, they are not reliable. 
 
 ### Features
 * Filtering by file size and extension
