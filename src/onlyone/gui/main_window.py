@@ -29,6 +29,7 @@ from onlyone.gui.custom_widgets.deletion_confirm_dialog import DeletionConfirmDi
 from onlyone.gui.keep_one_worker import KeepOneWorker
 from onlyone.logging_config import get_logger, cleanup_logging
 from onlyone import __version__
+from onlyone.logging_config import LOG_FILE
 
 
 class SettingsManager:
@@ -363,7 +364,14 @@ class MainWindow(QMainWindow):
             A tool to find and remove duplicate files.<br><br>
             
             Check <a href="https://github.com/initumX/onlyone">OnlyOne GitHub</a> for help<br><br>
-            Leave a star on the GitHub page if you like this app<br><br>
+            Enjoying OnlyOne? Consider starring the project on GitHub!<br><br>
+            
+            <b>NOTE</b><br>
+            No files are deleted until you click "Keep OnlyOne File Per Group" <br>
+            or manually delete a file via the context menu. Even then, files are <br>
+            safely moved to the system trash (not permanently erased), and all <br>
+            deletion operations are recorded in the log file: <br>
+            {LOG_FILE}<br><br>
             
             © Copyright (c) 2026 initumX (initum.x@gmail.com)<br><br>
             License: MIT License<br>
