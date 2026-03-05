@@ -10,8 +10,8 @@ A PyQt-based tool for finding and removing duplicate files with advanced filteri
 `pip install onlyone[gui]`
 
 ## How to install and run
-  1. Create python virtual environment and go there: `python3 venv ~/onlyone && cd ~/onlyone` 
-  2. Activate it: `source ~/onlyone/bin/activate`
+  1. Create python virtual environment and go there: `python3 -m venv ~/mytestenv && cd ~/mytestenv` 
+  2. Activate it: `source bin/activate`
   3. Install onlyone into it: `pip install onlyone[gui]`
   4. Run the app: `onlyone-gui`  or `onlyone`(for cli)  
 Note: Newest OnlyOne requires at least **python 3.8** (but higher version is recommended)
