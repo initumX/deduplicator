@@ -73,3 +73,7 @@
 - GUI: prevent UI freeze during 'Keep One File Per Group' with large datasets
 - GUI: add max_groups limit for GUI to prevent performance issues
 - GUI: add max_groups limit control with preset values
+
+### [2.5.9] 5 March 2026 
+-GUI/CLI: Logging improve. All logs come into file ~/.onlyone/logs/app.log
+-CLI: clean output, only progress indication and result
