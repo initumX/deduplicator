@@ -50,13 +50,11 @@ jobs:
       - name: Build GUI Executable
         run: |
           pyinstaller --clean --noconfirm onlyone-gui.spec
-          # Убедитесь, что имя в spec файле совпадает с тем, что здесь (OnlyOne)
           mv dist/OnlyOne${{ matrix.ext }} dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }}
 
       - name: Build CLI Executable
         run: |
           pyinstaller --clean --noconfirm onlyone-cli.spec
-          # Проверьте, что в onlyone-cli.spec имя тоже соответствует (onlyone-cli)
           mv dist/onlyone-cli${{ matrix.ext }} dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }}
 
       - name: Prepare Artifacts
