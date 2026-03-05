@@ -52,7 +52,7 @@ class ProgressBar:
             # Determinate: show counter + percentage
             pct = 100 * self._count / self.total
             status = f"{self._count:,}/{self.total:,} ({pct:.1f}%)"
-            marker = "✓" if is_done else "•"
+            marker = "Done" if is_done else "•"
         else:
             # Indeterminate: spinner + counter only
             spin_set = self._spin_ascii if self.ascii_only else self._spin_unicode

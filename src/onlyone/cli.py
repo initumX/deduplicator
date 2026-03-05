@@ -440,7 +440,7 @@ class CLIApplication:
                 deleted_count, len(files_to_delete), space_saved, failed_files, ascii_only=ascii_only
             )
             print(result)
-            print(f"\nℹ️  Detailed deletion log saved to: {LOG_FILE}")
+            print(f"\nDetailed deletion log saved to: {LOG_FILE}")
 
         except KeyboardInterrupt:
             if delete_bar:
@@ -518,7 +518,7 @@ class CLIApplication:
         # Show completion time
         elapsed = time.time() - self.start_time
         if self.show_stats:
-            print(f"\n✅ Completed in {elapsed:.2f} seconds")
+            print(f"\n Completed in {elapsed:.2f} seconds")
 
 
 def main() -> None:
@@ -527,7 +527,7 @@ def main() -> None:
     try:
         app.run()
     except KeyboardInterrupt:
-        print("\n️  Operation cancelled by user (Ctrl+C)")
+        print("\n️ Operation cancelled by user (Ctrl+C)")
         sys.exit(130)
     except Exception as e:
         if os.environ.get("DEBUG"):
