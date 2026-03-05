@@ -1,5 +1,5 @@
 """
-Copyright (c) 2025 initumX (initum.x@gmail.com)
+Copyright (c) 2026 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 
 core/scanner.py
@@ -17,6 +17,7 @@ import sys
 from typing import List, Optional, Callable, Set, Dict
 from pathlib import Path
 import time
+from onlyone.core.measurer import bytes_to_human
 from onlyone.logging_config import get_logger
 logger = get_logger("onlyone.core.scanner")
 
@@ -76,7 +77,11 @@ class FileScanner:
         """
         logger.debug("Starting scan operation")
         logger.debug(f"Root directories: {self.root_dirs}")
-        logger.debug(f"Filters: min_size={self.min_size}, max_size={self.max_size}, extensions={self.extensions}")
+        logger.debug(f"Filters: "
+                     f"min_size={bytes_to_human(self.min_size)},"
+                     f"max_size={bytes_to_human(self.max_size)},"
+                     f"extensions={self.extensions}"
+                     )
 
         found_files: List[File] = []
         # Track resolved absolute paths to prevent duplicates when roots overlap
@@ -88,6 +93,8 @@ class FileScanner:
             "skipped_size": 0,
             "skipped_ext": 0,
             "skipped_symlink": 0,
+            "skipped_path_error": 0,
+            "skipped_file_object_error": 0,
         }
 
         # Check for cancellation before starting
@@ -131,7 +138,7 @@ class FileScanner:
                         # avoid symlinks BEFORE resolve
                         try:
                             if path.is_symlink():
-                                logger.debug(f"Skipping symbolic link: {path}")
+                                stats["skipped_symlink"] += 1
                                 continue
                         except (OSError, PermissionError):
                             continue
@@ -141,6 +148,7 @@ class FileScanner:
                             resolved_path = str(path.resolve())
                         except (OSError, ValueError) as e:
                             logger.warning(f"Could not resolve path (skipping): {path} | Error: {e}")
+                            stats["skipped_path_error"] += 1
                             continue
 
                         # Skip if already processed (overlap protection)
@@ -179,9 +187,11 @@ class FileScanner:
         if any(stats.values()):
             logger.info(
                 f"Skipped "
-                f"{stats['skipped_size']} files because of size filter, "
-                f"{stats['skipped_ext']} files because of extension filter, "
-                f"and {stats['skipped_symlink']} symlink"
+                f"{stats['skipped_size']} files by size filter, "
+                f"{stats['skipped_ext']} files by extension filter, "
+                f"{stats['skipped_symlink']} symlinks, "
+                f"{stats['skipped_path_error']} path resolution errors, "
+                f"{stats['skipped_file_object_error']} file object creation errors"
             )
 
         return found_files
@@ -285,17 +295,6 @@ class FileScanner:
             return None
 
         try:
-            if path.is_symlink():
-                stats["skipped_symlink"] += 1
-                return None
-        except PermissionError:
-            logger.warning(f"Permission denied checking symlink: {path}")
-            return None
-        except OSError as e:
-            logger.warning(f"Error checking symlink status for {path}: {e}")
-            return None
-
-        try:
             # Get file size directly
             stat_result = path.stat()
             size = stat_result.st_size
@@ -315,7 +314,7 @@ class FileScanner:
             stats["skipped_size"] += 1
             return None
 
-        # Apply extension filter
+        # Apply extension filter (with aggregation to prevent log spam)
         if not self._extension_passes(path):
             stats["skipped_ext"] += 1
             return None
@@ -329,6 +328,7 @@ class FileScanner:
             )
         except Exception as e:
             logger.warning(f"Failed to create File object for {path}: {e}")
+            stats["skipped_file_object_error"] += 1
             return None
 
         if self.favourite_dirs:
@@ -380,12 +380,10 @@ class FileScanner:
         if self._exclude_mode:
             # Blacklist mode: accept file if its extension is NOT in the exclude list
             if ext in self.extensions:
-                logger.debug(f"Skipping {path} (extension '{ext}' is excluded)")
                 return False
             return True
         else:
             # Whitelist mode: accept file only if its extension IS in the allow list
             if ext in self.extensions:
                 return True
-            logger.debug(f"Skipping {path} (extension '{ext}' not in allowed list)")
             return False
