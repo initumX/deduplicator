@@ -1,42 +1,27 @@
 """
-Copyright (c) 2025 initumX (initum.x@gmail.com)
+Copyright (c) 202 initumX (initum.x@gmail.com)
 Licensed under the MIT License
 logging_config.py
 Unified logging configuration for CLI, GUI, and test modes.
+ALL logging goes to FILE ONLY. Console is kept clean for progress bar and summary.
 """
 import logging
 import sys
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 from logging.handlers import RotatingFileHandler
 
 # Constants
 DEFAULT_LOG_LEVEL = logging.INFO
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(name)-25s - %(levelname)-8s - %(message)s"
-CLI_LOG_FORMAT = "%(levelname)-8s | %(name)-25s | %(message)s"
 LOG_DIR = Path.home() / ".onlyone" / "logs"
 LOG_FILE = LOG_DIR / "app.log"
 MAX_LOG_SIZE = 10 * 1024 * 1024
-BACKUP_COUNT = 5  # Number of backup log files
+BACKUP_COUNT = 5
 
-# --- Filter to hide verbose deletion logs from console ---
-class DeletionLogFilter(logging.Filter):
-    """Filters out verbose deletion logs from console output to keep it clean."""
-    def filter(self, record):
-        # Block messages containing the specific deletion marker
-        return "DELETED |" not in record.getMessage()
-# -----------------------------------------------------------
-
-# --- Test mode detection (STRICT - no sys.argv checks) ---
 def _is_test_mode() -> bool:
-    """
-    Detect if running in test mode.
-    Checks for:
-    - ONLYONE_TEST_MODE environment variable
-    - pytest in sys.modules
-    - unittest in sys.modules
-    """
+    """Detect if running in test mode."""
     if os.environ.get("ONLYONE_TEST_MODE", "").lower() in ("1", "true", "yes"):
         return True
     if "pytest" in sys.modules:
@@ -44,11 +29,14 @@ def _is_test_mode() -> bool:
     if "unittest" in sys.modules:
         return True
     return False
-# -----------------------------------------------------------
 
 def ensure_log_directory() -> Path:
     """Create the log directory if it does not exist."""
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+    except (FileExistsError, NotADirectoryError) as e:
+        if not LOG_DIR.is_dir():
+            raise FileExistsError(f"Log directory path exists as a file: {LOG_DIR}") from e
     return LOG_DIR
 
 def setup_logging(
@@ -56,18 +44,21 @@ def setup_logging(
     level: int = DEFAULT_LOG_LEVEL,
     verbose: bool = False,
     disable_file_logging: bool = False,
+    force_test_mode: Optional[bool] = None,
 ) -> logging.Logger:
     """
     Configure logging for the specified operation mode.
+
+    IMPORTANT: Console handler is DISABLED for CLI mode to keep output clean.
+    All logging goes to FILE ONLY.
+
     Args:
-        mode: Operation mode:
-            - "cli": Output to stdout (console) + file
-            - "gui": Output to file only
-            - "library": Output to file only (for library usage)
-            - "test": Output to stdout only, no file logging
+        mode: Operation mode ("cli", "gui", "library", "test")
         level: Logging level (logging.INFO, logging.DEBUG, etc.)
-        verbose: If True, set level to DEBUG regardless of mode
-        disable_file_logging: If True, skip file handler creation (useful for tests)
+        verbose: If True, set level to DEBUG (all messages to file)
+        disable_file_logging: If True, skip file handler creation
+        force_test_mode: Explicitly override test mode detection
+
     Returns:
         Configured logger for the application
     """
@@ -75,12 +66,22 @@ def setup_logging(
     if verbose:
         level = logging.DEBUG
 
-    # Auto-detect test mode (strict check - no sys.argv)
-    test_mode = _is_test_mode() or mode == "test" or disable_file_logging
+    # Determine test mode
+    if force_test_mode is not None:
+        test_mode = force_test_mode
+    else:
+        test_mode = _is_test_mode() or mode == "test"
 
-    # Create log directory (skip in test mode)
-    if not test_mode:
-        ensure_log_directory()
+    # In test mode, force DEBUG level
+    if test_mode:
+        level = logging.DEBUG
+
+    # Create log directory (skip in test mode or when file logging disabled)
+    if not test_mode and not disable_file_logging:
+        try:
+            ensure_log_directory()
+        except (FileExistsError, PermissionError, OSError) as e:
+            print(f"Warning: Could not create log directory at {LOG_DIR}: {e}", file=sys.stderr)
 
     # Get root application logger
     logger = logging.getLogger("onlyone")
@@ -90,65 +91,51 @@ def setup_logging(
     if logger.handlers:
         logger.handlers.clear()
 
-    # Create formatters
+    # Create formatter
     file_formatter = logging.Formatter(DEFAULT_LOG_FORMAT)
-    console_formatter = logging.Formatter(CLI_LOG_FORMAT)
 
-    # === File Handler (skip in test mode) ===
-    if not test_mode:
+    # === File Handler (ALL modes except test) ===
+    if not test_mode and not disable_file_logging:
         try:
             file_handler = RotatingFileHandler(
                 LOG_FILE,
                 maxBytes=MAX_LOG_SIZE,
                 backupCount=BACKUP_COUNT,
                 encoding="utf-8",
-                delay=True  # Delay file creation until first write
+                delay=True
             )
             file_handler.setLevel(level)
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
-        except (PermissionError, OSError) as e:
-            # If log file cannot be created, warn but do not crash
+        except (PermissionError, OSError, FileExistsError) as e:
             print(f"Warning: Could not create log file at {LOG_FILE}: {e}", file=sys.stderr)
 
-    # === Console Handler (CLI and test modes) ===
-    if mode == "cli" or test_mode:
+    # === Console Handler: DISABLED for CLI mode ===
+    # Console output is handled directly by CLI (progress bar + summary)
+    # This prevents logging messages from interfering with progress bar
+    # Only test mode gets console output for debugging
+    if mode == "test":
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
-        console_handler.setFormatter(console_formatter)
-        # Apply filter to console handler (hide deletion logs from console)
-        # Only apply in CLI mode (tests can show everything for debugging)
-        if mode == "cli":
-            console_handler.addFilter(DeletionLogFilter())
+        console_handler.setFormatter(file_formatter)
         logger.addHandler(console_handler)
 
-    # === Exception Handling ===
-    # For GUI and library modes, log exceptions to file
-    if mode in ("gui", "library") and not test_mode:
+    # === Log Initialization Message (file only) ===
+    if mode in ("gui", "library", "cli") and not test_mode and not disable_file_logging:
         logging.captureWarnings(True)
-        logger.info(f"Logging initialized | Mode: {mode} | Level: {logging.getLevelName(level)}")
+        logger.info(f"Logging initialized | Mode: {mode} | Level: {logging.getLevelName(level)} | Verbose: {verbose}")
 
-    # For test mode, log initialization to console for debugging
-    if test_mode:
+    if test_mode or mode == "test":
         logger.debug(f"Logging initialized | Mode: TEST | File logging: DISABLED")
 
     return logger
 
 def get_logger(name: str = "onlyone") -> logging.Logger:
-    """
-    Get a logger with the specified name.
-    Args:
-        name: Logger name (default "onlyone")
-    Returns:
-        Logger instance
-    """
+    """Get a logger with the specified name."""
     return logging.getLogger(name)
 
 def cleanup_logging() -> None:
-    """
-    Clean up all logging handlers.
-    Call this upon application exit to release file descriptors.
-    """
+    """Clean up all logging handlers."""
     logger = logging.getLogger("onlyone")
     for handler in logger.handlers[:]:
         handler.close()
