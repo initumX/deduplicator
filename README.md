@@ -27,7 +27,7 @@ or manually delete a file via the context menu. Even then, files are
 safely moved to the system trash (not permanently erased) and all 
 deletion operations are recorded in the log file ~/.onlyone/logs/app.log
 
-# NOTE for cautious people
+## NOTE for cautious people
 FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS RELIABLE.  
 Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file.  
 Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).  
