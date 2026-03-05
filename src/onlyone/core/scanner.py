@@ -139,9 +139,8 @@ class FileScanner:
                         # Resolve absolute path to detect overlaps across different roots
                         try:
                             resolved_path = str(path.resolve())
-                        except (OSError, ValueError):
-                            # If resolution fails, skip file to avoid crashes
-                            logger.debug(f"Could not resolve path (skipping): {path}")
+                        except (OSError, ValueError) as e:
+                            logger.warning(f"Could not resolve path (skipping): {path} | Error: {e}")
                             continue
 
                         # Skip if already processed (overlap protection)
@@ -329,7 +328,7 @@ class FileScanner:
                 path_depth=path_depth
             )
         except Exception as e:
-            logger.debug(f"Failed to create File object for {path}: {e}")
+            logger.warning(f"Failed to create File object for {path}: {e}")
             return None
 
         if self.favourite_dirs:
