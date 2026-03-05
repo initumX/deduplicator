@@ -73,7 +73,7 @@ def format_deletion_preview(
 
     for idx, group in enumerate(groups, 1):
         size_str = bytes_to_human(group.size)
-        lines.append(f"{icons['group']} Group {idx} | File size: {size_str} | Files: {len(group.files)}")
+        lines.append(f"{icons['group']} Group {idx} | File size: {size_str}")
         lines.append("-" * 60)
 
         preserved_file = group.files[0]
