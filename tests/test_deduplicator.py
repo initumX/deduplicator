@@ -3,7 +3,6 @@ Integration tests for full deduplication pipeline.
 Verifies end-to-end workflow: scan → pipeline execution → sorted groups.
 """
 from pathlib import Path
-from typing import List
 
 from onlyone.core.scanner import FileScanner
 from onlyone.core.deduplicator import Deduplicator
@@ -14,7 +13,6 @@ from onlyone.core.models import (
     BoostMode,
     File,
     FileHashes,
-    DuplicateGroup,
 )
 
 
@@ -375,7 +373,7 @@ class TestDeduplicatorIntegration:
         assert stats.stage_stats["front"]["files"] == 2
 
     def test_stats_collected_for_all_stages_in_full_mode(self, test_files: dict) -> None:
-        """FULL mode stats must contain entries for all stages including 'full'."""
+        """FULL mode stats must contain entries for all stages in FULL pipeline (size, front, full)."""
         root_dir = str(Path(test_files["dup1_a"]).parent)
         params = DeduplicationParams(
             root_dirs=[root_dir],
@@ -397,7 +395,8 @@ class TestDeduplicatorIntegration:
             stopped_flag=lambda: False,
             progress_callback=None,
         )
-        required_stages = {"size", "front", "middle", "full"}
+        # FULL mode pipeline: size → front → full (no middle/end stages)
+        required_stages = {"size", "front", "full"}
         assert required_stages.issubset(set(stats.stage_stats.keys()))
         for stage in required_stages:
             assert stats.stage_stats[stage]["files"] >= 0

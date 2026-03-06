@@ -112,8 +112,6 @@ class Deduplicator:
             pipeline.append(("end", EndHashStage(self.grouper)))
         elif mode == DeduplicationMode.FULL:
             pipeline.append(("front", FrontHashStage(self.grouper)))
-            pipeline.append(("middle", MiddleHashStage(self.grouper)))
-            pipeline.append(("end", EndHashStage(self.grouper)))
             pipeline.append(("full", FullHashStage(self.grouper)))
         return pipeline
 
