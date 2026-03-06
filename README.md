@@ -90,7 +90,7 @@ Don't use versions older than 2.5.7, they are not reliable.
 2. Applies one of the initial grouping ways from "boosting" option (size, size+extension, etc)  
 3. Further checking depends on mode:  
    * "normal": checks hash-sum of 3 parts of the file: front -> middle -> end (generally reliable)  
-   * "full": checks hash-sum of front -> middle -> end -> entire file (very slow for large files)  
+   * "full": checks hash-sum of front -> entire file  
 4. Shows the list of groups sorted in descending order (groups with larger files come first).   
    **Files inside a group are sorted by path/filename length (you can regulate this).
 
@@ -144,7 +144,7 @@ Options:
 
 `--mode {fast, normal, full}` checking mode (normal by default)
 * `normal`  check by hashsum from 3 parts of file  
-* `full`    same as "normal mode" but with whole file hashsum at final stage
+* `full`    check by full hash  
 
 `--sort {shortest-path, shortest-filename}` sorting inside a group (shortest-path by default)  
 `--dry-run`             Test running  
