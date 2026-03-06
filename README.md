@@ -21,6 +21,38 @@ Note: Newest OnlyOne requires at least **python 3.8** (but higher version is rec
 * If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
 * See [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md) to see what's new you can find here
 
+## Usage as a Module
+
+Once installed, you can integrate OnlyOne into your own Python scripts:
+
+```python
+from onlyone import DeduplicationCommand, DeduplicationParams, DeduplicationMode
+
+# 1. Configure parameters
+params = DeduplicationParams.from_human_readable(
+    root_dirs=["~/Downloads/"],
+    min_size_str="1KB",
+    max_size_str="1GB",
+    extensions=["^", ".jpg", ".png"],  # '^' enables blacklist mode
+    mode=DeduplicationMode.FULL,
+    max_groups=12,
+)
+
+# 2. Create the command
+command = DeduplicationCommand()
+
+# 3. Execute
+# Optional: pass progress_callback and stopped_flag for GUI integration
+groups, stats = command.execute(params)
+
+# 4. Process results
+print(f"Duplicate groups found: {len(groups)}")
+for group in groups:
+    print(f"Size: {group.size}, Files: {len(group.files)}")
+    for file in group.files:
+        print(f"  - {file.path}")
+```
+
 ## NOTE for anxious people
 No files are deleted until you click "Keep OnlyOne File Per Group" 
 or manually delete a file via the context menu. Even then, files are 
