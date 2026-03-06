@@ -50,13 +50,13 @@ jobs:
       - name: Build GUI Executable
         shell: bash
         run: |
-          pyinstaller --clean --noconfirm onlyone-gui.spec
+          pyinstaller --clean --noconfirm --upx-dir=/usr/bin onlyone-gui.spec
           mv "dist/OnlyOne${{ matrix.ext }}" "dist/OnlyOne-${{ matrix.target }}${{ matrix.ext }}"
 
       - name: Build CLI Executable
         shell: bash
         run: |
-          pyinstaller --clean --noconfirm onlyone-cli.spec
+          pyinstaller --clean --noconfirm --upx-dir=/usr/bin onlyone-cli.spec
           mv "dist/onlyone-cli${{ matrix.ext }}" "dist/onlyone-cli-${{ matrix.target }}${{ matrix.ext }}"
 
       - name: Prepare Artifacts
