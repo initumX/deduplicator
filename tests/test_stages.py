@@ -924,7 +924,8 @@ class TestNoFalseConfirmation:
         grouper = FileGrouper(HasherImpl(XXHashAlgorithmImpl()))
         stage = FrontHashStage(grouper)
         confirmed = []
-        remaining = stage.process(
+
+        stage.process(
             [DuplicateGroup(size=size, files=files)],
             confirmed,
             stopped_flag=lambda: False

@@ -198,3 +198,55 @@ class TestFileGrouperImpl:
             groups = method(files) # type: ignore[call-arg]
             assert len(groups) == 1, f"{method.__name__} failed"
             assert len(list(groups.values())[0]) == 2
+
+
+class TestFileGrouperParallel:
+
+    def test_parallel_vs_sequential_equivalence(self, tmp_path):
+        """Parallel and sequential grouping must produce identical results."""
+        # Create 20 small identical files
+        files = []
+        content = b"test" * 1024
+        for i in range(20):
+            p = tmp_path / f"file_{i}.bin"
+            p.write_bytes(content)
+            files.append(File(path=str(p), size=len(content)))
+
+        grouper = FileGrouper(max_workers=4)
+
+        # Run both methods
+        parallel_result = grouper._group_by_parallel(
+            files,
+            lambda f: grouper.hasher.compute_full_hash(f)
+        )
+        sequential_result = grouper._group_by(
+            files,
+            lambda f: grouper.hasher.compute_full_hash(f)
+        )
+
+        # Compare: same keys, same files per key (order may differ)
+        assert set(parallel_result.keys()) == set(sequential_result.keys())
+        for key in parallel_result:
+            assert len(parallel_result[key]) == len(sequential_result[key])
+            assert {f.path for f in parallel_result[key]} == {f.path for f in sequential_result[key]}
+
+    def test_parallel_error_isolation(self, tmp_path):
+        """One failing file should not crash parallel execution."""
+        files = []
+        # Valid files
+        for i in range(5):
+            p = tmp_path / f"valid_{i}.bin"
+            p.write_bytes(b"content")
+            files.append(File(path=str(p), size=7))
+        # Invalid path (will fail to read)
+        files.append(File(path="/nonexistent/file.bin", size=100))
+
+        grouper = FileGrouper(max_workers=2)
+        result = grouper._group_by_parallel(
+            files,
+            lambda f: grouper.hasher.compute_full_hash(f)
+        )
+
+        # Should still have the valid group
+        assert len(result) >= 1
+        assert all(len(group) >= 2 for group in result.values())
