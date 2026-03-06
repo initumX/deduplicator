@@ -214,6 +214,12 @@ class CLIApplication:
             help="Enable debug logging (shows skipped files, hash errors, etc.)"
         )
 
+        parser.add_argument(
+            "--show-fav", "--show-marker",
+            action="store_true",
+            help="Show priority/favourite markers in output (disabled by default for script safety)"
+        )
+
         return parser.parse_args(args)
 
     def validate_args(self, args: argparse.Namespace) -> None:
@@ -364,21 +370,28 @@ class CLIApplication:
     def output_results(
             groups: List[DuplicateGroup],
             ascii_only: bool = False,
-            stats: Optional[DeduplicationStats] = None
+            stats: Optional[DeduplicationStats] = None,
+            show_fav: bool = False
     ) -> None:
         """Output duplicate groups as plain text."""
         if not groups:
             print("No duplicate groups found.")
             return
 
-        output = format_groups_output(groups, show_fav_markers=True, ascii_only=ascii_only, stats=stats)
+        output = format_groups_output(
+            groups,
+            show_fav_marker=show_fav,
+            ascii_only=ascii_only,
+            stats=stats
+        )
         print(output)
 
     def execute_keep_one(
             self,
             groups: List[DuplicateGroup],
             force: bool = False,
-            ascii_only: bool = False
+            ascii_only: bool = False,
+            show_fav: bool = False
     ) -> None:
         """Keep one file per group, delete the rest. Always shows preview before deletion."""
         if not groups:
@@ -395,7 +408,7 @@ class CLIApplication:
         space_saved = self.calculate_space_savings(groups, files_to_delete)
 
         # Preview via reporter (formatting only)
-        preview = format_deletion_preview(groups, files_to_delete, space_saved, ascii_only=ascii_only)
+        preview = format_deletion_preview(groups, files_to_delete, space_saved, show_fav_marker=show_fav, ascii_only=ascii_only)
         print(preview)
 
         # Confirmation (orchestration - stays in CLI)
@@ -469,7 +482,7 @@ class CLIApplication:
                 delete_bar.finish()
             self.error_exit(f"Failed during deletion process: {e}")
 
-    def show_dry_run_preview(self, groups: List[DuplicateGroup]) -> None:
+    def show_dry_run_preview(self, groups: List[DuplicateGroup], show_fav: bool = False) -> None:
         """Show which files would be deleted without actually deleting them."""
         if not groups:
             print("No duplicate groups found.")
@@ -490,7 +503,13 @@ class CLIApplication:
         print("=" * 60)
 
         # Use the same preview formatter as execute_keep_one
-        preview = format_deletion_preview(groups, files_to_delete, space_saved, ascii_only=self._args_ascii)
+        preview = format_deletion_preview(
+            groups,
+            files_to_delete,
+            space_saved,
+            show_fav_marker=show_fav,
+            ascii_only=self._args_ascii
+        )
         print(preview)
 
         # Final notice
@@ -524,13 +543,13 @@ class CLIApplication:
 
         # Conditional output based on flags
         if args.dry_run:
-            self.show_dry_run_preview(groups)
+            self.show_dry_run_preview(groups, show_fav=args.show_fav)
         elif args.keep_one:
             # Always show preview before deletion (safety first)
-            self.execute_keep_one(groups, force=args.force, ascii_only=args.ascii)
+            self.execute_keep_one(groups, force=args.force, show_fav=args.show_fav, ascii_only=args.ascii)
         else:
             # Show standard duplicate groups list
-            self.output_results(groups, ascii_only=args.ascii, stats=stats)
+            self.output_results(groups, ascii_only=args.ascii, show_fav=args.show_fav, stats=stats)
 
         # Show completion time
         elapsed = time.time() - self.start_time

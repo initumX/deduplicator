@@ -32,7 +32,7 @@ def _get_icons(ascii_only: bool) -> dict:
 
 def format_groups_output(
         groups: List[DuplicateGroup],
-        show_fav_markers: bool = True,
+        show_fav_marker: bool = False,
         ascii_only: bool = False,
         stats: Optional[DeduplicationStats] = None
 ) -> str:
@@ -54,11 +54,11 @@ def format_groups_output(
         lines.append(f"Found {len(groups)} duplicate groups ({total_files} files)")
 
     for idx, group in enumerate(groups, 1):
-        lines.extend(format_group(group, idx, show_fav_markers, ascii_only))
+        lines.extend(format_group(group, idx, show_fav_marker, ascii_only))
 
     return "\n".join(lines)
 
-def format_group(group: DuplicateGroup, idx: int, show_fav_markers: bool = True, ascii_only: bool = False) -> List[str]:
+def format_group(group: DuplicateGroup, idx: int, show_fav_marker: bool = True, ascii_only: bool = False) -> List[str]:
     """Format a single duplicate group. Returns list of lines."""
     icons = _get_icons(ascii_only)
     lines = []
@@ -66,8 +66,8 @@ def format_group(group: DuplicateGroup, idx: int, show_fav_markers: bool = True,
     lines.append(f"\n{icons['group']} Group {idx} | File size {size_str} ")
 
     for file in group.files:
-        marker = icons['fav'] if show_fav_markers and file.is_from_fav_dir else ""
-        lines.append(f"   {file.path} [{bytes_to_human(file.size)}]{marker}")
+        marker = icons['fav'] if show_fav_marker and file.is_from_fav_dir else ""
+        lines.append(f"  {file.path} {marker}")
 
     return lines
 
@@ -76,7 +76,7 @@ def format_deletion_preview(
     groups: List[DuplicateGroup],
     files_to_delete: List[str],
     space_saved: int,
-    show_fav_markers: bool = True,
+    show_fav_marker: bool = False,
     ascii_only: bool = False
 ) -> str:
     """Format preview of files to be deleted. Returns a single string."""
@@ -90,11 +90,11 @@ def format_deletion_preview(
         lines.append("-" * 60)
 
         preserved_file = group.files[0]
-        marker = icons['fav'] if show_fav_markers and preserved_file.is_from_fav_dir else ""
+        marker = icons['fav'] if show_fav_marker and preserved_file.is_from_fav_dir else ""
         lines.append(f"   [KEEP] {preserved_file.path}{marker}")
 
         for file in group.files[1:]:
-            marker = icons['fav'] if show_fav_markers and file.is_from_fav_dir else ""
+            marker = icons['fav'] if show_fav_marker and file.is_from_fav_dir else ""
             lines.append(f"   [DEL]  {file.path} {marker}")
         lines.append("")
 
