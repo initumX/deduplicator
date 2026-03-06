@@ -6,8 +6,8 @@ reporter.py
 Formatting helpers for CLI output. Returns strings; cli.py handles printing.
 """
 
-from typing import List
-from onlyone.core.models import DuplicateGroup
+from typing import List, Optional
+from onlyone.core.models import DuplicateGroup, DeduplicationStats
 from onlyone.core.measurer import bytes_to_human
 
 
@@ -25,32 +25,45 @@ def _get_icons(ascii_only: bool) -> dict:
         return {
             'group': '📁',
             'fav': ' (FAV)',
-            'warning': '⚠️  ',
+            'warning': 'WARNING:',
             'success': '✅ ',
             'bullet': '  •',
         }
 
-def format_groups_output(groups: List[DuplicateGroup], show_fav_markers: bool = True, ascii_only: bool = False) -> str:
+def format_groups_output(
+        groups: List[DuplicateGroup],
+        show_fav_markers: bool = True,
+        ascii_only: bool = False,
+        stats: Optional[DeduplicationStats] = None
+) -> str:
     """Format duplicate groups as human-readable text. Returns a single string."""
     if not groups:
         return "No duplicate groups found."
 
     lines = []
     total_files = sum(len(g.files) for g in groups)
-    lines.append(f"\nFound {len(groups)} duplicate groups ({total_files} files)")
+
+    if stats and stats.groups_truncated:
+        icons = _get_icons(ascii_only)
+        print()
+        lines.append(f"{icons['warning']}\nResults limited to {len(groups)} groups (showing largest first)")
+        lines.append(f"Total groups found: {stats.total_groups_found}")
+        lines.append(f"Use --max-groups with higher value for full results")
+        lines.append("")
+    else:
+        lines.append(f"Found {len(groups)} duplicate groups ({total_files} files)")
 
     for idx, group in enumerate(groups, 1):
         lines.extend(format_group(group, idx, show_fav_markers, ascii_only))
 
     return "\n".join(lines)
 
-
 def format_group(group: DuplicateGroup, idx: int, show_fav_markers: bool = True, ascii_only: bool = False) -> List[str]:
     """Format a single duplicate group. Returns list of lines."""
     icons = _get_icons(ascii_only)
     lines = []
     size_str = bytes_to_human(group.size)
-    lines.append(f"\n{icons['group']} Group {idx} | Size: {size_str} | Files: {len(group.files)}")
+    lines.append(f"\n{icons['group']} Group {idx} | File size {size_str} ")
 
     for file in group.files:
         marker = icons['fav'] if show_fav_markers and file.is_from_fav_dir else ""

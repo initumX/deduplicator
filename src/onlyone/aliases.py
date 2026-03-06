@@ -46,6 +46,9 @@ Examples:
   Dry run with ascii-compilant output
   %(prog)s -i ~/Downloads --dry-run --ascii
   
+  Dry run with ascii-compilant output, limit result to 10 groups
+  %(prog)s -i ~/Downloads --dry-run --ascii --max-groups 10
+  
   Filter files by size, exclude(^ inverts whitelist to blacklist) extensions jpg and png and find duplicates
   %(prog)s -i ~/Downloads -m 500KB -M 10MB -x ^ .jpg .png --dry-run
 

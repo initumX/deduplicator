@@ -9,9 +9,10 @@ import sys
 import os
 import time
 from pathlib import Path
-from typing import List, Optional, NoReturn
+from typing import List, Tuple, Optional, NoReturn
 import logging
 from onlyone.logging_config import setup_logging, cleanup_logging, LOG_FILE
+from onlyone.core.models import DeduplicationStats
 
 # === EARLY DEPENDENCY VALIDATION ===
 _MISSING_DEPS = []
@@ -166,6 +167,14 @@ class CLIApplication:
                  "  'shortest-filename' (shorter filenames first). Default: shortest-path\n"
         )
 
+        parser.add_argument(
+            "--max-groups",
+            type=int,
+            default=None,
+            metavar='N',
+            help="Limit the number of duplicate groups shown (default: unlimited). "
+        )
+
         # Actions
         parser.add_argument(
             "--keep-one",
@@ -254,6 +263,9 @@ class CLIApplication:
                 f"Valid options: {', '.join({'normal', 'full'})}"
             )
 
+        if args.max_groups is not None and args.max_groups < 1:
+            self.error_exit("--max-groups must be a positive integer (>= 1)")
+
     def create_params(self, args: argparse.Namespace) -> DeduplicationParams:
         """Create DeduplicationParams from CLI arguments."""
         try:
@@ -288,7 +300,8 @@ class CLIApplication:
                 excluded_dirs=excluded_dirs,
                 sort_order=sort_order,
                 boost=boost_mode,
-                mode=mode
+                mode=mode,
+                max_groups=args.max_groups,
             )
         except ValueError as e:
             self.error_exit(f"Parameter error: {e}")
@@ -325,7 +338,7 @@ class CLIApplication:
                     total_bytes += file.size
         return total_bytes
 
-    def run_deduplication(self, params: DeduplicationParams) -> List[DuplicateGroup]:
+    def run_deduplication(self, params: DeduplicationParams) -> Tuple[List[DuplicateGroup], DeduplicationStats]:
         """Execute deduplication workflow."""
         command = DeduplicationCommand()
 
@@ -340,7 +353,7 @@ class CLIApplication:
                 print()
                 print(stats.print_summary())
 
-            return groups
+            return groups, stats
         except Exception as e:
             if self._progress:
                 self._progress.finish()
@@ -348,13 +361,17 @@ class CLIApplication:
             self.error_exit(f"Deduplication failed: {e}")
 
     @staticmethod
-    def output_results(groups: List[DuplicateGroup], ascii_only: bool = False) -> None:
+    def output_results(
+            groups: List[DuplicateGroup],
+            ascii_only: bool = False,
+            stats: Optional[DeduplicationStats] = None
+    ) -> None:
         """Output duplicate groups as plain text."""
         if not groups:
             print("No duplicate groups found.")
             return
 
-        output = format_groups_output(groups, show_fav_markers=True, ascii_only=ascii_only)
+        output = format_groups_output(groups, show_fav_markers=True, ascii_only=ascii_only, stats=stats)
         print(output)
 
     def execute_keep_one(
@@ -503,7 +520,7 @@ class CLIApplication:
         self.validate_args(args)
         params = self.create_params(args)
 
-        groups = self.run_deduplication(params)
+        groups, stats = self.run_deduplication(params)
 
         # Conditional output based on flags
         if args.dry_run:
@@ -513,7 +530,7 @@ class CLIApplication:
             self.execute_keep_one(groups, force=args.force, ascii_only=args.ascii)
         else:
             # Show standard duplicate groups list
-            self.output_results(groups, ascii_only=args.ascii)
+            self.output_results(groups, ascii_only=args.ascii, stats=stats)
 
         # Show completion time
         elapsed = time.time() - self.start_time
