@@ -19,7 +19,7 @@ from onlyone.aliases import (
     DEDUP_MODE_ALIASES, DEDUP_MODE_CHOICES, DEDUP_MODE_HELP_TEXT,
     EPILOG_TEXT
 )
-from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup
+from onlyone.core import DeduplicationParams, DeduplicationMode, SortOrder, File, DuplicateGroup, BoostMode
 from onlyone.core.measurer import bytes_to_human, human_to_bytes
 from onlyone.services import DuplicateService
 from onlyone.services.file_service import FileService
@@ -35,6 +35,7 @@ __all__ = [
     "DeduplicationParams",
     "DeduplicationMode",
     "SortOrder",
+    "BoostMode",
     "File",
     "ProgressBar",
     "format_groups_output",
