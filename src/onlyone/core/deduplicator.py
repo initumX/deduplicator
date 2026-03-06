@@ -7,7 +7,7 @@ Implements a pipeline-based deduplication system using File objects.
 Supports three modes:
     - fast: size -> front
     - normal: size -> front -> middle -> end
-    - full: size -> front -> middle -> full_hash
+    - full: size -> front -> full_hash
 """
 import time
 from typing import List, Tuple, Union, Optional, Callable
