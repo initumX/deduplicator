@@ -113,7 +113,7 @@ class CLIApplication:
             help="Maximum file size (e.g., 10MB, 1GB). Default: 100GB"
         )
         parser.add_argument(
-            "--extensions", "-x",
+            "--extensions", "--extension", "--ext", "-x",
             nargs="+",
             default=[],
             type=str,
@@ -121,7 +121,7 @@ class CLIApplication:
             help="File extensions (space separated) to include (e.g., .jpg .png)"
         )
         parser.add_argument(
-            "--priority-dirs", '-p',
+            "--priority-dirs", "--favourite-dirs", "--favourites", "-p",
             nargs="+",
             default=[],
             type=str,
@@ -131,7 +131,7 @@ class CLIApplication:
         )
 
         parser.add_argument(
-            "--excluded-dirs", '-e',
+            "--excluded-dirs", "--ex", "-e",
             nargs="+",
             default=[],
             type=str,
@@ -215,7 +215,7 @@ class CLIApplication:
         )
 
         parser.add_argument(
-            "--show-fav", "--show-marker",
+            "--show-fav", "--show-marker", "--marker",
             action="store_true",
             help="Show priority/favourite markers in output (disabled by default for script safety)"
         )
