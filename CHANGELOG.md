@@ -81,4 +81,4 @@
 ### [2.6.0] March 2026
 - CORE: ThreadPool for full-hashing (~20% faster)
 - PIPELINE: FULL mode now follows size -> front-hash -> full-hash (avoids extra stages)
-- 
+- CLI: implement --max-groups CLI argument to limit result groups

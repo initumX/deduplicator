@@ -101,6 +101,7 @@ Options:
 `-x, --extensions`     extension filter (space separated, start with ^ to make extensions list work in "blacklist" mode)    
 `-p, --priority-dirs`  priority dirs (space separated). Files from here are prioritized to keep (come first in each group)   
 `--excluded-dirs`     excluded/ignored dirs (space separated)  
+`--max-groups` limit number of result groups  
 `--boost {size,extension,filename,fuzzy}`  Rule for initial file grouping:  
 * `size` Group files of the same size only (default)  
 * `extension`  Group files of the same size and extension  
