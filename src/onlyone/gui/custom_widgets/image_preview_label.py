@@ -50,7 +50,7 @@ class ImagePreviewLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setText("Select an image file to preview...")
+        self.setText("Select an image or pdf file to preview...")
         self.setWordWrap(True)
         self.current_file = None
         self.original_pixmap = None
