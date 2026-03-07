@@ -83,3 +83,6 @@
 - PIPELINE: FULL mode now follows size -> front-hash -> full-hash (avoids extra stages)
 - CLI: implement --max-groups CLI argument to limit result groups
 - CLI: script-friendly output (disabled trailing (FAV)-marker by default, use --show-fav to enable it)
+
+### [2.6.1] 7 March 2026
+Binaries from previous release were too large because of packing issues, this version supposed to fix this issue
