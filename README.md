@@ -136,22 +136,19 @@ for group in groups:
         print(f"  - {file.path}")
 ```
 
-## NOTES
+## NOTES FOR CAUTIOUS
 * No files are deleted until you click "Keep OnlyOne File Per Group" 
 or manually delete a file via the context menu. Even then, files are 
-safely moved to the system trash and all 
-deletion operations are recorded in the log file ~/.onlyone/logs/app.log
+safely moved to the system trash and all deletion operations are 
+recorded in the log file ~/.onlyone/logs/app.log
 * The red/green highlighting and "KEEP"/"DEL" labels shown after scanning 
 are **preview indicators** only - they help you understand which files would 
 be preserved or removed if you click "Keep OnlyOne File Per Group". 
 No files are actually deleted at this stage. Deletion occurs only after 
 you explicitly confirm the action.
-* FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS 100% RELIABLE.  
-Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file. 
-Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).
-Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).
-It's ok in the most cases, but sometimes it can lead to false positives.
-Don't use versions older than 2.5.7, they are not reliable
+* Normal mode compares files by only size and 3 parts, not by the whole file content.
+If you have sensitive data, use full mode to avoid any chance of false positives.
+
 ### TESTS
 `pytest tests/ -v` 
 
