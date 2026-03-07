@@ -142,9 +142,9 @@ or manually delete a file via the context menu. Even then, files are
 safely moved to the system trash and all deletion operations are 
 recorded in the log file ~/.onlyone/logs/app.log
 * The red/green highlighting and "KEEP"/"DEL" labels shown after scanning 
-are **preview indicators** only - they help you understand which files would 
+are **preview indicators** only. They help you understand which files would 
 be preserved or removed if you click "Keep OnlyOne File Per Group". 
-No files are actually deleted at this stage. Deletion occurs only after 
+Deletion occurs only after 
 you explicitly confirm the action.
 * Normal mode compares files by only size and 3 parts, not by the whole file content.
 If you have sensitive data, use full mode to avoid any chance of false positives.
