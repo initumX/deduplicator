@@ -21,57 +21,7 @@ Note: Newest OnlyOne requires at least **python 3.8** (but higher version is rec
 * If you like this app, push a star on its [github page](https://github.com/initumX/onlyone)  
 * See [Changelog](https://github.com/initumX/onlyone/blob/main/CHANGELOG.md) to see what's new you can find here
 
-## Usage as a Module
 
-Once installed, you can integrate OnlyOne into your own Python scripts:
-
-```python
-from onlyone import DeduplicationCommand, DeduplicationParams, DeduplicationMode
-
-# 1. Configure parameters
-params = DeduplicationParams.from_human_readable(
-    root_dirs=["~/Downloads/"],
-    min_size_str="1KB",
-    max_size_str="1GB",
-    extensions=["^", ".jpg", ".png"],  # '^' enables blacklist mode
-    mode=DeduplicationMode.FULL,
-    max_groups=12,
-)
-
-# 2. Create the command
-command = DeduplicationCommand()
-
-# 3. Execute
-# Optional: pass progress_callback and stopped_flag for GUI integration
-groups, stats = command.execute(params)
-
-# 4. Process results
-print(f"Duplicate groups found: {len(groups)}")
-for group in groups:
-    print(f"Size: {group.size}, Files: {len(group.files)}")
-    for file in group.files:
-        print(f"  - {file.path}")
-```
-
-## NOTE for anxious people
-No files are deleted until you click "Keep OnlyOne File Per Group" 
-or manually delete a file via the context menu. Even then, files are 
-safely moved to the system trash (not permanently erased) and all 
-deletion operations are recorded in the log file ~/.onlyone/logs/app.log  
-
-The red/green highlighting and "KEEP"/"DEL" labels shown after scanning 
-are **preview indicators** only - they help you understand which files would 
-be preserved or removed if you click "Keep OnlyOne File Per Group". 
-No files are actually deleted at this stage. Deletion occurs only after 
-you explicitly confirm the action.
-
-## NOTE for cautious people
-FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS 100% RELIABLE.  
-Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file.  
-Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).  
-Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).  
-It's ok in the most cases, but sometimes it can lead to false positives.  
-Don't use versions older than 2.5.7, they are not reliable. 
 
 ### Features
 * Filtering by file size and extension
@@ -104,7 +54,6 @@ If both files have the same path depth, the file with shortest filename wins the
 
       REMEMBER: In the end, there can be only one file/per group :)
 ---
-
 
 ### How to use cli-version
 Examples:  
@@ -155,6 +104,54 @@ Options:
 `--version, -v`         Show version and exit   
 `--help, -h`            Show help file  
 
+## Usage as a Module
+
+Once installed, you can integrate OnlyOne into your own Python scripts:
+
+```python
+from onlyone import DeduplicationCommand, DeduplicationParams, DeduplicationMode
+
+# 1. Configure parameters
+params = DeduplicationParams.from_human_readable(
+    root_dirs=["~/Downloads/"],
+    min_size_str="1KB",
+    max_size_str="1GB",
+    extensions=["^", ".jpg", ".png"],  # '^' enables blacklist mode
+    mode=DeduplicationMode.FULL,
+    max_groups=12,
+)
+
+# 2. Create the command
+command = DeduplicationCommand()
+
+# 3. Execute
+# Optional: pass progress_callback and stopped_flag for GUI integration
+groups, stats = command.execute(params)
+
+# 4. Process results
+print(f"Duplicate groups found: {len(groups)}")
+for group in groups:
+    print(f"Size: {group.size}, Files: {len(group.files)}")
+    for file in group.files:
+        print(f"  - {file.path}")
+```
+
+## NOTES
+* No files are deleted until you click "Keep OnlyOne File Per Group" 
+or manually delete a file via the context menu. Even then, files are 
+safely moved to the system trash and all 
+deletion operations are recorded in the log file ~/.onlyone/logs/app.log
+* The red/green highlighting and "KEEP"/"DEL" labels shown after scanning 
+are **preview indicators** only - they help you understand which files would 
+be preserved or removed if you click "Keep OnlyOne File Per Group". 
+No files are actually deleted at this stage. Deletion occurs only after 
+you explicitly confirm the action.
+* FOR HIGHLY SIMILAR FILES ONLY FULL MODE IS 100% RELIABLE.  
+Highly similar files means the same size, same 64+ kbytes at start, end and middle point of the file. 
+Normal mode is 100% reliable only for files <= 256KB (app uses 128KB chunks for files of this size).
+Bigger files are compared in NORMAL mode just by size and 3 little chunks (64+ KB, chunk is adaptive).
+It's ok in the most cases, but sometimes it can lead to false positives.
+Don't use versions older than 2.5.7, they are not reliable
 ### TESTS
 `pytest tests/ -v` 
 
